@@ -10,4 +10,4 @@ addCompilerPlugin(
 libraryDependencies += "edu.berkeley.cs" %% "chisel3" % chiselVersion
 libraryDependencies += "edu.berkeley.cs" %% "chiseltest" % "0.6.2" % Test
 
-Compile / run / mainClass := Some("riscvsingle.GenerateExtend")
+Compile / run / mainClass := Some("riscvpipeline.GenerateRiscvPipeline")
