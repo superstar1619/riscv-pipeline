@@ -30,9 +30,12 @@ VALIDATION_SUITE ?= all
   generate-irom generate-ifu generate-lsu generate-cpu test test-pipeline test-rtl clean
 
 .PHONY: build-acceptance generate-acceptance test-acceptance generate-rtl-test
-.PHONY: build-validation generate-validation test-validation test-arch test-coremark
+.PHONY: build-validation generate-validation test-validation test-arch test-coremark test-validation-builder
 
-build-validation:
+test-validation-builder:
+	python3 -m unittest discover -s src/test/python -v
+
+build-validation: test-validation-builder
 	python3 scripts/build-validation.py $(VALIDATION_SUITE)
 
 generate-validation: build-validation

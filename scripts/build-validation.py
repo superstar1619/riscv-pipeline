@@ -51,10 +51,21 @@ def compile_file(source, obj, includes=(), extra=()):
 
 
 def verify_source(repo, source, revision):
+    if not source.is_file():
+        raise ValueError(f'Missing upstream source: {source}')
     committed = subprocess.check_output(['git', '-C', str(repo), 'show',
                                          f'{revision}:{source.relative_to(repo)}'])
     assert source.read_bytes() == committed, f'Upstream source changed: {source}'
     return hashlib.sha256(committed).hexdigest()
+
+
+def pinned_files(repo, directory, suffix, revision):
+    paths = run(['git', '-C', repo, 'ls-tree', '-r', '--name-only', revision,
+                 directory]).splitlines()
+    files = [repo / path for path in paths if path.endswith(suffix)]
+    if not files:
+        raise ValueError(f'No pinned sources in {directory}')
+    return files
 
 
 def build_image(name, objects, entry, extra=(), cases=0):
@@ -151,15 +162,26 @@ def arch_tests(selected):
     # The unprivileged tests need no trap/CSR framework. Disable compressed alignment
     # padding in the upstream platform environment while retaining all vectors/macros.
     upstream = ARCH / 'riscv-test-suite/env'
-    for source in upstream.glob('*.h'):
+    for source in pinned_files(ARCH, 'riscv-test-suite/env', '.h', ARCH_REVISION):
         verify_source(ARCH, source, ARCH_REVISION)
         text = source.read_text().replace('.option rvc', '.option norvc')
-        (env / source.name).write_text(text)
+        destination = env / source.relative_to(upstream)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(text)
+    sources = pinned_files(ARCH, 'riscv-test-suite/rv32i_m/I/src', '.S', ARCH_REVISION)
+    # Textbook Table 7.10 also lists this JALR bit-0-clearing test. Upstream
+    # moved it to privilege/, but this particular case needs no traps or CSR.
+    sources.append(ARCH / 'riscv-test-suite/rv32i_m/privilege/src/misalign1-jalr-01.S')
+    available = {source.stem for source in sources}
+    unknown = set(selected or ()) - available
+    if unknown:
+        raise ValueError(f'Unknown architecture tests: {sorted(unknown)}')
+    for source in sources:
+        verify_source(ARCH, source, ARCH_REVISION)
     results = []
-    for source in sorted((ARCH / 'riscv-test-suite/rv32i_m/I/src').glob('*.S')):
+    for source in sorted(sources):
         if selected and source.stem not in selected:
             continue
-        verify_source(ARCH, source, ARCH_REVISION)
         work = BUILD / source.stem
         work.mkdir(parents=True, exist_ok=True)
         obj = work / 'test.o'
