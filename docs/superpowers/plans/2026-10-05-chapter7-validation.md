@@ -42,20 +42,20 @@
 **Files:** 新建 scripts/build-validation.py、scripts/test-validation.sh、programs/validation 平台头/启动/链接脚本和 src/test/cpp/SignatureRtlTest.cpp。
 **Interfaces:** 大型测试共用 524288-word IROM、32768-word DTIM，入口 0x80000000；目标镜像 target/validation/program.memfile，签名地址和值及运行元数据位于 target/validation。
 
-- [ ] 使用本地固定 riscv-arch-test rv32i_m/I 所有源文件，保留原始向量与宏，关闭无关 trap/instret harness。
-- [ ] 所有初始 .data/.rodata 由启动代码写真实 RAM；.bss 清零，栈和 tohost 保留独立区域。
-- [ ] 同一 ELF 在 Spike 上生成参考签名，检查 timeout/退出状态和完整签名长度。
-- [ ] 使用共用 Verilator runner 收集所有 byte-mask 写入并比对完整签名；保留额外 poison/timeout 的负向检查。
-- [ ] 全部 I 测试通过；记录版本、测试/向量数量、覆盖范围及 FENCE 行为。
-- [ ] 提交架构测试平台和覆盖记录。
+- [x] 使用本地固定 riscv-arch-test rv32i_m/I 所有源文件及教材 misalign1-jalr 用例，保留原始向量与宏，关闭无关 trap/instret harness。
+- [x] 所有初始 .data/.rodata 由启动代码写真实 RAM；.bss 清零，栈和 tohost 保留独立区域。
+- [x] 同一 ELF 在 Spike 上生成参考签名，检查 timeout/退出状态和完整签名长度。
+- [x] 使用共用 Verilator runner 收集所有 byte-mask 写入并比对完整签名；保留额外 poison/timeout 的负向检查。
+- [x] 全部 I 测试通过；记录版本、测试/向量数量、覆盖范围及 FENCE 行为。
+- [x] 提交架构测试平台和覆盖记录。
 
 ### Task 3: CoreMark
 
 **Files:** 新建 programs/coremark/core_portme.h、core_portme.c、benchmark.c；扩展 validation 构建和测试入口。
 **Interfaces:** 上游 core_list_join/core_matrix/core_state/core_util/core_main 文件保持原样；自定义仿真驱动调用原 iterate，2000-byte 数据、10 iterations，性能及验证种子；签名导出 seed/list/matrix/state/final CRC 和错误数。
 
-- [ ] 编译为 RV32I/ilp32，使用 RV32I libgcc 软件乘除，检查所有可执行指令为支持范围。
-- [ ] 同一 ELF 在 Spike 生成完整 CRC 参考，同时核对上游固定 list/matrix/state CRC。
-- [ ] Verilator 对性能及验证种子各运行三个随机种子，比较完整 CRC 和错误计数，记录纯执行区周期及 cycles/iteration。
-- [ ] 运行完整 Scala 和恢复后的 RTL/架构/CoreMark 入口；记录准确结果，独立只读分支评审，必要修正后提交。
-- [ ] 保留分支并报告提交号、可重复命令、结果和官方计分限制。
+- [x] 编译为 RV32I/ilp32，使用 RV32I libgcc 软件乘除，检查所有可执行指令为支持范围。
+- [x] 同一 ELF 在 Spike 生成完整 CRC 参考，同时核对上游固定 list/matrix/state CRC。
+- [x] Verilator 对性能及验证种子各运行三个随机种子，比较完整 CRC 和错误计数，记录纯执行区周期及 cycles/iteration。
+- [x] 运行完整 Scala 和恢复后的 RTL/架构/CoreMark 入口；记录准确结果，独立只读分支评审，必要修正后提交。
+- [x] 保留分支并报告提交号、可重复命令、结果和官方计分限制。

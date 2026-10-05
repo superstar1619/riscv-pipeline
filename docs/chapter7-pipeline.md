@@ -1,5 +1,9 @@
 # 第七章五级流水线实施记录
 
+本记录描述首次定向验证阶段。随后用户要求继续完整验收并加入 CoreMark，
+已完成的回归、§7.4 覆盖及 CoreMark 结果见
+[完整验收记录](chapter7-validation.md)。以下停止范围保留为首轮实施历史。
+
 依据用户实施方案、教材 §7.2–7.3 和本地 CVW `src/ifu/irom.sv`、
 `src/lsu/dtim.sv`、`src/ieu/controller.sv`、`src/ieu/datapath.sv`、
 `src/hazard/hazard.sv`。只参考流水控制、前递和存储器连接，未移植扩展子系统。

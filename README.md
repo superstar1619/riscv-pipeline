@@ -37,13 +37,17 @@ Funct3 对齐，再进入 W。RAM 无初始化或复位，未写位置未指定�
 高有效同步复位清空流水有效位、恢复复位向量并抑制 RAM/寄存器写入；数据 RAM 和
 非零寄存器保持。首次 store 的观察周期不再等于单周期执行周期。
 
-## 本次定向验证
+## 验证入口
 
 从工程目录执行：
 
 ```bash
 ./scripts/sbt-local.sh compile 'Test / compile'
 make test-pipeline SBT=./scripts/sbt-local.sh
+make test SBT=./scripts/sbt-local.sh
+make test-acceptance SBT=./scripts/sbt-local.sh
+make test-rtl SBT=./scripts/sbt-local.sh
+make test-validation SBT=./scripts/sbt-local.sh
 make generate-cpu SBT=./scripts/sbt-local.sh
 make generate-cpu SBT=./scripts/sbt-local.sh \
   IMEM_DEPTH=128 DMEM_DEPTH=128 RESET_VECTOR=0x100 \
@@ -61,15 +65,23 @@ make generate-cpu SBT=./scripts/sbt-local.sh \
 `IMEM_DEPTH`、`DMEM_DEPTH`、`INSTRUCTION_INIT_FILE`、`RESET_VECTOR`、
 `CPU_TARGET_DIR` 参数。生成 RTL、构建缓存和波形由 `.gitignore` 排除。
 
-## 后续验收
+## 完整验收与 CoreMark
 
-本次按计划在定向测试和两种配置 RTL 生成后停止，没有运行完整 Scala/Verilator
-回归、CoreMark 或 §7.4 testplan。未受流水时序影响的基础模块测试仍在
-`src/test/scala`。旧单周期的 IFU/IEU/Datapath/LSU/存储器及整机逐周期测试归档在
-`src/test/legacy`，由上述三组测试提供当前时序覆盖。
+继续阶段已通过完整 Scala 回归（122 项）、整机验收和四种 RTL 配置验收。
+§7.4 覆盖上游 `rv32i_m/I` 全部 38 个程序及教材附加 JALR 用例；这 39 个程序
+和两种 CoreMark 模式均各运行三个
+随机种子，完整签名与 Spike 一致。可单独运行 `make test-arch`、
+`make test-coremark`，或由 `test-validation` 一起构建、生成 RTL、检查签名。
+详细覆盖表、CRC、周期和可重复配置见 [完整验收记录](docs/chapter7-validation.md)。
 
-现有验收镜像、汇编、trace、元数据保留；trace 是单周期历史资料，不能作为流水线
-逐周期预期。旧 C++ 检查归档在 `src/test/legacy/cpp`，`test-acceptance`、`test-rtl`
-暂时明确报错，待后续完整验收适配后恢复。`make test` 可运行当前活动 Scala 测试，
-本次未执行。`make build-acceptance` 仍可生成镜像和历史 trace，需要 RISC-V GNU
-binutils，默认前缀 `riscv64-unknown-elf-`，可用 `RISCV_TOOL_PREFIX` 指定。
+大型软件测试需要本地 CVW `addins/riscv-arch-test`、`addins/coremark`、
+RV32I GNU 工具链、Spike 和 Verilator。`CVW_ROOT` 可指定 CVW 路径；源码 revision
+固定并核对原始文件。生成参数使用 2 MiB IROM/128 KiB DTIM，启动程序通过实际
+store 初始化数据，默认核心参数保持原值。构建产物和日志位于 `target/validation`。
+CoreMark 使用 2000 字节、10 次迭代，检查上游 CRC 并报告仿真周期；
+没有真实时钟频率及至少 10 秒测量，不报告官方得分。
+
+历史 trace 保留；验收只比较其中有序的架构访存事件。旧单周期的模块/整机逐周期
+测试归档在 `src/test/legacy`，活动流水线测试位于 `src/test/scala`。
+`make build-acceptance` 仍可生成验收镜像和历史 trace，需要 RISC-V GNU binutils，
+默认前缀 `riscv64-unknown-elf-`，可用 `RISCV_TOOL_PREFIX` 指定。
