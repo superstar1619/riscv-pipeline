@@ -1,0 +1,16 @@
+target/
+project/target/
+project/project/
+test_run_dir/
+.cache/
+.bsp/
+.metals/
+generated/
+
+# RTL and simulator artifacts
+*.vcd
+*.fst
+*.fir
+*.anno.json
+obj_dir/
+.superpowers/
