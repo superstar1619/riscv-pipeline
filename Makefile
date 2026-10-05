@@ -29,7 +29,6 @@ CPU_TARGET_DIR ?= generated/riscv-pipeline
   generate-irom generate-ifu generate-lsu generate-cpu test test-pipeline test-rtl clean
 
 .PHONY: build-acceptance generate-acceptance test-acceptance generate-rtl-test
-
 build-acceptance:
 	python3 scripts/build-rv32-acceptance.py
 
@@ -37,8 +36,7 @@ generate-acceptance:
 	$(SBT) "runMain riscvpipeline.GenerateRiscvPipeline 128 64 generated/rv32-acceptance programs/rv32-acceptance.memfile 0" "runMain riscvpipeline.GenerateRiscvPipeline 256 128 generated/rv32-acceptance-expanded programs/rv32-acceptance-expanded.memfile 0x100"
 
 test-acceptance:
-	@echo "Single-cycle acceptance traces require pipeline adaptation; use test-pipeline." >&2
-	@exit 2
+	$(SBT) 'testOnly riscvpipeline.CpuAcceptanceSpec riscvpipeline.PipelineSmokeSpec'
 
 generate:
 	$(SBT) "runMain riscvpipeline.GenerateExtend $(WIDTH) $(TARGET_DIR)"
@@ -101,7 +99,7 @@ generate-rtl-test:
 	  "runMain riscvpipeline.GenerateRiscvPipeline 128 64 generated/rv32-acceptance programs/rv32-acceptance.memfile 0" \
 	  "runMain riscvpipeline.GenerateRiscvPipeline 256 128 generated/rv32-acceptance-expanded programs/rv32-acceptance-expanded.memfile 0x100"
 
-test-rtl:
+test-rtl: generate-rtl-test
 	VERILATOR="$(VERILATOR)" ./scripts/test-rtl.sh
 
 clean:
