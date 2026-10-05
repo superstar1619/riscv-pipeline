@@ -2,8 +2,8 @@
 
 依据教材第七章 §7.2–7.3，将原单周期核心改为 F/D/E/M/W 五级流水线。
 Scala 包名为 `riscvpipeline`，顶层为 `RiscvPipeline`，接口为 `RiscvPipelineIO`，
-生成入口为 `GenerateRiscvPipeline`。单周期基线保存在本工程独立 Git 仓库的 `main`，
-本次实现位于 `feat/chapter7-pipeline`。
+生成入口为 `GenerateRiscvPipeline`。单周期基线保存在本工程独立 Git 仓库的 `baseline/single-cycle`，
+当前完整实现及验证报告位于 `main`。
 
 支持范围保持现有 RV32I；不包含乘除法、CSR、异常、中断、缓存或分支预测。
 工具链保持 JDK 17、sbt 1.10.7、Scala 2.13.14、Chisel 3.6.1、chiseltest 0.6.2。
@@ -87,3 +87,4 @@ CoreMark 使用 2000 字节、10 次迭代，检查上游 CRC 并报告仿真周
 测试归档在 `src/test/legacy`，活动流水线测试位于 `src/test/scala`。
 `make build-acceptance` 仍可生成验收镜像和历史 trace，需要 RISC-V GNU binutils，
 默认前缀 `riscv64-unknown-elf-`，可用 `RISCV_TOOL_PREFIX` 指定。
+# riscv-pipeline
