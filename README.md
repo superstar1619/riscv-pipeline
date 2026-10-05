@@ -1,61 +1,75 @@
-# RISC-V 流水线 CPU 开发基线（Chisel）
+# RV32I 五级流水线 CPU（Chisel）
 
-从 `single-cycle/riscv-single-cycle` 精简复制，供后续流水线 CPU 改造使用。
-**当前硬件仍是已验证的单周期 RV32 实现**，Scala 包名 `riscvsingle`、顶层
-`RiscvSingle` 和生产接口保持原样；本次仅迁移工程，尚未加入流水级、前递、停顿或冲刷。
-原工程保留，可用于对照实现和历史验证记录。
+依据教材第七章 §7.2–7.3，将原单周期核心改为 F/D/E/M/W 五级流水线。
+Scala 包名为 `riscvpipeline`，顶层为 `RiscvPipeline`，接口为 `RiscvPipelineIO`，
+生成入口为 `GenerateRiscvPipeline`。单周期基线保存在本工程独立 Git 仓库的 `main`，
+本次实现位于 `feat/chapter7-pipeline`。
 
-## 保留内容
+支持范围保持现有 RV32I；不包含乘除法、CSR、异常、中断、缓存或分支预测。
+工具链保持 JDK 17、sbt 1.10.7、Scala 2.13.14、Chisel 3.6.1、chiseltest 0.6.2。
+遵循 [Chisel 编码规范](docs/chisel-coding-standard.md)和
+[本地 skill](.agents/skills/chisel-coding-standard/SKILL.md)。
 
-- `src/main/scala`：CPU、IFU/IEU/LSU、基础模块、配置和 RTL 生成入口。
-- `src/test/scala`、`src/test/cpp`：模块、整机、复位与 Verilator 回归测试。
-- `programs`：汇编、程序镜像、逐周期 trace 与验收元数据。
-- `scripts`：本地 sbt 启动、验收程序生成和 RTL 验证脚本。
-- [Chisel 编码规范](docs/chisel-coding-standard.md)及[配套 skill](.agents/skills/chisel-coding-standard/SKILL.md)。
+## 时序与接口
 
-教材位于上一级 `pipeline` 目录。历史报告、Git 历史、旧 RTL、波形及构建缓存未迁入。
-`generated/`、`target/`、`test_run_dir/`、`.cache/` 均为可再生产物，由 `.gitignore` 排除。
+| 级 | 主要职责 |
+| --- | --- |
+| F | 保存 PCF，默认取 PC+4，接受 E 级跳转重定向 |
+| D | 接收 IROM 同步读结果及同沿采样的 PCD；译码、读寄存器和 W→D 旁路 |
+| E | M→E/W→E 前递后运算、分支比较、JALR 基址及 store 数据；提供 DTIM 读地址 |
+| M | 保存执行结果和访存信息；提供 DTIM 写地址/数据，处理同步读取的子字 |
+| W | 保存加载或执行结果，在下一上升沿写寄存器文件 |
 
-## 构建与验证
+M 前递优先于 W，排除 x0、无效写入及 M 级加载结果。load-use 和共享 DTIM
+地址端口的 store→load 冒险各停顿 F/D 一拍，并在 E 注入气泡。按实际源使用检测
+依赖；E 级条件分支、JAL/JALR 重定向优先于停顿，并冲刷 D/E。链接使用该指令的
+PC+4，JALR 清除目标最低位。
 
-版本保持 JDK 17、sbt 1.10.7、Scala 2.13.14、Chisel 3.6.1、chiseltest 0.6.2。
-从本工程目录执行：
+IROM 使用同步读，输出直接对应 D 级；停顿时保持最后有效读结果。DTIM 使用同步读、
+字节掩码写和共享地址，写优先。LSU 在 E 级发出读请求，响应与 M 级地址偏移及
+Funct3 对齐，再进入 W。RAM 无初始化或复位，未写位置未指定；地址按配置容量回绕。
+非法或未对齐的子字加载返回零，存储不写入。
+
+顶层保留显式 `clk/reset` 和原观察端口位宽：`WriteData/IEUAdr` 为 32 位、
+`MemWrite` 为 1 位、`MemRW` 为 2 位、`Funct3` 为 3 位、`ByteMask` 为 4 位。
+所有观察字段对应 M 级，`MemRW={read,write}` 报告该级请求，`MemWrite/ByteMask`
+报告实际允许的写入。store 在该 M 级周期末的上升沿提交。
+高有效同步复位清空流水有效位、恢复复位向量并抑制 RAM/寄存器写入；数据 RAM 和
+非零寄存器保持。首次 store 的观察周期不再等于单周期执行周期。
+
+## 本次定向验证
+
+从工程目录执行：
 
 ```bash
-# 全部 Scala/Chisel 回归测试
-make test SBT=./scripts/sbt-local.sh
-
-# 生成默认 CPU RTL
+./scripts/sbt-local.sh compile 'Test / compile'
+make test-pipeline SBT=./scripts/sbt-local.sh
 make generate-cpu SBT=./scripts/sbt-local.sh
-
-# 自动重新生成四种 CPU 配置，然后进行 12 次 Verilator 验证
-make test-rtl SBT=./scripts/sbt-local.sh
-
-# 仅运行整机验收和复位测试
-make test-acceptance SBT=./scripts/sbt-local.sh
-```
-
-`scripts/sbt-local.sh` 默认复用工作区 `../../.tools/chisel`，在本工程建立独立缓存。
-工具链可通过 `CHISEL_TOOLCHAIN_DIR` 指定；已有 sbt 在 PATH 中时可省略 `SBT` 参数。
-RTL 验证需要 Verilator 和 C++ 编译工具，可用 `VERILATOR=/path/to/verilator` 指定。
-RTL 中的镜像路径相对于本工程根目录，验证脚本会自动切换到该目录。
-
-保留独立模块的 `generate-*` 入口与 CPU 的 `IMEM_DEPTH`、`DMEM_DEPTH`、
-`INSTRUCTION_INIT_FILE`、`RESET_VECTOR`、`CPU_TARGET_DIR` 参数。例如：
-
-```bash
 make generate-cpu SBT=./scripts/sbt-local.sh \
   IMEM_DEPTH=128 DMEM_DEPTH=128 RESET_VECTOR=0x100 \
   INSTRUCTION_INIT_FILE=programs/rv32-configtest.memfile \
-  CPU_TARGET_DIR=generated/riscv-single128
+  CPU_TARGET_DIR=generated/riscv-pipeline128
 ```
 
-修改验收汇编后，运行 `make build-acceptance` 更新镜像、trace 和元数据；此命令需要
-RISC-V GNU binutils，默认前缀为 `riscv64-unknown-elf-`，可用 `RISCV_TOOL_PREFIX` 指定。
-直接运行现有测试和 RTL 验证使用保留的镜像，无需重新汇编。
+三组定向测试为 `PipelineHazardSpec`、`PipelineMemorySpec`、`PipelineSmokeSpec`，
+每个程序都有明确周期上限和通过条件；教材小程序在 80 拍内只依次产生
+`地址96＝7`、`地址100＝25` 两次存储。测试探针仅通过测试包装层导出，生产接口不增加
+调试端口。验证范围和结果记录见 [第七章实施记录](docs/chapter7-pipeline.md)。
 
-## 后续流水线改造
+`scripts/sbt-local.sh` 默认复用 `../../.tools/chisel`，缓存位于本工程 `.cache/`；
+可通过 `CHISEL_TOOLCHAIN_DIR` 指定工具链。保留独立模块 `generate-*` 入口及 CPU 的
+`IMEM_DEPTH`、`DMEM_DEPTH`、`INSTRUCTION_INIT_FILE`、`RESET_VECTOR`、
+`CPU_TARGET_DIR` 参数。生成 RTL、构建缓存和波形由 `.gitignore` 排除。
 
-当前整机限定 RV32，采用显式 `clk/reset` 和高有效同步复位。
-测试中的逐周期预期对应单周期执行；实际加入流水级时需按新的延迟、停顿和冲刷行为调整。
-程序镜像、指令覆盖和最终存储签名可继续作为流水线 CPU 的功能回归依据。
+## 后续验收
+
+本次按计划在定向测试和两种配置 RTL 生成后停止，没有运行完整 Scala/Verilator
+回归、CoreMark 或 §7.4 testplan。未受流水时序影响的基础模块测试仍在
+`src/test/scala`。旧单周期的 IFU/IEU/Datapath/LSU/存储器及整机逐周期测试归档在
+`src/test/legacy`，由上述三组测试提供当前时序覆盖。
+
+现有验收镜像、汇编、trace、元数据保留；trace 是单周期历史资料，不能作为流水线
+逐周期预期。旧 C++ 检查归档在 `src/test/legacy/cpp`，`test-acceptance`、`test-rtl`
+暂时明确报错，待后续完整验收适配后恢复。`make test` 可运行当前活动 Scala 测试，
+本次未执行。`make build-acceptance` 仍可生成镜像和历史 trace，需要 RISC-V GNU
+binutils，默认前缀 `riscv64-unknown-elf-`，可用 `RISCV_TOOL_PREFIX` 指定。

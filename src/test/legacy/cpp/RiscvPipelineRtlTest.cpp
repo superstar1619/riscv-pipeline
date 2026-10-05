@@ -1,4 +1,4 @@
-#include "VRiscvSingle.h"
+#include "VRiscvPipeline.h"
 #include "verilated.h"
 
 #include <cstdint>
@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
         auto context = std::make_unique<VerilatedContext>();
         context->randSeed(seed);
         context->randReset(2); // Randomize unspecified state; reset establishes PC/x0.
-        auto dut = std::make_unique<VRiscvSingle>(context.get());
+        auto dut = std::make_unique<VRiscvPipeline>(context.get());
         dut->clk = 0;
         dut->reset = 1;
         dut->eval(); // Also executes the generated ROM's $readmemh.

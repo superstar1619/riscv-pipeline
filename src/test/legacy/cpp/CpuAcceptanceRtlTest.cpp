@@ -1,4 +1,4 @@
-#include "VRiscvSingle.h"
+#include "VRiscvPipeline.h"
 #include "verilated.h"
 
 #include <array>
@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
         auto context = std::make_unique<VerilatedContext>();
         context->randSeed(seed);
         context->randReset(2); // 所有未规定初值随机化；程序自行建立所需 RF/RAM 值。
-        auto dut = std::make_unique<VRiscvSingle>(context.get());
+        auto dut = std::make_unique<VRiscvPipeline>(context.get());
         dut->clk = 0;
         dut->reset = 1;
         dut->eval();

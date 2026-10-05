@@ -14,3 +14,4 @@ generated/
 *.anno.json
 obj_dir/
 .superpowers/
+*.v
