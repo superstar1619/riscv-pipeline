@@ -22,6 +22,7 @@ RESET_VECTOR ?= 0
 LSU_TARGET_DIR ?= generated/lsu
 DMEM_DEPTH ?= 64
 CPU_TARGET_DIR ?= generated/riscv-pipeline
+VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
   generate-subwordwrite generate-subwordread generate-dtim generate-alu \
@@ -29,6 +30,23 @@ CPU_TARGET_DIR ?= generated/riscv-pipeline
   generate-irom generate-ifu generate-lsu generate-cpu test test-pipeline test-rtl clean
 
 .PHONY: build-acceptance generate-acceptance test-acceptance generate-rtl-test
+.PHONY: build-validation generate-validation test-validation test-arch test-coremark
+
+build-validation:
+	python3 scripts/build-validation.py $(VALIDATION_SUITE)
+
+generate-validation: build-validation
+	$(SBT) "runMain riscvpipeline.GenerateRiscvPipeline 524288 32768 generated/validation target/validation/program.memfile 0x80000000"
+
+test-validation: generate-validation
+	VERILATOR="$(VERILATOR)" bash scripts/test-validation.sh $(VALIDATION_SUITE)
+
+test-arch:
+	$(MAKE) test-validation VALIDATION_SUITE=arch
+
+test-coremark:
+	$(MAKE) test-validation VALIDATION_SUITE=coremark
+
 build-acceptance:
 	python3 scripts/build-rv32-acceptance.py
 
