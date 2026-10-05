@@ -73,6 +73,8 @@ make generate-cpu SBT=./scripts/sbt-local.sh \
 随机种子，完整签名与 Spike 一致。可单独运行 `make test-arch`、
 `make test-coremark`，或由 `test-validation` 一起构建、生成 RTL、检查签名。
 详细覆盖表、CRC、周期和可重复配置见 [完整验收记录](docs/chapter7-validation.md)。
+完整的测量方法、性能分析、功能覆盖和归档证据见
+[性能测评与功能正确性验证报告](docs/chapter7-performance-correctness-report.md)。
 
 大型软件测试需要本地 CVW `addins/riscv-arch-test`、`addins/coremark`、
 RV32I GNU 工具链、Spike 和 Verilator。`CVW_ROOT` 可指定 CVW 路径；源码 revision

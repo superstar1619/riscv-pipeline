@@ -1,0 +1,340 @@
+{
+  "reportDate": "2026-10-05",
+  "baselineCommit": "984750974d93acafc3162e702e7604cb8f0a7247",
+  "branch": "feat/chapter7-pipeline",
+  "sourceSha256": {
+    "src/main/scala/riscvpipeline/GenerateDatapath.scala": "c6be6a4a41261f46e53a18210a8ff9a18ab0b5dbde08fed0fde41d7f03c52d61",
+    "src/main/scala/riscvpipeline/GenerateIEU.scala": "cffe27db40f72a03e26f7453ff12a1a7d2369f05fdb23de283d8fd3a745c6fc1",
+    "src/main/scala/riscvpipeline/GenerateIFU.scala": "4860ad028101d5c89ef64117c744172cff227554d9f5bb3ae9d0c16b1f941631",
+    "src/main/scala/riscvpipeline/GenerateController.scala": "c92bf3a117c533c3af81b31d29394897d8a7cf44a4a364e99c40ad5f0c79c1f8",
+    "src/main/scala/riscvpipeline/GenerateIROM.scala": "0486a477ee1a101a656ee390e33e1f9443552b71935de07258ee4414b753fba4",
+    "src/main/scala/riscvpipeline/GenerateShifter.scala": "07ed8b592bf28b508aa742a35c75aad75e2a40105529f8b15440330008f1b684",
+    "src/main/scala/riscvpipeline/GenerateLSU.scala": "37273c3606107acfdeccbfec1e73322d2b84c415236777a39f5e788c801b6fbb",
+    "src/main/scala/riscvpipeline/GenerateRegFile.scala": "4dc4b4c646993c505e4d8ff66b573153a6ac0f85864338e0326fbc8a2292ce75",
+    "src/main/scala/riscvpipeline/GenerateRiscvPipeline.scala": "e0f373c3ae1993b7ded7fd8780b78139a5094ab3666fa8240a9421758aaeafba",
+    "src/main/scala/riscvpipeline/GenerateALU.scala": "694bc0317960514fb04c8bafa9dac39e6eee5bd57236547c4156e86192d42ebe",
+    "src/main/scala/riscvpipeline/GenerateExtend.scala": "6c7ec9b6c4aafbc9f145f9840ededd0d7e52af0ecf1a3ba579dcba7d381e79cd",
+    "src/main/scala/riscvpipeline/GenerateSwByteMask.scala": "6db5fd37f0ec6e29fd905000a98034cbb8bcdcef0327369fcd649032c34dbce9",
+    "src/main/scala/riscvpipeline/RiscvPipeline.scala": "98efe1eb08d25ca3365af4acac25560c53d682d66921a1d0fc9425438a130819",
+    "src/main/scala/riscvpipeline/GenerateSubwordWrite.scala": "93d6a27b2e4b13c54d2769d87d09b5298190d809add8be0186a9e97695d910d9",
+    "src/main/scala/riscvpipeline/GenerateSubwordRead.scala": "4dad428b848ae7aa181edf7aecfb854d04636e665bcf00702e009c5709a12dbf",
+    "src/main/scala/riscvpipeline/GenerateCmp.scala": "af5027985dff1311332fae969b05758c8be1d115b81b12e38d8ad2370b79e930",
+    "src/main/scala/riscvpipeline/GenerateDTIM.scala": "2ff6406538dcb2cff15c583ec9fa7d083ca1b81ebaae817087790ef2a72e4efa",
+    "src/main/scala/riscvpipeline/lsu/SubwordRead.scala": "509f9d1a425cddf7dfb2e07d98fa3aa0427f48bfe5ac0a51b7372fb5e8770a2f",
+    "src/main/scala/riscvpipeline/lsu/SwByteMask.scala": "97c571db00f3819f127a75598c6096bff1bc6b1aba309d2e67be852a0239fd61",
+    "src/main/scala/riscvpipeline/lsu/DTIM.scala": "588cd1ae6a7aae46d0e67c8dab75811aba5543e71b1985f0c31dc5ee9747e0dd",
+    "src/main/scala/riscvpipeline/lsu/LSU.scala": "e9c45c8c815a962f2cd666e489cbe64498f558f1a9d0295cf6a746dbce83bd7d",
+    "src/main/scala/riscvpipeline/lsu/SubwordWrite.scala": "5e348d34b4915b5f8551c23bb26d874c8df08f6ef4e107a886c21a80a524cf88",
+    "src/main/scala/riscvpipeline/config/CpuConfig.scala": "64add21f7ccb65864e101243555312f6f7998826d73ad0e1e5944b4a7edaf1c3",
+    "src/main/scala/riscvpipeline/ifu/IROM.scala": "c20e015f59ced02bb6f2b1a86b3ea7f2cb120b5bdcfa62d09e00f5b1809f5e23",
+    "src/main/scala/riscvpipeline/ifu/IFU.scala": "674ea0fcd868d2b2f5b95800f4df14d3d6a567c4171430014c10075d37d065fa",
+    "src/main/scala/riscvpipeline/hazard/Hazard.scala": "37491eb4cebde4bebc5ef2e04b307c38ee36871af70153ea14f82c04abfd181e",
+    "src/main/scala/riscvpipeline/ieu/Controller.scala": "61bbd0b44a7436aa4981830a19ba54dc6c255e05d3c460b47ba8109be8c80758",
+    "src/main/scala/riscvpipeline/ieu/RegFile.scala": "0240ad1ae87983632b5ea6f4e1a04502c3b018aa19bb397c3a3a9bd295c0fc53",
+    "src/main/scala/riscvpipeline/ieu/Shifter.scala": "ec9af65d46637ed0c184dda5c7e4097c6c6803efecc71b8daaafd441ac8d1312",
+    "src/main/scala/riscvpipeline/ieu/Datapath.scala": "ffe0065290474677849eeb06015a555537da7e53ea94de9a5d75787bdee9a1a5",
+    "src/main/scala/riscvpipeline/ieu/Cmp.scala": "f6add42d0145293032074c8f1200e1996217a35825ca806eb1fdeb6f24cb74ff",
+    "src/main/scala/riscvpipeline/ieu/Extend.scala": "f515b73acb4d0c393f4073a1b079b44099828668ae4ddce874117eaf211143c2",
+    "src/main/scala/riscvpipeline/ieu/IEU.scala": "699feffc8e6a16e3217ba21df13aa7e002a64fb461937eb457e1d123ba2c3cdc",
+    "src/main/scala/riscvpipeline/ieu/ALU.scala": "d9a8cafe3d4859a5a825bc5580108970eb8111ca4ff7757105577be1a4a7f248",
+    "src/test/scala/riscvpipeline/PipelineSmokeSpec.scala": "dd066e64b7387ee14c744a06db56a86e45ffcf29226468b2997ac87b17a7e2e0",
+    "src/test/scala/riscvpipeline/CpuAcceptanceSpec.scala": "27646309a11b5af0ea7a622d6925b9546c8e3f688dde58c2cee435701d65048e",
+    "src/test/scala/riscvpipeline/PipelineHazardSpec.scala": "2b39e8f6941a96cc949b8187d91e3eab8a04c8a04ad6e8a9a479a43c67f2fa48",
+    "src/test/scala/riscvpipeline/PipelineTestSupport.scala": "f4d6d1438c7a492ce07ce1d923b702ed0d121b6c708bd5dd8c3d03407cfdbf72",
+    "src/test/scala/riscvpipeline/PipelineMemorySpec.scala": "1797f109a1477b749d7efcc5256f65f5480d96e3b81abe31d19725432b306bdd",
+    "src/test/scala/riscvpipeline/lsu/SwByteMaskSpec.scala": "5c2e160d68f7f8e2309ac10790d6827205e15ba62838836f5f5f49f0fcde9887",
+    "src/test/scala/riscvpipeline/lsu/SubwordReadSpec.scala": "a6d5bbfa05bb0e3e548e89582ec33f00c07d3145600bdc70bc18f45bc3d680ca",
+    "src/test/scala/riscvpipeline/lsu/SubwordWriteSpec.scala": "e674cf28f14494eabf1fd3c11b9d3f0837a6deddff0bd043eb20475f19a10805",
+    "src/test/scala/riscvpipeline/config/CpuConfigSpec.scala": "fdb6007e7210f9d5ba46f46a69bdb687f92d2c608e250a0b74b5b3f64db2f67c",
+    "src/test/scala/riscvpipeline/ieu/ALUSpec.scala": "4e1908a4cf57e8a7625e85f05309f4c37857ff5967a4cc221cbbf4d8444cc452",
+    "src/test/scala/riscvpipeline/ieu/ControllerSpec.scala": "8cc8e962bd59f65cde7ba5b5dc56371bb02c6a9799919f7b9003281b314b4c41",
+    "src/test/scala/riscvpipeline/ieu/ExtendSpec.scala": "7805aafd71163eedb615aa195601de75425f07606f6eb0a7f0a98d039c94c722",
+    "src/test/scala/riscvpipeline/ieu/ShifterSpec.scala": "88601488ced64cfc7cf5ad072a569097c9759c0e01585cdf3452a2d3c421b176",
+    "src/test/scala/riscvpipeline/ieu/CmpSpec.scala": "8e4b3e81cad71fdbed395abb23cf2fa8dcc4cc6058142c0f731f65f7723894e6",
+    "src/test/scala/riscvpipeline/ieu/RegFileSpec.scala": "619b517a55d4a50c491cfad8ab1567d4fe296a64e36b9f1be2362b77f433f215",
+    "src/test/cpp/PipelineRtlTest.cpp": "950677adfdef33c79ec55e65868ff0590e8d88f9dbe32f50bde0df6ae68a6022",
+    "src/test/cpp/SignatureRtlTest.cpp": "e51ff472e69924d0c06d53d8ecfe33ec575296b4f2b89bc2462157d6c89fb82a",
+    "src/test/python/test_validation_sources.py": "2d3690b5ac34cbde6c95977d2322244e550ec8a2fcde9dafc5bddeb33cc03fed",
+    "scripts/test-validation.sh": "dd4bea14f6755c7eda9345f4619e00502f6b0083046c8572bd42ee1a850768e1",
+    "scripts/run-validation.py": "8062088d042405c542d11316b552e73e0247ea6d74c5dcc827f752741003ee15",
+    "scripts/build-rv32-acceptance.py": "948cf4f053142f482cb730a1d3c5db7c309403bbabeb5bcd1f769057af78f0bc",
+    "scripts/sbt-local.sh": "c5723e5c284f4d45db5b5a69acb5c847eaca2421ab25264bddb422ca3981e640",
+    "scripts/test-rtl.sh": "b770b99089be06bd422d54a5e98b538f8ce4b2397c33999688a6226e55a9d77d",
+    "scripts/build-validation.py": "c6cef9ed575fefe37f80d507fdf35bb4b8f52d793e3a2d6967e091a4a353836e",
+    "programs/validation/link.ld": "c754c29d5e7ca8668998482ec89d9ecba985488f7f21c0eceafa6e6222b8d8f1",
+    "programs/validation/start.S": "9b1b2aa17f63494032ac91f0762ade999e4628cb0bd015d64d4d6729ea98e2fb",
+    "programs/validation/model_test.h": "2919eef2a7c0030aa8fbc60a73c84a54938c4b887dcd44e0669be37007b35648",
+    "programs/coremark/benchmark.c": "7c173f085caa6e0ab2bd4e0bf677bc7deb739c8f7e716c8cead24af27463fa77",
+    "programs/coremark/core_portme.c": "af0d2dd1da43e350050d5d0a1214380216802a4f1d9c261cc9ba73e244d102e2",
+    "programs/coremark/core_portme.h": "998cbc0fd1892536bf57bacbd1516efe880c60deab5b6974b7011cf40d080d96"
+  },
+  "programArtifacts": {
+    "add-01": {
+      "program.elf": "d8ed2eb458eb7650f73ec03de1b34f1e951001af4831bb090cf35e10bb8b2c41",
+      "code.bin": "9860cdbb70a1e5b00a3d3982c51cab53124995e9998713bebafb5bdbb9ef6900",
+      "program.memfile": "7ec29934461d907f1be3fc1ba92d1f8f374b052ee911eae711d4c2293ed5f459",
+      "reference.signature": "8bb87b7a8c141005138f8f151d6f0d7e168ce5c136332fdf2b56456927af0e4d"
+    },
+    "addi-01": {
+      "program.elf": "d104fceed968f6ab8a7fedb4cf2454f6d7eb728d15f3b97bc235bb0b4ee79e31",
+      "code.bin": "e20092f4ec3a8837c93304872986db3ac95311fb7e7ad357d01390a0a3e3b00a",
+      "program.memfile": "33e4bb6bad3998ba8b6e8b013d0c778cc28af3053edd4c2885aa576c3b17ebdb",
+      "reference.signature": "2521e0a75efb2e2e4324e4cdc8abc6d9b4c000e71963259f231d35b2bea21406"
+    },
+    "and-01": {
+      "program.elf": "353f8f757cf71884365757ccd048613e1d3c9dbc61af8f53d4f4a670007a25fd",
+      "code.bin": "1513a098cbb64dad951c953e59379a194abf68d5f694ba3aab6ebb1eff2f2e1f",
+      "program.memfile": "4af3f3d705a2d8fca39213cff52df563076172a953a9a72a3f68afbd7f23eb34",
+      "reference.signature": "48ce60595423b7dd60c1a985be22831829f3c1392a8ded29c524a7a4b9bce955"
+    },
+    "andi-01": {
+      "program.elf": "0464281f3b24e345e94ab13f62ba7f8de6442782b14c44bc711cea58ca88fd02",
+      "code.bin": "55c7bfde63da8621ab61eadad8a72c2ecd60b50913d943ec724e25c61757663f",
+      "program.memfile": "f63c545ebd2a88daac8610fa1635a085b3b50d22d8f11af941312e97b5681c0a",
+      "reference.signature": "4ee3b223e135859a5b2f77df38e929bc620fad32eda3c3097540961b806a0ee2"
+    },
+    "auipc-01": {
+      "program.elf": "03758700f295187e4c528e77b44969317d0755d478176311fb5d74e660d26be7",
+      "code.bin": "ef6e5a8ddd99e2c92f25ada88352374d91a05069e2be3924e1fe097a5404247f",
+      "program.memfile": "1abdd0a4cbba090466aa93b14b179120a113423a3e09702fb319cf1cbc91591e",
+      "reference.signature": "979ae3f378ac3a30252b6fefe220c46bc281339a1841567f34caefd7b6119929"
+    },
+    "beq-01": {
+      "program.elf": "b575b4e4a657da691521b948a39a889ab1c4f331899ef0dd1518e9f2d9076475",
+      "code.bin": "000f9d083e30b4c784911d7b1ded3a706c2b9b1575a2e6d1e40667fac6505e42",
+      "program.memfile": "1c86271da9e2400589f1d1d5999c3ea3f58dd575dbf0ab5b097fba0bfa4e53cb",
+      "reference.signature": "5dca2213690d85a9e18afd5b21606d491df7c27566a7409f49448940c5e3e22c"
+    },
+    "bge-01": {
+      "program.elf": "1af49bdbb3554f7d7ad4cdb941ef1a1a25bbd6a9d3013069acb9cde09658825c",
+      "code.bin": "bb833893dc6d3fc2e230fac04c47a47368668e15e1ce79b5d793148b657db331",
+      "program.memfile": "c31d627c0a752116ecf496343ea1735cbe47adb0363501c99d580c379b605c5e",
+      "reference.signature": "3043f6070c2b99ca608be196e5af4a9b334cf5f0ae35ced0c4c91f55197cbf43"
+    },
+    "bgeu-01": {
+      "program.elf": "9016ef551cea9e82c71f46024a7ab9ae3d57006cc3d05d9210e31039b89d8722",
+      "code.bin": "2f3d6fbff9e2a4bc779f5472fe7efce8a191f9c920f1cc79d64fa3c0cf93ea31",
+      "program.memfile": "099e68c0577753617006c829f36e0e9e6f80dca1953d32bcc4c7b1dab4a51326",
+      "reference.signature": "65c3aa1540d56bf1e5ab0025818ae1442d53954251a8c33ffe6d1366c8fb1061"
+    },
+    "blt-01": {
+      "program.elf": "3c88d05c03a482ff2fd2c7651199da2cf587c2ced77330f8901c3e18063c7ef5",
+      "code.bin": "514f8b5c7ebb30d9ff51dc572eb44f410bc6ededaaca2f2cfa313e77f0a01c8e",
+      "program.memfile": "0fbc5b48b3f61d0404a1bd9b9b89262080246b56729ef3b037710a92c3af1f62",
+      "reference.signature": "7cdcedd0dcb49b84224b75bc7a006e01acc5e01b51271bfeaea55724c00e25bf"
+    },
+    "bltu-01": {
+      "program.elf": "f95ca85a729d53e2d814fe1730c2180d3590eec152214af90d00afaf9f5c738d",
+      "code.bin": "6fa9beaa6221f6e1c0981914a832ea91c19e5af26ffccec27f4917521d97c364",
+      "program.memfile": "56aaae668a159f8a7b3cc4915c59fc98af50a48ee8abba64bda8c5d1e3e695b4",
+      "reference.signature": "f8d27ca58cc9bd284562043e387510a1310f6fed9e3cc9cb6916055a9f68df80"
+    },
+    "bne-01": {
+      "program.elf": "0a7acba410004ccf4d8b1999688da96077774fbe8797295473584d5909e3fa41",
+      "code.bin": "12fcf60a78a7148580f846f94bccc03db3222ae6683938129845225474c6b97a",
+      "program.memfile": "1df06ae04ee194b1b3fe63a85801590cf7dcaac2a735b9bdf4ad8d0cc752f521",
+      "reference.signature": "abcedc8553c5621505e863ee74516ca3f1e9743037c9c04f9a4452fa2d722379"
+    },
+    "fence-01": {
+      "program.elf": "df60a2a129c9ac6f9fdc5b3aa2477b3d274eedbc820615db967db7ce8489494c",
+      "code.bin": "b2ea83bd88362a18b99c3788dd985cbc087f8947f84d43045420736dace76bd2",
+      "program.memfile": "098f377a5c894c18ccb10b146f86b259ef965ec74f4868cf4e4e3543026d6b7b",
+      "reference.signature": "12f43b00e16267dc9e7feaec57cb1d8ee08f50b3761e7d9e248eb062fb03cab4"
+    },
+    "jal-01": {
+      "program.elf": "0b8242e4bebd49145bc2f34275080ca4c6a3f94a7bcc0ea03dd7890db05e3094",
+      "code.bin": "536901cfdf20f4201f53d99be2741060bcb4a8663f97e720cfa18b516db555bb",
+      "program.memfile": "48de28aa536e1288d93aa62e2bb033a5f4c997a2bad5a9555e2ac075cdf8eca8",
+      "reference.signature": "cb24b37e96e0826f49f460c811bef7a74d516c3b99572aaee9fb85da33ccf87d"
+    },
+    "jalr-01": {
+      "program.elf": "6f94ef44b56c3c1ad06838853290c3b8fd45a8d9d6a40d0c33215193be86639f",
+      "code.bin": "84653671486c7ddd003f9c9a8e52dfcb8d2facfc662d0d161124d9b6735b95f8",
+      "program.memfile": "f5a8c568dd866aca536ef0ebba71400ac47988ee9929616dfcbfdec1824f6a7f",
+      "reference.signature": "a9155ed2f47a3cf8b5ba33d210642d34e9ecaa3c878059e84317a3e5f2072cad"
+    },
+    "lb-align-01": {
+      "program.elf": "881aa5e8f029db3f8989787bc438bd1e5cdd0252811fdece23078269c7a94045",
+      "code.bin": "198b95c353aeaa2e99251f3b80b3e4707e17c3de6e3a48ebdc1c82a3b3a78241",
+      "program.memfile": "ac44d30eafd610747bdaf6d00b716ebf50f26063e1ab083382d374f2ef7f63f7",
+      "reference.signature": "8973af504a590346c0c15088921edba65d473b622d4c7f46e549b570c891abce"
+    },
+    "lbu-align-01": {
+      "program.elf": "fa9359ece751829518dcbb53ff1b03f57601ac2d074a0b1e768faffdd5152b89",
+      "code.bin": "29151a8d1e3bb4f60f2f71947b5ae5856ad21e8691d394ec0de9da1a622ebf97",
+      "program.memfile": "08c12a4367917d9a2889837a065144ec5c3720a34f9c6b464523c8ff9f84f36d",
+      "reference.signature": "85fd9819e1108221d0c6bf5b8368f04bcbb0774db2d15bf52c2174fa29914619"
+    },
+    "lh-align-01": {
+      "program.elf": "34dcf9d7705a49c8062d5e5eebf94a9ef2fdea15f74a16ed5630e63f67a83001",
+      "code.bin": "c4c0a7b6ef2e3231aa15338d3e99a576a15456222067cfe0e5f5445a2cfd7bec",
+      "program.memfile": "57f87bf46b53aed115b813727e256cb3799fc5c1d42452bbe01da7c967acb2b5",
+      "reference.signature": "fa7f80346003a44900669afac310a4b19d4b8b21533c23e0475a3a3dedc36fab"
+    },
+    "lhu-align-01": {
+      "program.elf": "b70b653eb32fa177ef3ecb4a94d6b6b9f5a6b83f24804ab4fe1f09c76ebe3bfe",
+      "code.bin": "78d37113b4345f8a061a0cf3bbfdaa98dbbcc2eb99f4f4545a28e8fb5d6167e6",
+      "program.memfile": "8d36c8b859a213579fa4e9a6098a96b7a2227f010f69b8a5bbadcdce0e9c473c",
+      "reference.signature": "a761292cb8779911161ddab54117fa4d17f0cee2107b35ac59cba8e948690f5a"
+    },
+    "lui-01": {
+      "program.elf": "6946d5f2a7eef1e96d4404a060d0669d83ecb27d686733d8f484a5edcb1654b7",
+      "code.bin": "963d66a1a79e9776796480367d61ec5d86cbf2ebafe170c264bd2c23b31a5981",
+      "program.memfile": "fe6a4ad9a7dcd4faacf3bd4ea5cb189670c01a88f402e3e4ba49c8b8c2a1b70b",
+      "reference.signature": "a87a317bc72739c4109cb4ccee797f517c5558006b15bf2ac79b2f6db14a193c"
+    },
+    "lw-align-01": {
+      "program.elf": "32fe2919831f7a3e8586f6aa3c4cb9f1e2dc073fec5649e1541d9a0fb1bde872",
+      "code.bin": "69435e1bf67b1acd2994a60a2f64270c86c97842a2f07deada9d2bb10268cca5",
+      "program.memfile": "153d4ee9bdacb183c3ca6b5d4f731d03929aa7077704f3cccb218e01c4973454",
+      "reference.signature": "2d1d71d68b73c4b3480b7bd1057c0703b4ca2984ad9929402db91872ebb2b3a5"
+    },
+    "or-01": {
+      "program.elf": "c14330cd5ca5df3769650a4c716de2062c0da8bb7be368bc9b14ceadee862813",
+      "code.bin": "18112154ba8ebf61c13223c8dfe700fe1a5971e32c8a527033ab7e0a45e11621",
+      "program.memfile": "cd85805966b6087b3bfa0f060cea1cecde7794b52b5b67aa173a67b29fd4f7fa",
+      "reference.signature": "1eb3ec4eeacf146377f574a3ae2a0e11e1c01c386be65b727c99d4d4a2fb09b9"
+    },
+    "ori-01": {
+      "program.elf": "1f6ef871f8df65728f124dc3ee12725bdba3af63e3e4ea59e8a60787036a2649",
+      "code.bin": "0e4869d5133df8dc03cfa7c480854db8b9f70d14025d5b1777ca50060bde1577",
+      "program.memfile": "96f3859842dcedbaa315f2a86cc57206656696ed6fd20ec6f41b640ffbccb2b1",
+      "reference.signature": "d97956a37470b370a3e0981c42450c3ca8009b9bdc98cb9b0345edef200f9ac5"
+    },
+    "sb-align-01": {
+      "program.elf": "2118dc51eb810d286e89b96de4487226376932f629ef2ab911afb64bdcc6e29d",
+      "code.bin": "16ad91892f0c5487f6853ff309fc1ec2f89853b5430a26309ae1c021501c1dec",
+      "program.memfile": "9dd754d9ad41fc89256f9070c3b79734477da1fe656491c7d2c2bf589de8ec8a",
+      "reference.signature": "c22058aeaac1dfe4b67fd96ed3b007bb0589432f5ee3bb6acb4df195cefcbb93"
+    },
+    "sh-align-01": {
+      "program.elf": "644217e50dff0000051b7679c1b9553f7adc95745f53b2fa783ab136da851d13",
+      "code.bin": "8ac53b23dd45a5ad57867ee08b820e59770fd9f4d6986d6b51f46f3eef8d91a2",
+      "program.memfile": "0fffc6a54588ee38d187e1ac6ada08761364555bc55c12b6a04a45e12868b777",
+      "reference.signature": "4c49b34e4f6cf0ccb7488f7adc44bf8fc10512c09dcd6957ef59d3f1d836ccce"
+    },
+    "sll-01": {
+      "program.elf": "8ee4c9d8d2a54bf595e1db2fff226d5bf085fbf2d7844784d5b6a3b1c5107002",
+      "code.bin": "ee26293790dc17aab54ba5e0fecade53b0e1402922afa4a326ec66d456d0dde0",
+      "program.memfile": "cb790a901af3fa912ed2d622550bb0ae8efb6cd3660b627eea0298d4f687ea71",
+      "reference.signature": "f89f2362077c04399ec7af33e069ad7954fbb365954a665a75168a5d22285e83"
+    },
+    "slli-01": {
+      "program.elf": "e2aac54b3344bc84467f9bd2b54dc199006f73d40af0a7668ebeac02a97855ab",
+      "code.bin": "d97d8528a54a109184df7a289e3766a927d87ce539c58dc4880ca1a9daa363ee",
+      "program.memfile": "2fed8c6877d607c4817cc964a99bd5c9f83764790882ac52d5e7917e5620b20e",
+      "reference.signature": "2ea2b9f0b7203485b0d0742dad2a4d84523b5de410af3e1196ff04a818d3b2f0"
+    },
+    "slt-01": {
+      "program.elf": "4d5fb0338fc85ee1128fb73f6edafeec1b029c763b022344257fde2d6d6aabf4",
+      "code.bin": "8267a46376826bfbddcea9927f86fa216f7693e3d53543025b04b6d4847ca176",
+      "program.memfile": "9e92ac53621174d7e50b044496d8b6e8165d893a76ebaec653db87d74aacc9e4",
+      "reference.signature": "32ce5ad8f310f7751d164669074aa6bd5e0269c690ad7a71651489d5ed33d319"
+    },
+    "slti-01": {
+      "program.elf": "f299f2ac6069a78cbcc3135f3e568a9ae7bea7e847f6f525ede7dc7e84563d83",
+      "code.bin": "90fca149dcf187a4be7e3b4df82739850958f8e284f6e6f334c5bc420041e628",
+      "program.memfile": "7958c419f08ea9dc7e0ebfced26b823918440ed5eb95d500df7d316c477dcf56",
+      "reference.signature": "ffc2158cc0712b621519629a31a9e1611588c00f991d8f27e60fe710e5223d97"
+    },
+    "sltiu-01": {
+      "program.elf": "e6d6693966f1476361a512fef602c642af4f8404fa478eed00ae8ff49ff26996",
+      "code.bin": "0605620bd971ec651e88f16e5df930d6a1f41ea1f3561ed4f80537be7c32a1b6",
+      "program.memfile": "d76510f29fdf23315f1e09232069eb1d6a192dd53d29b539e04b2b8ab4cd14ed",
+      "reference.signature": "77c4685e2f985a45671c1544037df8e031459420dbb29ec67e766ba7ce557113"
+    },
+    "sltu-01": {
+      "program.elf": "9d6a21c49558a5a593655a5d4fa43afc226a4b9e1cd9a0a284a13c2c804b69d2",
+      "code.bin": "39cc171103970eb60c4d18bc09e6574e827a94c62a2d9248ae77f6e06b10818f",
+      "program.memfile": "4b629acf6de3ccbb7dc03b1fef644289d5965af91e268337669a55dc198f3299",
+      "reference.signature": "a8be789e71cf660b001d1e2d2a60f70af662b58f889db644de0d2dae611ac9ff"
+    },
+    "sra-01": {
+      "program.elf": "d50e5411cfea64b903ea6c733166ba70948aeb6894340fc119c31cb0c2cc75ab",
+      "code.bin": "0547b3b826867ee39f83b62cf562b6132abf09fbf23b968e0f9dafa5b1ecbd14",
+      "program.memfile": "4003e46b31688463ef80156b3b985cc0e5903441a4bca10f45453804ab543b0f",
+      "reference.signature": "fa6d161340f8de8d1cd867811e8963685d0cbbc3c042588921e8e5c2b9c426a1"
+    },
+    "srai-01": {
+      "program.elf": "454558c75f81bf2cf1a38bd8af121b104ef76459c61e7b63b6dbefe8aa72773d",
+      "code.bin": "c9a96f7926408b846456c76c76e57fd294784333d8ee3c6304f2ae808b8fee2e",
+      "program.memfile": "fbf01c1b91d2ca5e8e7e8e6765f317d3ee9133f49105d96acd62b0b357e7803a",
+      "reference.signature": "ce7307e1c6dccc802b5d102d551e35eb1766d90173e1e976c53f24c97cbc7e07"
+    },
+    "srl-01": {
+      "program.elf": "e431a88ec86316d6973f63888532b85561d059c98d3eff4e8d70d5c54b92b858",
+      "code.bin": "479fb06922ad04a421703dfca3beeb1632374041eeeaf671af8f092e76b88d31",
+      "program.memfile": "d807439d9cf277e43e0531ca157d947bc6807a2e88ad0907b6f24772bc182130",
+      "reference.signature": "a013aa54846034bfe9395063605017df5130909206f58b4df8e9ce5517e1590b"
+    },
+    "srli-01": {
+      "program.elf": "62b65bbf9fa99063cecac8cd6422f8a97dbb36a6c794d85a145ffe11825e9feb",
+      "code.bin": "ace652378446d92b1a55e7efc764196b7f1b1b79f607f1ec7abf59b8685b5e11",
+      "program.memfile": "627040077eb422ac551c6bb2d70dc258a772b19d3d6dccee883f867201110a30",
+      "reference.signature": "810ea321d175d0c9200637347dbec44f19a6f2d000b811b11beaa518d479eb3a"
+    },
+    "sub-01": {
+      "program.elf": "3bd5fe109426ecc285d4dd49b07553f8ed8e22b8d32406ce459aa26dee5e74f0",
+      "code.bin": "453da6eeb70caf289b69ac012423dcb4c8226d0c616c46c7775dd5cc32b76a1f",
+      "program.memfile": "8985c9d63961703d3461c5c07722669e5170a1584e5b3ce4667e1951c6b439de",
+      "reference.signature": "5081a0ab8ddb1476570e09e11a335889a937b4978402c7ceb9c50f220c38e02f"
+    },
+    "sw-align-01": {
+      "program.elf": "91a4e31d612d61a102efcf1d6e93df6668d55730d736381132e3f699f1baf202",
+      "code.bin": "d30447d6c4d37f0f0d7cd55dd6dae39174c9b4088a9435852fe1f14746097a79",
+      "program.memfile": "346034763693d39538f379eb1ad0e11368896066341d97e9603d5ef787973ff0",
+      "reference.signature": "510912dbde5a322b56192420e6e96cbda7e8299f67f882c41ef1bbfc275fb0e6"
+    },
+    "xor-01": {
+      "program.elf": "fa68f92c2c9eb17d9ca901bb628642d4830126c98406ceb99670338f6cb6c79f",
+      "code.bin": "1e85c4c166cdae45efc44c3dc90477862f91cd5a49ba606ff5931993bf646704",
+      "program.memfile": "849459994d7db05193c259dd9a3dd3b71c5c3efa6981b45c34bb6bd942286edb",
+      "reference.signature": "69a4daa177e030d2a7cc0fef238fc346ff353751b143fc50c33146cec5bd358e"
+    },
+    "xori-01": {
+      "program.elf": "9c8271cc4def64154542d0660cd9fc4a517810d97115403e277237872d72e668",
+      "code.bin": "f8b275ddc26968202a948d9f553c009fb33db0b3fe500bd9d9ac5d702e47b95f",
+      "program.memfile": "ea37f275eb1a6784edbbc33c5940f86b19da8be457750dbdd5c4402ec070ca2e",
+      "reference.signature": "edb4c7358764aec7f3b5c6536d90fa9f11a6c383164230c0b77db6e947cdb0dd"
+    },
+    "misalign1-jalr-01": {
+      "program.elf": "f08b08ef91e8cb8cb12bf4737d47849f901e51f6ff9b36318441414715715df3",
+      "code.bin": "c24d381b75aeacf1d04f3f5c821f73842c18057840083d28cd4aa75085009eae",
+      "program.memfile": "a9b915f255acbb5fcf1c85ea0f2e838f331eb12fd4ac165f57cc1aeb9ca323d3",
+      "reference.signature": "2be7bbd48df187a6584b833b0e783a710e185c8a04097e2647dfda92064847a3"
+    },
+    "coremark-performance": {
+      "program.elf": "d1f879c9ef56cc0c8b0d51c238cd31a6ed4b8b076d12367e3d3b367d6d58b3e8",
+      "code.bin": "b446a791702c1afdcaef5a92863f581bac6f6006635f11447b8ccdb012304cd0",
+      "program.memfile": "942b39bade9f27bc96cd8ca8f4873c0fa782b7b425b80d5409971fb7fba93db1",
+      "reference.signature": "687d802443eaea3f72e883a100796e32ae0299d3c24c951f375e559fd76b171b",
+      "footprint": {
+        "codeBytes": 11660,
+        "initializedDataBytes": 788,
+        "bssBytes": 2104,
+        "staticDataSpanBytes": 2904,
+        "bssEnd": "0x80210b58",
+        "stackTop": "0x8021f000"
+      }
+    },
+    "coremark-validation": {
+      "program.elf": "7ea116a0ab2bba50e5aa029ae344a34c7536da9705e22617bb71098cf9bca74c",
+      "code.bin": "28669222f1841e1005fd81183a87f8a479ba2c177039aed2860652bed288abf8",
+      "program.memfile": "05f149bca45a81a5593cb00acbf5c09e4c80dc7491b7f5a7fb949fe6291eba57",
+      "reference.signature": "e3646d85d83ef3a8509a98c00501432a372525533264740e3a4887aaa96b002c",
+      "footprint": {
+        "codeBytes": 11676,
+        "initializedDataBytes": 796,
+        "bssBytes": 2096,
+        "staticDataSpanBytes": 2896,
+        "bssEnd": "0x80210b50",
+        "stackTop": "0x8021f000"
+      }
+    }
+  },
+  "notes": [
+    "Captures existing completed runs; no new hardware benchmark was run for this report.",
+    "ELF/code/memory images are hashed but not archived; references and result logs are archived.",
+    "Static memory spans are link-time allocations, not measured stack high-water marks."
+  ]
+}

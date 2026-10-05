@@ -1,0 +1,1265 @@
+{
+  "manifest": {
+    "imemDepth": 524288,
+    "dmemDepth": 32768,
+    "resetVector": "0x80000000",
+    "coremarkRevision": "f3e8f2e0941e42961aadcc52750b1b5577c157c9",
+    "archRevision": "c8c813af55ea79acb97fe832c5737cc4539af3ee",
+    "compiler": "riscv64-unknown-elf-gcc (g5115c7e44) 15.2.0",
+    "compilerFlags": [
+      "-march=rv32i",
+      "-mabi=ilp32",
+      "-O2",
+      "-ffreestanding",
+      "-fno-builtin",
+      "-fno-pic",
+      "-fno-pie",
+      "-fno-stack-protector",
+      "-fno-unwind-tables",
+      "-fno-delete-null-pointer-checks",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-msmall-data-limit=0",
+      "-mstrict-align",
+      "-mno-relax"
+    ],
+    "coremarkSha256": {
+      "core_list_join.c": "ca00e4e010ece47d7f040cb92aa50a95345a00d3171b59d088f6b243be06ce7b",
+      "core_main.c": "17884c93c5b94378eb0ff02b4df3725756cf2addb9b8cbcaa6200a4649ff5ca7",
+      "core_matrix.c": "ecdff717b5a5c4907d221a606760e25499899cbf617582c05d40db71c91351e4",
+      "core_state.c": "f4b84bb0a3452c45a4daa664ab502bfdccbd31cb57d93e9ac490c60937717a4e",
+      "core_util.c": "a3fbfcb9bb943b638624b8ece01c5836dd56a96d7bcde2697b248d077447327f",
+      "coremark.h": "29f7eb0f0bdf6002f6c7dccfa4f8f9f32c0b8f6709f6538c2b73221938a9c8f1"
+    },
+    "programs": [
+      {
+        "name": "add-01",
+        "image": "target/validation/add-01/program.memfile",
+        "reference": "target/validation/add-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 590,
+        "cycleLimit": 1000000,
+        "instructionWords": 7129,
+        "testCases": 588,
+        "crc": null
+      },
+      {
+        "name": "addi-01",
+        "image": "target/validation/addi-01/program.memfile",
+        "reference": "target/validation/addi-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 563,
+        "cycleLimit": 1000000,
+        "instructionWords": 5976,
+        "testCases": 561,
+        "crc": null
+      },
+      {
+        "name": "and-01",
+        "image": "target/validation/and-01/program.memfile",
+        "reference": "target/validation/and-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 586,
+        "cycleLimit": 1000000,
+        "instructionWords": 7085,
+        "testCases": 584,
+        "crc": null
+      },
+      {
+        "name": "andi-01",
+        "image": "target/validation/andi-01/program.memfile",
+        "reference": "target/validation/andi-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 564,
+        "cycleLimit": 1000000,
+        "instructionWords": 5979,
+        "testCases": 562,
+        "crc": null
+      },
+      {
+        "name": "auipc-01",
+        "image": "target/validation/auipc-01/program.memfile",
+        "reference": "target/validation/auipc-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 66,
+        "cycleLimit": 1000000,
+        "instructionWords": 2723,
+        "testCases": 64,
+        "crc": null
+      },
+      {
+        "name": "beq-01",
+        "image": "target/validation/beq-01/program.memfile",
+        "reference": "target/validation/beq-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 585,
+        "cycleLimit": 1000000,
+        "instructionWords": 60338,
+        "testCases": 583,
+        "crc": null
+      },
+      {
+        "name": "bge-01",
+        "image": "target/validation/bge-01/program.memfile",
+        "reference": "target/validation/bge-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 592,
+        "cycleLimit": 1000000,
+        "instructionWords": 62215,
+        "testCases": 590,
+        "crc": null
+      },
+      {
+        "name": "bgeu-01",
+        "image": "target/validation/bgeu-01/program.memfile",
+        "reference": "target/validation/bgeu-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 728,
+        "cycleLimit": 1000000,
+        "instructionWords": 78703,
+        "testCases": 726,
+        "crc": null
+      },
+      {
+        "name": "blt-01",
+        "image": "target/validation/blt-01/program.memfile",
+        "reference": "target/validation/blt-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 582,
+        "cycleLimit": 1000000,
+        "instructionWords": 60113,
+        "testCases": 580,
+        "crc": null
+      },
+      {
+        "name": "bltu-01",
+        "image": "target/validation/bltu-01/program.memfile",
+        "reference": "target/validation/bltu-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 728,
+        "cycleLimit": 1000000,
+        "instructionWords": 79431,
+        "testCases": 726,
+        "crc": null
+      },
+      {
+        "name": "bne-01",
+        "image": "target/validation/bne-01/program.memfile",
+        "reference": "target/validation/bne-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 586,
+        "cycleLimit": 1000000,
+        "instructionWords": 60869,
+        "testCases": 584,
+        "crc": null
+      },
+      {
+        "name": "fence-01",
+        "image": "target/validation/fence-01/program.memfile",
+        "reference": "target/validation/fence-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 3,
+        "cycleLimit": 1000000,
+        "instructionWords": 2212,
+        "testCases": 0,
+        "crc": null
+      },
+      {
+        "name": "jal-01",
+        "image": "target/validation/jal-01/program.memfile",
+        "reference": "target/validation/jal-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 34,
+        "cycleLimit": 1000000,
+        "instructionWords": 441243,
+        "testCases": 32,
+        "crc": null
+      },
+      {
+        "name": "jalr-01",
+        "image": "target/validation/jalr-01/program.memfile",
+        "reference": "target/validation/jalr-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 35,
+        "cycleLimit": 1000000,
+        "instructionWords": 3366,
+        "testCases": 33,
+        "crc": null
+      },
+      {
+        "name": "lb-align-01",
+        "image": "target/validation/lb-align-01/program.memfile",
+        "reference": "target/validation/lb-align-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 35,
+        "cycleLimit": 1000000,
+        "instructionWords": 2830,
+        "testCases": 33,
+        "crc": null
+      },
+      {
+        "name": "lbu-align-01",
+        "image": "target/validation/lbu-align-01/program.memfile",
+        "reference": "target/validation/lbu-align-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 34,
+        "cycleLimit": 1000000,
+        "instructionWords": 2811,
+        "testCases": 32,
+        "crc": null
+      },
+      {
+        "name": "lh-align-01",
+        "image": "target/validation/lh-align-01/program.memfile",
+        "reference": "target/validation/lh-align-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 34,
+        "cycleLimit": 1000000,
+        "instructionWords": 2811,
+        "testCases": 32,
+        "crc": null
+      },
+      {
+        "name": "lhu-align-01",
+        "image": "target/validation/lhu-align-01/program.memfile",
+        "reference": "target/validation/lhu-align-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 34,
+        "cycleLimit": 1000000,
+        "instructionWords": 2811,
+        "testCases": 32,
+        "crc": null
+      },
+      {
+        "name": "lui-01",
+        "image": "target/validation/lui-01/program.memfile",
+        "reference": "target/validation/lui-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 65,
+        "cycleLimit": 1000000,
+        "instructionWords": 2528,
+        "testCases": 63,
+        "crc": null
+      },
+      {
+        "name": "lw-align-01",
+        "image": "target/validation/lw-align-01/program.memfile",
+        "reference": "target/validation/lw-align-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 34,
+        "cycleLimit": 1000000,
+        "instructionWords": 2811,
+        "testCases": 32,
+        "crc": null
+      },
+      {
+        "name": "or-01",
+        "image": "target/validation/or-01/program.memfile",
+        "reference": "target/validation/or-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 589,
+        "cycleLimit": 1000000,
+        "instructionWords": 7126,
+        "testCases": 587,
+        "crc": null
+      },
+      {
+        "name": "ori-01",
+        "image": "target/validation/ori-01/program.memfile",
+        "reference": "target/validation/ori-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 411,
+        "cycleLimit": 1000000,
+        "instructionWords": 4974,
+        "testCases": 409,
+        "crc": null
+      },
+      {
+        "name": "sb-align-01",
+        "image": "target/validation/sb-align-01/program.memfile",
+        "reference": "target/validation/sb-align-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 72,
+        "cycleLimit": 1000000,
+        "instructionWords": 2933,
+        "testCases": 70,
+        "crc": null
+      },
+      {
+        "name": "sh-align-01",
+        "image": "target/validation/sh-align-01/program.memfile",
+        "reference": "target/validation/sh-align-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 73,
+        "cycleLimit": 1000000,
+        "instructionWords": 2936,
+        "testCases": 71,
+        "crc": null
+      },
+      {
+        "name": "sll-01",
+        "image": "target/validation/sll-01/program.memfile",
+        "reference": "target/validation/sll-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 91,
+        "cycleLimit": 1000000,
+        "instructionWords": 2870,
+        "testCases": 89,
+        "crc": null
+      },
+      {
+        "name": "slli-01",
+        "image": "target/validation/slli-01/program.memfile",
+        "reference": "target/validation/slli-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 90,
+        "cycleLimit": 1000000,
+        "instructionWords": 2771,
+        "testCases": 88,
+        "crc": null
+      },
+      {
+        "name": "slt-01",
+        "image": "target/validation/slt-01/program.memfile",
+        "reference": "target/validation/slt-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 586,
+        "cycleLimit": 1000000,
+        "instructionWords": 7101,
+        "testCases": 584,
+        "crc": null
+      },
+      {
+        "name": "slti-01",
+        "image": "target/validation/slti-01/program.memfile",
+        "reference": "target/validation/slti-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 562,
+        "cycleLimit": 1000000,
+        "instructionWords": 5965,
+        "testCases": 560,
+        "crc": null
+      },
+      {
+        "name": "sltiu-01",
+        "image": "target/validation/sltiu-01/program.memfile",
+        "reference": "target/validation/sltiu-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 701,
+        "cycleLimit": 1000000,
+        "instructionWords": 6862,
+        "testCases": 699,
+        "crc": null
+      },
+      {
+        "name": "sltu-01",
+        "image": "target/validation/sltu-01/program.memfile",
+        "reference": "target/validation/sltu-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 724,
+        "cycleLimit": 1000000,
+        "instructionWords": 8195,
+        "testCases": 722,
+        "crc": null
+      },
+      {
+        "name": "sra-01",
+        "image": "target/validation/sra-01/program.memfile",
+        "reference": "target/validation/sra-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 92,
+        "cycleLimit": 1000000,
+        "instructionWords": 2873,
+        "testCases": 90,
+        "crc": null
+      },
+      {
+        "name": "srai-01",
+        "image": "target/validation/srai-01/program.memfile",
+        "reference": "target/validation/srai-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 89,
+        "cycleLimit": 1000000,
+        "instructionWords": 2768,
+        "testCases": 87,
+        "crc": null
+      },
+      {
+        "name": "srl-01",
+        "image": "target/validation/srl-01/program.memfile",
+        "reference": "target/validation/srl-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 94,
+        "cycleLimit": 1000000,
+        "instructionWords": 2903,
+        "testCases": 92,
+        "crc": null
+      },
+      {
+        "name": "srli-01",
+        "image": "target/validation/srli-01/program.memfile",
+        "reference": "target/validation/srli-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 92,
+        "cycleLimit": 1000000,
+        "instructionWords": 2785,
+        "testCases": 90,
+        "crc": null
+      },
+      {
+        "name": "sub-01",
+        "image": "target/validation/sub-01/program.memfile",
+        "reference": "target/validation/sub-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 594,
+        "cycleLimit": 1000000,
+        "instructionWords": 7149,
+        "testCases": 592,
+        "crc": null
+      },
+      {
+        "name": "sw-align-01",
+        "image": "target/validation/sw-align-01/program.memfile",
+        "reference": "target/validation/sw-align-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 70,
+        "cycleLimit": 1000000,
+        "instructionWords": 2911,
+        "testCases": 68,
+        "crc": null
+      },
+      {
+        "name": "xor-01",
+        "image": "target/validation/xor-01/program.memfile",
+        "reference": "target/validation/xor-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 590,
+        "cycleLimit": 1000000,
+        "instructionWords": 7121,
+        "testCases": 588,
+        "crc": null
+      },
+      {
+        "name": "xori-01",
+        "image": "target/validation/xori-01/program.memfile",
+        "reference": "target/validation/xori-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 568,
+        "cycleLimit": 1000000,
+        "instructionWords": 6007,
+        "testCases": 566,
+        "crc": null
+      },
+      {
+        "name": "misalign1-jalr-01",
+        "image": "target/validation/misalign1-jalr-01/program.memfile",
+        "reference": "target/validation/misalign1-jalr-01/reference.signature",
+        "sigbase": "80211000",
+        "signatureWords": 3,
+        "cycleLimit": 1000000,
+        "instructionWords": 2230,
+        "testCases": 1,
+        "crc": null
+      },
+      {
+        "name": "coremark-performance",
+        "image": "target/validation/coremark-performance/program.memfile",
+        "reference": "target/validation/coremark-performance/reference.signature",
+        "sigbase": "80210328",
+        "signatureWords": 7,
+        "cycleLimit": 30000000,
+        "instructionWords": 2915,
+        "testCases": 0,
+        "crc": [
+          "0000e9f5",
+          "0000e714",
+          "00001fd7",
+          "00008e3a",
+          "0000fcaf",
+          "00000000",
+          "0000000a"
+        ]
+      },
+      {
+        "name": "coremark-validation",
+        "image": "target/validation/coremark-validation/program.memfile",
+        "reference": "target/validation/coremark-validation/reference.signature",
+        "sigbase": "80210320",
+        "signatureWords": 7,
+        "cycleLimit": 30000000,
+        "instructionWords": 2919,
+        "testCases": 0,
+        "crc": [
+          "000018f2",
+          "0000e3c1",
+          "00000747",
+          "00008d84",
+          "0000c64e",
+          "00000000",
+          "0000000a"
+        ]
+      }
+    ]
+  },
+  "seeds": [
+    1,
+    17,
+    2026
+  ],
+  "negativeChecks": [
+    "signature",
+    "timeout"
+  ],
+  "results": [
+    {
+      "name": "add-01",
+      "seed": 1,
+      "cycles": 7122,
+      "signatureWords": 590
+    },
+    {
+      "name": "add-01",
+      "seed": 17,
+      "cycles": 7122,
+      "signatureWords": 590
+    },
+    {
+      "name": "add-01",
+      "seed": 2026,
+      "cycles": 7122,
+      "signatureWords": 590
+    },
+    {
+      "name": "addi-01",
+      "seed": 1,
+      "cycles": 5968,
+      "signatureWords": 563
+    },
+    {
+      "name": "addi-01",
+      "seed": 17,
+      "cycles": 5968,
+      "signatureWords": 563
+    },
+    {
+      "name": "addi-01",
+      "seed": 2026,
+      "cycles": 5968,
+      "signatureWords": 563
+    },
+    {
+      "name": "and-01",
+      "seed": 1,
+      "cycles": 7075,
+      "signatureWords": 586
+    },
+    {
+      "name": "and-01",
+      "seed": 17,
+      "cycles": 7075,
+      "signatureWords": 586
+    },
+    {
+      "name": "and-01",
+      "seed": 2026,
+      "cycles": 7075,
+      "signatureWords": 586
+    },
+    {
+      "name": "andi-01",
+      "seed": 1,
+      "cycles": 5975,
+      "signatureWords": 564
+    },
+    {
+      "name": "andi-01",
+      "seed": 17,
+      "cycles": 5975,
+      "signatureWords": 564
+    },
+    {
+      "name": "andi-01",
+      "seed": 2026,
+      "cycles": 5975,
+      "signatureWords": 564
+    },
+    {
+      "name": "auipc-01",
+      "seed": 1,
+      "cycles": 2716,
+      "signatureWords": 66
+    },
+    {
+      "name": "auipc-01",
+      "seed": 17,
+      "cycles": 2716,
+      "signatureWords": 66
+    },
+    {
+      "name": "auipc-01",
+      "seed": 2026,
+      "cycles": 2716,
+      "signatureWords": 66
+    },
+    {
+      "name": "beq-01",
+      "seed": 1,
+      "cycles": 11787,
+      "signatureWords": 585
+    },
+    {
+      "name": "beq-01",
+      "seed": 17,
+      "cycles": 11787,
+      "signatureWords": 585
+    },
+    {
+      "name": "beq-01",
+      "seed": 2026,
+      "cycles": 11787,
+      "signatureWords": 585
+    },
+    {
+      "name": "bge-01",
+      "seed": 1,
+      "cycles": 12457,
+      "signatureWords": 592
+    },
+    {
+      "name": "bge-01",
+      "seed": 17,
+      "cycles": 12457,
+      "signatureWords": 592
+    },
+    {
+      "name": "bge-01",
+      "seed": 2026,
+      "cycles": 12457,
+      "signatureWords": 592
+    },
+    {
+      "name": "bgeu-01",
+      "seed": 1,
+      "cycles": 14782,
+      "signatureWords": 728
+    },
+    {
+      "name": "bgeu-01",
+      "seed": 17,
+      "cycles": 14782,
+      "signatureWords": 728
+    },
+    {
+      "name": "bgeu-01",
+      "seed": 2026,
+      "cycles": 14782,
+      "signatureWords": 728
+    },
+    {
+      "name": "blt-01",
+      "seed": 1,
+      "cycles": 12231,
+      "signatureWords": 582
+    },
+    {
+      "name": "blt-01",
+      "seed": 17,
+      "cycles": 12231,
+      "signatureWords": 582
+    },
+    {
+      "name": "blt-01",
+      "seed": 2026,
+      "cycles": 12231,
+      "signatureWords": 582
+    },
+    {
+      "name": "bltu-01",
+      "seed": 1,
+      "cycles": 14726,
+      "signatureWords": 728
+    },
+    {
+      "name": "bltu-01",
+      "seed": 17,
+      "cycles": 14726,
+      "signatureWords": 728
+    },
+    {
+      "name": "bltu-01",
+      "seed": 2026,
+      "cycles": 14726,
+      "signatureWords": 728
+    },
+    {
+      "name": "bne-01",
+      "seed": 1,
+      "cycles": 12869,
+      "signatureWords": 586
+    },
+    {
+      "name": "bne-01",
+      "seed": 17,
+      "cycles": 12869,
+      "signatureWords": 586
+    },
+    {
+      "name": "bne-01",
+      "seed": 2026,
+      "cycles": 12869,
+      "signatureWords": 586
+    },
+    {
+      "name": "fence-01",
+      "seed": 1,
+      "cycles": 2207,
+      "signatureWords": 3
+    },
+    {
+      "name": "fence-01",
+      "seed": 17,
+      "cycles": 2207,
+      "signatureWords": 3
+    },
+    {
+      "name": "fence-01",
+      "seed": 2026,
+      "cycles": 2207,
+      "signatureWords": 3
+    },
+    {
+      "name": "jal-01",
+      "seed": 1,
+      "cycles": 3939,
+      "signatureWords": 34
+    },
+    {
+      "name": "jal-01",
+      "seed": 17,
+      "cycles": 3939,
+      "signatureWords": 34
+    },
+    {
+      "name": "jal-01",
+      "seed": 2026,
+      "cycles": 3939,
+      "signatureWords": 34
+    },
+    {
+      "name": "jalr-01",
+      "seed": 1,
+      "cycles": 3363,
+      "signatureWords": 35
+    },
+    {
+      "name": "jalr-01",
+      "seed": 17,
+      "cycles": 3363,
+      "signatureWords": 35
+    },
+    {
+      "name": "jalr-01",
+      "seed": 2026,
+      "cycles": 3363,
+      "signatureWords": 35
+    },
+    {
+      "name": "lb-align-01",
+      "seed": 1,
+      "cycles": 2820,
+      "signatureWords": 35
+    },
+    {
+      "name": "lb-align-01",
+      "seed": 17,
+      "cycles": 2820,
+      "signatureWords": 35
+    },
+    {
+      "name": "lb-align-01",
+      "seed": 2026,
+      "cycles": 2820,
+      "signatureWords": 35
+    },
+    {
+      "name": "lbu-align-01",
+      "seed": 1,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "lbu-align-01",
+      "seed": 17,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "lbu-align-01",
+      "seed": 2026,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "lh-align-01",
+      "seed": 1,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "lh-align-01",
+      "seed": 17,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "lh-align-01",
+      "seed": 2026,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "lhu-align-01",
+      "seed": 1,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "lhu-align-01",
+      "seed": 17,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "lhu-align-01",
+      "seed": 2026,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "lui-01",
+      "seed": 1,
+      "cycles": 2518,
+      "signatureWords": 65
+    },
+    {
+      "name": "lui-01",
+      "seed": 17,
+      "cycles": 2518,
+      "signatureWords": 65
+    },
+    {
+      "name": "lui-01",
+      "seed": 2026,
+      "cycles": 2518,
+      "signatureWords": 65
+    },
+    {
+      "name": "lw-align-01",
+      "seed": 1,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "lw-align-01",
+      "seed": 17,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "lw-align-01",
+      "seed": 2026,
+      "cycles": 2801,
+      "signatureWords": 34
+    },
+    {
+      "name": "or-01",
+      "seed": 1,
+      "cycles": 7118,
+      "signatureWords": 589
+    },
+    {
+      "name": "or-01",
+      "seed": 17,
+      "cycles": 7118,
+      "signatureWords": 589
+    },
+    {
+      "name": "or-01",
+      "seed": 2026,
+      "cycles": 7118,
+      "signatureWords": 589
+    },
+    {
+      "name": "ori-01",
+      "seed": 1,
+      "cycles": 4971,
+      "signatureWords": 411
+    },
+    {
+      "name": "ori-01",
+      "seed": 17,
+      "cycles": 4971,
+      "signatureWords": 411
+    },
+    {
+      "name": "ori-01",
+      "seed": 2026,
+      "cycles": 4971,
+      "signatureWords": 411
+    },
+    {
+      "name": "sb-align-01",
+      "seed": 1,
+      "cycles": 2925,
+      "signatureWords": 72
+    },
+    {
+      "name": "sb-align-01",
+      "seed": 17,
+      "cycles": 2925,
+      "signatureWords": 72
+    },
+    {
+      "name": "sb-align-01",
+      "seed": 2026,
+      "cycles": 2925,
+      "signatureWords": 72
+    },
+    {
+      "name": "sh-align-01",
+      "seed": 1,
+      "cycles": 2932,
+      "signatureWords": 73
+    },
+    {
+      "name": "sh-align-01",
+      "seed": 17,
+      "cycles": 2932,
+      "signatureWords": 73
+    },
+    {
+      "name": "sh-align-01",
+      "seed": 2026,
+      "cycles": 2932,
+      "signatureWords": 73
+    },
+    {
+      "name": "sll-01",
+      "seed": 1,
+      "cycles": 2865,
+      "signatureWords": 91
+    },
+    {
+      "name": "sll-01",
+      "seed": 17,
+      "cycles": 2865,
+      "signatureWords": 91
+    },
+    {
+      "name": "sll-01",
+      "seed": 2026,
+      "cycles": 2865,
+      "signatureWords": 91
+    },
+    {
+      "name": "slli-01",
+      "seed": 1,
+      "cycles": 2768,
+      "signatureWords": 90
+    },
+    {
+      "name": "slli-01",
+      "seed": 17,
+      "cycles": 2768,
+      "signatureWords": 90
+    },
+    {
+      "name": "slli-01",
+      "seed": 2026,
+      "cycles": 2768,
+      "signatureWords": 90
+    },
+    {
+      "name": "slt-01",
+      "seed": 1,
+      "cycles": 7096,
+      "signatureWords": 586
+    },
+    {
+      "name": "slt-01",
+      "seed": 17,
+      "cycles": 7096,
+      "signatureWords": 586
+    },
+    {
+      "name": "slt-01",
+      "seed": 2026,
+      "cycles": 7096,
+      "signatureWords": 586
+    },
+    {
+      "name": "slti-01",
+      "seed": 1,
+      "cycles": 5958,
+      "signatureWords": 562
+    },
+    {
+      "name": "slti-01",
+      "seed": 17,
+      "cycles": 5958,
+      "signatureWords": 562
+    },
+    {
+      "name": "slti-01",
+      "seed": 2026,
+      "cycles": 5958,
+      "signatureWords": 562
+    },
+    {
+      "name": "sltiu-01",
+      "seed": 1,
+      "cycles": 6859,
+      "signatureWords": 701
+    },
+    {
+      "name": "sltiu-01",
+      "seed": 17,
+      "cycles": 6859,
+      "signatureWords": 701
+    },
+    {
+      "name": "sltiu-01",
+      "seed": 2026,
+      "cycles": 6859,
+      "signatureWords": 701
+    },
+    {
+      "name": "sltu-01",
+      "seed": 1,
+      "cycles": 8188,
+      "signatureWords": 724
+    },
+    {
+      "name": "sltu-01",
+      "seed": 17,
+      "cycles": 8188,
+      "signatureWords": 724
+    },
+    {
+      "name": "sltu-01",
+      "seed": 2026,
+      "cycles": 8188,
+      "signatureWords": 724
+    },
+    {
+      "name": "sra-01",
+      "seed": 1,
+      "cycles": 2870,
+      "signatureWords": 92
+    },
+    {
+      "name": "sra-01",
+      "seed": 17,
+      "cycles": 2870,
+      "signatureWords": 92
+    },
+    {
+      "name": "sra-01",
+      "seed": 2026,
+      "cycles": 2870,
+      "signatureWords": 92
+    },
+    {
+      "name": "srai-01",
+      "seed": 1,
+      "cycles": 2760,
+      "signatureWords": 89
+    },
+    {
+      "name": "srai-01",
+      "seed": 17,
+      "cycles": 2760,
+      "signatureWords": 89
+    },
+    {
+      "name": "srai-01",
+      "seed": 2026,
+      "cycles": 2760,
+      "signatureWords": 89
+    },
+    {
+      "name": "srl-01",
+      "seed": 1,
+      "cycles": 2897,
+      "signatureWords": 94
+    },
+    {
+      "name": "srl-01",
+      "seed": 17,
+      "cycles": 2897,
+      "signatureWords": 94
+    },
+    {
+      "name": "srl-01",
+      "seed": 2026,
+      "cycles": 2897,
+      "signatureWords": 94
+    },
+    {
+      "name": "srli-01",
+      "seed": 1,
+      "cycles": 2778,
+      "signatureWords": 92
+    },
+    {
+      "name": "srli-01",
+      "seed": 17,
+      "cycles": 2778,
+      "signatureWords": 92
+    },
+    {
+      "name": "srli-01",
+      "seed": 2026,
+      "cycles": 2778,
+      "signatureWords": 92
+    },
+    {
+      "name": "sub-01",
+      "seed": 1,
+      "cycles": 7145,
+      "signatureWords": 594
+    },
+    {
+      "name": "sub-01",
+      "seed": 17,
+      "cycles": 7145,
+      "signatureWords": 594
+    },
+    {
+      "name": "sub-01",
+      "seed": 2026,
+      "cycles": 7145,
+      "signatureWords": 594
+    },
+    {
+      "name": "sw-align-01",
+      "seed": 1,
+      "cycles": 2902,
+      "signatureWords": 70
+    },
+    {
+      "name": "sw-align-01",
+      "seed": 17,
+      "cycles": 2902,
+      "signatureWords": 70
+    },
+    {
+      "name": "sw-align-01",
+      "seed": 2026,
+      "cycles": 2902,
+      "signatureWords": 70
+    },
+    {
+      "name": "xor-01",
+      "seed": 1,
+      "cycles": 7117,
+      "signatureWords": 590
+    },
+    {
+      "name": "xor-01",
+      "seed": 17,
+      "cycles": 7117,
+      "signatureWords": 590
+    },
+    {
+      "name": "xor-01",
+      "seed": 2026,
+      "cycles": 7117,
+      "signatureWords": 590
+    },
+    {
+      "name": "xori-01",
+      "seed": 1,
+      "cycles": 5997,
+      "signatureWords": 568
+    },
+    {
+      "name": "xori-01",
+      "seed": 17,
+      "cycles": 5997,
+      "signatureWords": 568
+    },
+    {
+      "name": "xori-01",
+      "seed": 2026,
+      "cycles": 5997,
+      "signatureWords": 568
+    },
+    {
+      "name": "misalign1-jalr-01",
+      "seed": 1,
+      "cycles": 2227,
+      "signatureWords": 3
+    },
+    {
+      "name": "misalign1-jalr-01",
+      "seed": 17,
+      "cycles": 2227,
+      "signatureWords": 3
+    },
+    {
+      "name": "misalign1-jalr-01",
+      "seed": 2026,
+      "cycles": 2227,
+      "signatureWords": 3
+    },
+    {
+      "name": "coremark-performance",
+      "seed": 1,
+      "cycles": 10558861,
+      "signatureWords": 7,
+      "benchmarkCycles": 10533211,
+      "cyclesPerIteration": 1053321.1
+    },
+    {
+      "name": "coremark-performance",
+      "seed": 17,
+      "cycles": 10558861,
+      "signatureWords": 7,
+      "benchmarkCycles": 10533211,
+      "cyclesPerIteration": 1053321.1
+    },
+    {
+      "name": "coremark-performance",
+      "seed": 2026,
+      "cycles": 10558861,
+      "signatureWords": 7,
+      "benchmarkCycles": 10533211,
+      "cyclesPerIteration": 1053321.1
+    },
+    {
+      "name": "coremark-validation",
+      "seed": 1,
+      "cycles": 11357303,
+      "signatureWords": 7,
+      "benchmarkCycles": 11331447,
+      "cyclesPerIteration": 1133144.7
+    },
+    {
+      "name": "coremark-validation",
+      "seed": 17,
+      "cycles": 11357303,
+      "signatureWords": 7,
+      "benchmarkCycles": 11331447,
+      "cyclesPerIteration": 1133144.7
+    },
+    {
+      "name": "coremark-validation",
+      "seed": 2026,
+      "cycles": 11357303,
+      "signatureWords": 7,
+      "benchmarkCycles": 11331447,
+      "cyclesPerIteration": 1133144.7
+    }
+  ]
+}
