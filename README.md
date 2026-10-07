@@ -7,7 +7,7 @@ Scala 包名为 `riscvpipeline`，顶层为 `RiscvPipeline`，接口为 `RiscvPi
 
 支持范围保持现有 RV32I；不包含乘除法、CSR、异常、中断、缓存或分支预测。
 第八章按独立模块逐轮交付：`CSRAccess`、`PrivDecode`、`CSRStatus`、`CSRInterrupt`、
-`CSRMachine`、`CSRSupervisor` 和 `CSRCounters` 尚未接入 CPU，
+`CSRMachine`、`CSRSupervisor`、`CSRCounters` 和 `PrivMode` 尚未接入 CPU，
 模块路线见 [第八章实施记录](docs/chapter8/README.md)，
 接口、算例和验证见 [CSRAccess 中文说明](docs/chapter8/01-csr-access.md)。
 特权指令译码及权限边界见 [PrivDecode 中文说明](docs/chapter8/02-priv-decode.md)。
@@ -16,6 +16,7 @@ Scala 包名为 `riscvpipeline`，顶层为 `RiscvPipeline`，接口为 `RiscvPi
 机器陷阱记录、向量、委托及配置见 [CSRMachine 中文说明](docs/chapter8/05-csr-machine.md)。
 监督陷阱记录、satp 及时间比较见 [CSRSupervisor 中文说明](docs/chapter8/06-csr-supervisor.md)。
 周期、退休、时间视图及 HPM 见 [CSRCounters 中文说明](docs/chapter8/07-csr-counters.md)。
+特权级状态及陷阱返回转换见 [PrivMode 中文说明](docs/chapter8/08-priv-mode.md)。
 工具链保持 JDK 17、sbt 1.10.7、Scala 2.13.14、Chisel 3.6.1、chiseltest 0.6.2。
 遵循 [Chisel 编码规范](docs/chisel-coding-standard.md)和
 [本地 skill](.agents/skills/chisel-coding-standard/SKILL.md)。
@@ -68,6 +69,8 @@ make test-csr-supervisor SBT=./scripts/sbt-local.sh
 make generate-csr-supervisor SBT=./scripts/sbt-local.sh
 make test-csr-counters SBT=./scripts/sbt-local.sh
 make generate-csr-counters SBT=./scripts/sbt-local.sh
+make test-priv-mode SBT=./scripts/sbt-local.sh
+make generate-priv-mode SBT=./scripts/sbt-local.sh
 make test SBT=./scripts/sbt-local.sh
 make test-acceptance SBT=./scripts/sbt-local.sh
 make test-rtl SBT=./scripts/sbt-local.sh

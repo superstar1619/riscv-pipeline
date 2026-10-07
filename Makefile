@@ -50,6 +50,8 @@ CSR_SUPERVISOR_ASID_BITS ?= 0
 CSR_COUNTERS_TARGET_DIR ?= generated/csr-counters
 CSR_COUNTERS_SUPERVISOR_SUPPORTED ?= true
 CSR_COUNTERS_HPM_COUNTERS ?= 0
+PRIV_MODE_TARGET_DIR ?= generated/priv-mode
+PRIV_MODE_SUPERVISOR_SUPPORTED ?= true
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -65,6 +67,7 @@ VALIDATION_SUITE ?= all
 .PHONY: generate-csr-machine test-csr-machine
 .PHONY: generate-csr-supervisor test-csr-supervisor
 .PHONY: generate-csr-counters test-csr-counters
+.PHONY: generate-priv-mode test-priv-mode
 .PHONY: build-validation generate-validation test-validation test-arch test-coremark test-validation-builder
 
 test-validation-builder:
@@ -186,6 +189,12 @@ generate-csr-counters:
 
 test-csr-counters:
 	$(SBT) 'testOnly riscvpipeline.privileged.CSRCountersSpec'
+
+generate-priv-mode:
+	$(SBT) "runMain riscvpipeline.GeneratePrivMode $(PRIV_MODE_TARGET_DIR) $(PRIV_MODE_SUPERVISOR_SUPPORTED)"
+
+test-priv-mode:
+	$(SBT) 'testOnly riscvpipeline.privileged.PrivModeSpec'
 
 test:
 	$(SBT) test
