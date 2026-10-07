@@ -26,6 +26,10 @@ CSR_ACCESS_TARGET_DIR ?= generated/csr-access
 PRIV_DECODE_TARGET_DIR ?= generated/priv-decode
 PRIV_DECODE_SUPERVISOR_SUPPORTED ?= true
 PRIV_DECODE_VIRTUAL_MEMORY_SUPPORTED ?= false
+CSR_STATUS_TARGET_DIR ?= generated/csr-status
+CSR_STATUS_SUPERVISOR_SUPPORTED ?= true
+CSR_STATUS_VIRTUAL_MEMORY_SUPPORTED ?= false
+CSR_STATUS_BIG_ENDIAN_SUPPORTED ?= false
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -36,6 +40,7 @@ VALIDATION_SUITE ?= all
 .PHONY: build-acceptance generate-acceptance test-acceptance generate-rtl-test
 .PHONY: generate-csr-access test-csr-access
 .PHONY: generate-priv-decode test-priv-decode
+.PHONY: generate-csr-status test-csr-status
 .PHONY: build-validation generate-validation test-validation test-arch test-coremark test-validation-builder
 
 test-validation-builder:
@@ -127,6 +132,12 @@ generate-priv-decode:
 
 test-priv-decode:
 	$(SBT) 'testOnly riscvpipeline.privileged.PrivDecodeSpec'
+
+generate-csr-status:
+	$(SBT) "runMain riscvpipeline.GenerateCSRStatus $(CSR_STATUS_TARGET_DIR) $(CSR_STATUS_SUPERVISOR_SUPPORTED) $(CSR_STATUS_VIRTUAL_MEMORY_SUPPORTED) $(CSR_STATUS_BIG_ENDIAN_SUPPORTED)"
+
+test-csr-status:
+	$(SBT) 'testOnly riscvpipeline.privileged.CSRStatusSpec'
 
 test:
 	$(SBT) test

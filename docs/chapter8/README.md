@@ -5,7 +5,8 @@
 测试和中文说明完成后停止，待用户检查并明确同意再继续。**
 用户在第二轮补充要求：每次继续前先完成上一轮 Git 提交；各轮验证通过后单独提交。
 
-当前已实现 [CSRAccess](01-csr-access.md) 和 [PrivDecode](02-priv-decode.md)，独立于 CPU。
+当前已实现 [CSRAccess](01-csr-access.md)、[PrivDecode](02-priv-decode.md) 和
+[CSRStatus](03-csr-status.md)，独立于 CPU。
 **独立模块已验证不等于 CPU 已支持 CSR**：现有 `RiscvPipeline` 仍为第七章 RV32I 核心，
 CSR 写回、陷阱、中断和特权转换尚未接入。
 
@@ -14,8 +15,8 @@ CSR 写回、陷阱、中断和特权转换尚未接入。
 | 轮次 | 模块/阶段 | 职责 | 状态 |
 | --- | --- | --- | --- |
 | 1 | `CSRAccess` | 六种 CSR 指令访问、读改写、基础权限判断 | 已认可并提交：`7f70103` |
-| 2 | `PrivDecode` | 特权指令译码及权限检查 | 第二轮交付，等待用户检查 |
-| 3 | `CSRStatus` | `mstatus/mstatush/sstatus` | 未开始 |
+| 2 | `PrivDecode` | 特权指令译码及权限检查 | 已认可并提交：`711afd1` |
+| 3 | `CSRStatus` | `mstatus/mstatush/sstatus` | 第三轮交付，等待用户检查 |
 | 4 | `CSRInterrupt` | `mie/mip/sie/sip` 和中断输入 | 未开始 |
 | 5 | `CSRMachine` | M 模式陷阱、委托、配置和标识寄存器 | 未开始 |
 | 6 | `CSRSupervisor` | S 模式陷阱及配置寄存器 | 未开始 |
@@ -42,7 +43,10 @@ verilator --lint-only --top-module CSRAccess generated/csr-access/CSRAccess.v
 make test-priv-decode SBT=./scripts/sbt-local.sh
 make generate-priv-decode SBT=./scripts/sbt-local.sh
 verilator --lint-only --top-module PrivDecode generated/priv-decode/PrivDecode.v
+make test-csr-status SBT=./scripts/sbt-local.sh
+make generate-csr-status SBT=./scripts/sbt-local.sh
+verilator --lint-only --top-module CSRStatus generated/csr-status/CSRStatus.v
 ```
 
-源码、接口语义、测试覆盖与实际结果见 [CSRAccess](01-csr-access.md) 和
-[PrivDecode](02-priv-decode.md)。
+源码、接口语义、测试覆盖与实际结果见 [CSRAccess](01-csr-access.md)、
+[PrivDecode](02-priv-decode.md)、[CSRStatus](03-csr-status.md)。
