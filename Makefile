@@ -30,6 +30,9 @@ CSR_STATUS_TARGET_DIR ?= generated/csr-status
 CSR_STATUS_SUPERVISOR_SUPPORTED ?= true
 CSR_STATUS_VIRTUAL_MEMORY_SUPPORTED ?= false
 CSR_STATUS_BIG_ENDIAN_SUPPORTED ?= false
+CSR_INTERRUPT_TARGET_DIR ?= generated/csr-interrupt
+CSR_INTERRUPT_SUPERVISOR_SUPPORTED ?= true
+CSR_INTERRUPT_SSTC_SUPPORTED ?= false
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -41,6 +44,7 @@ VALIDATION_SUITE ?= all
 .PHONY: generate-csr-access test-csr-access
 .PHONY: generate-priv-decode test-priv-decode
 .PHONY: generate-csr-status test-csr-status
+.PHONY: generate-csr-interrupt test-csr-interrupt
 .PHONY: build-validation generate-validation test-validation test-arch test-coremark test-validation-builder
 
 test-validation-builder:
@@ -138,6 +142,12 @@ generate-csr-status:
 
 test-csr-status:
 	$(SBT) 'testOnly riscvpipeline.privileged.CSRStatusSpec'
+
+generate-csr-interrupt:
+	$(SBT) "runMain riscvpipeline.GenerateCSRInterrupt $(CSR_INTERRUPT_TARGET_DIR) $(CSR_INTERRUPT_SUPERVISOR_SUPPORTED) $(CSR_INTERRUPT_SSTC_SUPPORTED)"
+
+test-csr-interrupt:
+	$(SBT) 'testOnly riscvpipeline.privileged.CSRInterruptSpec'
 
 test:
 	$(SBT) test
