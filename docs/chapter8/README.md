@@ -2,9 +2,10 @@
 
 参考《RISC-V System-on-Chip Design, Edition 1》第八章，书页 335–381
 （PDF 页 370–416），以及本地 CVW 源码。采用增量路线：**每轮只交付一个独立模块，
-测试和中文说明完成后停止，待用户检查并明确同意再继续。** 不自动提交代码。
+测试和中文说明完成后停止，待用户检查并明确同意再继续。**
+用户在第二轮补充要求：每次继续前先完成上一轮 Git 提交；各轮验证通过后单独提交。
 
-当前首轮仅实现 [CSRAccess](01-csr-access.md)，独立于 CPU。
+当前已实现 [CSRAccess](01-csr-access.md) 和 [PrivDecode](02-priv-decode.md)，独立于 CPU。
 **独立模块已验证不等于 CPU 已支持 CSR**：现有 `RiscvPipeline` 仍为第七章 RV32I 核心，
 CSR 写回、陷阱、中断和特权转换尚未接入。
 
@@ -12,8 +13,8 @@ CSR 写回、陷阱、中断和特权转换尚未接入。
 
 | 轮次 | 模块/阶段 | 职责 | 状态 |
 | --- | --- | --- | --- |
-| 1 | `CSRAccess` | 六种 CSR 指令访问、读改写、基础权限判断 | 本轮交付，等待用户检查 |
-| 2 | `PrivDecode` | 特权指令译码及权限检查 | 未开始 |
+| 1 | `CSRAccess` | 六种 CSR 指令访问、读改写、基础权限判断 | 已认可并提交：`7f70103` |
+| 2 | `PrivDecode` | 特权指令译码及权限检查 | 第二轮交付，等待用户检查 |
 | 3 | `CSRStatus` | `mstatus/mstatush/sstatus` | 未开始 |
 | 4 | `CSRInterrupt` | `mie/mip/sie/sip` 和中断输入 | 未开始 |
 | 5 | `CSRMachine` | M 模式陷阱、委托、配置和标识寄存器 | 未开始 |
@@ -32,12 +33,16 @@ CSR 写回、陷阱、中断和特权转换尚未接入。
 MMU、PMP、浮点单元、CLINT/PLIC 本体留给后续章节，相关接口和配置限制逐轮记录。
 首轮不重复大型 CoreMark 验收。
 
-## 首轮检查入口
+## 已交付模块检查入口
 
 ```bash
 make test-csr-access SBT=./scripts/sbt-local.sh
 make generate-csr-access SBT=./scripts/sbt-local.sh
 verilator --lint-only --top-module CSRAccess generated/csr-access/CSRAccess.v
+make test-priv-decode SBT=./scripts/sbt-local.sh
+make generate-priv-decode SBT=./scripts/sbt-local.sh
+verilator --lint-only --top-module PrivDecode generated/priv-decode/PrivDecode.v
 ```
 
-源码、接口语义、测试覆盖与实际结果见 [01-csr-access.md](01-csr-access.md)。
+源码、接口语义、测试覆盖与实际结果见 [CSRAccess](01-csr-access.md) 和
+[PrivDecode](02-priv-decode.md)。

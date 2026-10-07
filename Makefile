@@ -23,6 +23,9 @@ LSU_TARGET_DIR ?= generated/lsu
 DMEM_DEPTH ?= 64
 CPU_TARGET_DIR ?= generated/riscv-pipeline
 CSR_ACCESS_TARGET_DIR ?= generated/csr-access
+PRIV_DECODE_TARGET_DIR ?= generated/priv-decode
+PRIV_DECODE_SUPERVISOR_SUPPORTED ?= true
+PRIV_DECODE_VIRTUAL_MEMORY_SUPPORTED ?= false
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -32,6 +35,7 @@ VALIDATION_SUITE ?= all
 
 .PHONY: build-acceptance generate-acceptance test-acceptance generate-rtl-test
 .PHONY: generate-csr-access test-csr-access
+.PHONY: generate-priv-decode test-priv-decode
 .PHONY: build-validation generate-validation test-validation test-arch test-coremark test-validation-builder
 
 test-validation-builder:
@@ -117,6 +121,12 @@ generate-csr-access:
 
 test-csr-access:
 	$(SBT) 'testOnly riscvpipeline.privileged.CSRAccessSpec'
+
+generate-priv-decode:
+	$(SBT) "runMain riscvpipeline.GeneratePrivDecode $(PRIV_DECODE_TARGET_DIR) $(PRIV_DECODE_SUPERVISOR_SUPPORTED) $(PRIV_DECODE_VIRTUAL_MEMORY_SUPPORTED)"
+
+test-priv-decode:
+	$(SBT) 'testOnly riscvpipeline.privileged.PrivDecodeSpec'
 
 test:
 	$(SBT) test
