@@ -47,6 +47,9 @@ CSR_SUPERVISOR_SSTC_SUPPORTED ?= false
 CSR_SUPERVISOR_VECTORED_INTERRUPTS_SUPPORTED ?= true
 CSR_SUPERVISOR_HPM_COUNTERS ?= 0
 CSR_SUPERVISOR_ASID_BITS ?= 0
+CSR_COUNTERS_TARGET_DIR ?= generated/csr-counters
+CSR_COUNTERS_SUPERVISOR_SUPPORTED ?= true
+CSR_COUNTERS_HPM_COUNTERS ?= 0
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -61,6 +64,7 @@ VALIDATION_SUITE ?= all
 .PHONY: generate-csr-interrupt test-csr-interrupt
 .PHONY: generate-csr-machine test-csr-machine
 .PHONY: generate-csr-supervisor test-csr-supervisor
+.PHONY: generate-csr-counters test-csr-counters
 .PHONY: build-validation generate-validation test-validation test-arch test-coremark test-validation-builder
 
 test-validation-builder:
@@ -176,6 +180,12 @@ generate-csr-supervisor:
 
 test-csr-supervisor:
 	$(SBT) 'testOnly riscvpipeline.privileged.CSRSupervisorSpec'
+
+generate-csr-counters:
+	$(SBT) "runMain riscvpipeline.GenerateCSRCounters $(CSR_COUNTERS_TARGET_DIR) $(CSR_COUNTERS_SUPERVISOR_SUPPORTED) $(CSR_COUNTERS_HPM_COUNTERS)"
+
+test-csr-counters:
+	$(SBT) 'testOnly riscvpipeline.privileged.CSRCountersSpec'
 
 test:
 	$(SBT) test

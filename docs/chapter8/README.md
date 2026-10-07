@@ -7,7 +7,8 @@
 
 当前已实现 [CSRAccess](01-csr-access.md)、[PrivDecode](02-priv-decode.md)、
 [CSRStatus](03-csr-status.md)、[CSRInterrupt](04-csr-interrupt.md)、
-[CSRMachine](05-csr-machine.md) 和 [CSRSupervisor](06-csr-supervisor.md)，独立于 CPU。
+[CSRMachine](05-csr-machine.md)、[CSRSupervisor](06-csr-supervisor.md) 和
+[CSRCounters](07-csr-counters.md)，独立于 CPU。
 **独立模块已验证不等于 CPU 已支持 CSR**：现有 `RiscvPipeline` 仍为第七章 RV32I 核心，
 CSR 写回、陷阱、中断和特权转换尚未接入。
 
@@ -20,8 +21,8 @@ CSR 写回、陷阱、中断和特权转换尚未接入。
 | 3 | `CSRStatus` | `mstatus/mstatush/sstatus` | 已认可并提交：`ebd56b5` |
 | 4 | `CSRInterrupt` | `mie/mip/sie/sip` 和中断输入 | 已认可并提交：`1970fc7` |
 | 5 | `CSRMachine` | M 模式陷阱、委托、配置和标识寄存器 | 已认可并提交：`bcdc7d8` |
-| 6 | `CSRSupervisor` | S 模式陷阱及配置寄存器 | 第六轮交付，等待用户检查 |
-| 7 | `CSRCounters` | 周期、退休指令、时间及性能计数器 | 未开始 |
+| 6 | `CSRSupervisor` | S 模式陷阱及配置寄存器 | 已认可并提交：`26f8215` |
+| 7 | `CSRCounters` | 周期、退休指令、时间及性能计数器 | 第七轮交付，等待用户检查 |
 | 8 | `PrivMode` | 特权级状态及陷阱返回转换 | 未开始 |
 | 9 | `Trap` | 异常/中断仲裁、优先级及委托 | 未开始 |
 | 10 | `WFI` | 等待、唤醒和超时 | 未开始 |
@@ -56,9 +57,12 @@ verilator --lint-only --top-module CSRMachine generated/csr-machine/CSRMachine.v
 make test-csr-supervisor SBT=./scripts/sbt-local.sh
 make generate-csr-supervisor SBT=./scripts/sbt-local.sh
 verilator --lint-only --top-module CSRSupervisor generated/csr-supervisor/CSRSupervisor.v
+make test-csr-counters SBT=./scripts/sbt-local.sh
+make generate-csr-counters SBT=./scripts/sbt-local.sh
+verilator --lint-only --top-module CSRCounters generated/csr-counters/CSRCounters.v
 ```
 
 源码、接口语义、测试覆盖与实际结果见 [CSRAccess](01-csr-access.md)、
 [PrivDecode](02-priv-decode.md)、[CSRStatus](03-csr-status.md)、
 [CSRInterrupt](04-csr-interrupt.md)、[CSRMachine](05-csr-machine.md)、
-[CSRSupervisor](06-csr-supervisor.md)。
+[CSRSupervisor](06-csr-supervisor.md)、[CSRCounters](07-csr-counters.md)。
