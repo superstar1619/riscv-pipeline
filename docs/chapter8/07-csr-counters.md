@@ -121,8 +121,10 @@ TIME_REGW 的来源、频率、跨域桥接、一致性和单调性由调用方�
 
 ## 增长、软件写与事件选择
 
-软件提交条件：`ValidM && !StallW && !FlushM && !TrapM && !reset`，还需授权写意图、
-当前 M 模式和本组访问许可。复位优先于一切自有状态更新，且为同步上升沿清零。
+软件写使能条件：`ValidM && !StallW && !FlushM && !TrapM`，还需授权写意图、
+当前 M 模式和本组访问许可。所有自有状态使用同步复位的 RegInit，复位在上升沿优先于
+软件写和增长，因此使能无需再与 `!reset`。这个内部组合使能在 reset 高时可以为一，
+但不会提交写入；本模块没有向其他模块输出组合写请求。
 
 | 状态 | 增长条件 | 与流水线门控的关系 |
 | --- | --- | --- |
@@ -255,6 +257,10 @@ RTL 生成/lint 采用八组：S 关闭/开启各配 HPM0/1/3/29。接口测试�
 实现后全部通过。日志位于本地忽略目录 `target/chapter8/csr-counters/`，包含 baseline、
 red-missing、red-behavior、green、compile、module、generate、generate-configs、
 八份 lint 日志，以及 pipeline、suite 日志。沿用工程 ChiselStage 弃用提示，不升级工具链。
+
+2026-10-08 按检查意见移除内部软件写使能的 `!reset` 后，重新运行模块测试 20/20
+通过；八组 RTL 重新生成、Verilator lint 均通过，80 个端口保持稳定。生成逻辑确认
+所有计数器和事件选择器仍在上升沿优先复位，相关日志位于 `reset-gate/` 子目录。
 
 本轮单独 Git 提交并停止，等待检查后再继续 PrivMode。
 

@@ -81,7 +81,7 @@ final class CSRCounters(
   io.CSRCModifyValM := io.CSRCReadValM
 
   val SoftwareWriteM = io.ValidM && !io.StallW && !io.FlushM && !io.TrapM &&
-    !reset && io.CSRWriteM && MachineModeM && io.CSRCAccessAllowedM
+    io.CSRWriteM && MachineModeM && io.CSRCAccessAllowedM
   val RetireM = io.ValidM && io.InstrRetiredM && !io.StallW && !io.FlushM && !io.TrapM
   for ((n, counter) <- CounterStates.toSeq.sortBy(_._1)) {
     val EventM = if (n == 0) {
