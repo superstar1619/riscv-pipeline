@@ -40,6 +40,13 @@ CSR_MACHINE_SSTC_SUPPORTED ?= false
 CSR_MACHINE_VECTORED_INTERRUPTS_SUPPORTED ?= true
 CSR_MACHINE_HPM_COUNTERS ?= 0
 CSR_MACHINE_HART_ID ?= 0
+CSR_SUPERVISOR_TARGET_DIR ?= generated/csr-supervisor
+CSR_SUPERVISOR_SUPPORTED ?= true
+CSR_SUPERVISOR_VIRTUAL_MEMORY_SUPPORTED ?= false
+CSR_SUPERVISOR_SSTC_SUPPORTED ?= false
+CSR_SUPERVISOR_VECTORED_INTERRUPTS_SUPPORTED ?= true
+CSR_SUPERVISOR_HPM_COUNTERS ?= 0
+CSR_SUPERVISOR_ASID_BITS ?= 0
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -53,6 +60,7 @@ VALIDATION_SUITE ?= all
 .PHONY: generate-csr-status test-csr-status
 .PHONY: generate-csr-interrupt test-csr-interrupt
 .PHONY: generate-csr-machine test-csr-machine
+.PHONY: generate-csr-supervisor test-csr-supervisor
 .PHONY: build-validation generate-validation test-validation test-arch test-coremark test-validation-builder
 
 test-validation-builder:
@@ -162,6 +170,12 @@ generate-csr-machine:
 
 test-csr-machine:
 	$(SBT) 'testOnly riscvpipeline.privileged.CSRMachineSpec'
+
+generate-csr-supervisor:
+	$(SBT) "runMain riscvpipeline.GenerateCSRSupervisor $(CSR_SUPERVISOR_TARGET_DIR) $(CSR_SUPERVISOR_SUPPORTED) $(CSR_SUPERVISOR_VIRTUAL_MEMORY_SUPPORTED) $(CSR_SUPERVISOR_SSTC_SUPPORTED) $(CSR_SUPERVISOR_VECTORED_INTERRUPTS_SUPPORTED) $(CSR_SUPERVISOR_HPM_COUNTERS) $(CSR_SUPERVISOR_ASID_BITS)"
+
+test-csr-supervisor:
+	$(SBT) 'testOnly riscvpipeline.privileged.CSRSupervisorSpec'
 
 test:
 	$(SBT) test
