@@ -33,6 +33,13 @@ CSR_STATUS_BIG_ENDIAN_SUPPORTED ?= false
 CSR_INTERRUPT_TARGET_DIR ?= generated/csr-interrupt
 CSR_INTERRUPT_SUPERVISOR_SUPPORTED ?= true
 CSR_INTERRUPT_SSTC_SUPPORTED ?= false
+CSR_MACHINE_TARGET_DIR ?= generated/csr-machine
+CSR_MACHINE_SUPERVISOR_SUPPORTED ?= true
+CSR_MACHINE_VIRTUAL_MEMORY_SUPPORTED ?= false
+CSR_MACHINE_SSTC_SUPPORTED ?= false
+CSR_MACHINE_VECTORED_INTERRUPTS_SUPPORTED ?= true
+CSR_MACHINE_HPM_COUNTERS ?= 0
+CSR_MACHINE_HART_ID ?= 0
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -45,6 +52,7 @@ VALIDATION_SUITE ?= all
 .PHONY: generate-priv-decode test-priv-decode
 .PHONY: generate-csr-status test-csr-status
 .PHONY: generate-csr-interrupt test-csr-interrupt
+.PHONY: generate-csr-machine test-csr-machine
 .PHONY: build-validation generate-validation test-validation test-arch test-coremark test-validation-builder
 
 test-validation-builder:
@@ -148,6 +156,12 @@ generate-csr-interrupt:
 
 test-csr-interrupt:
 	$(SBT) 'testOnly riscvpipeline.privileged.CSRInterruptSpec'
+
+generate-csr-machine:
+	$(SBT) "runMain riscvpipeline.GenerateCSRMachine $(CSR_MACHINE_TARGET_DIR) $(CSR_MACHINE_SUPERVISOR_SUPPORTED) $(CSR_MACHINE_VIRTUAL_MEMORY_SUPPORTED) $(CSR_MACHINE_SSTC_SUPPORTED) $(CSR_MACHINE_VECTORED_INTERRUPTS_SUPPORTED) $(CSR_MACHINE_HPM_COUNTERS) $(CSR_MACHINE_HART_ID)"
+
+test-csr-machine:
+	$(SBT) 'testOnly riscvpipeline.privileged.CSRMachineSpec'
 
 test:
 	$(SBT) test
