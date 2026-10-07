@@ -6,6 +6,9 @@ Scala 包名为 `riscvpipeline`，顶层为 `RiscvPipeline`，接口为 `RiscvPi
 当前完整实现及验证报告位于 `main`。
 
 支持范围保持现有 RV32I；不包含乘除法、CSR、异常、中断、缓存或分支预测。
+第八章开始按独立模块逐轮交付：首轮 `CSRAccess` 尚未接入 CPU，
+模块路线见 [第八章实施记录](docs/chapter8/README.md)，
+接口、算例和验证见 [CSRAccess 中文说明](docs/chapter8/01-csr-access.md)。
 工具链保持 JDK 17、sbt 1.10.7、Scala 2.13.14、Chisel 3.6.1、chiseltest 0.6.2。
 遵循 [Chisel 编码规范](docs/chisel-coding-standard.md)和
 [本地 skill](.agents/skills/chisel-coding-standard/SKILL.md)。
@@ -44,6 +47,8 @@ Funct3 对齐，再进入 W。RAM 无初始化或复位，未写位置未指定�
 ```bash
 ./scripts/sbt-local.sh compile 'Test / compile'
 make test-pipeline SBT=./scripts/sbt-local.sh
+make test-csr-access SBT=./scripts/sbt-local.sh
+make generate-csr-access SBT=./scripts/sbt-local.sh
 make test SBT=./scripts/sbt-local.sh
 make test-acceptance SBT=./scripts/sbt-local.sh
 make test-rtl SBT=./scripts/sbt-local.sh

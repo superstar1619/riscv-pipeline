@@ -22,6 +22,7 @@ RESET_VECTOR ?= 0
 LSU_TARGET_DIR ?= generated/lsu
 DMEM_DEPTH ?= 64
 CPU_TARGET_DIR ?= generated/riscv-pipeline
+CSR_ACCESS_TARGET_DIR ?= generated/csr-access
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -30,6 +31,7 @@ VALIDATION_SUITE ?= all
   generate-irom generate-ifu generate-lsu generate-cpu test test-pipeline test-rtl clean
 
 .PHONY: build-acceptance generate-acceptance test-acceptance generate-rtl-test
+.PHONY: generate-csr-access test-csr-access
 .PHONY: build-validation generate-validation test-validation test-arch test-coremark test-validation-builder
 
 test-validation-builder:
@@ -109,6 +111,12 @@ generate-cpu:
 
 test-pipeline:
 	$(SBT) 'testOnly riscvpipeline.PipelineHazardSpec riscvpipeline.PipelineMemorySpec riscvpipeline.PipelineSmokeSpec'
+
+generate-csr-access:
+	$(SBT) "runMain riscvpipeline.GenerateCSRAccess $(CSR_ACCESS_TARGET_DIR)"
+
+test-csr-access:
+	$(SBT) 'testOnly riscvpipeline.privileged.CSRAccessSpec'
 
 test:
 	$(SBT) test
