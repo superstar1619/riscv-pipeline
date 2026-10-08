@@ -54,6 +54,8 @@ PRIV_MODE_TARGET_DIR ?= generated/priv-mode
 PRIV_MODE_SUPERVISOR_SUPPORTED ?= true
 TRAP_TARGET_DIR ?= generated/trap
 TRAP_SUPERVISOR_SUPPORTED ?= true
+WFI_TARGET_DIR ?= generated/wfi
+WFI_TIMEOUT_CYCLES ?= 65536
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -220,3 +222,10 @@ generate-trap:
 
 test-trap:
 	$(SBT) 'testOnly riscvpipeline.privileged.TrapSpec'
+
+.PHONY: generate-wfi test-wfi
+generate-wfi:
+	$(SBT) "runMain riscvpipeline.GenerateWFI $(WFI_TARGET_DIR) $(WFI_TIMEOUT_CYCLES)"
+
+test-wfi:
+	$(SBT) 'testOnly riscvpipeline.privileged.WFISpec'
