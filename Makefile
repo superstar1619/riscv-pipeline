@@ -52,6 +52,8 @@ CSR_COUNTERS_SUPERVISOR_SUPPORTED ?= true
 CSR_COUNTERS_HPM_COUNTERS ?= 0
 PRIV_MODE_TARGET_DIR ?= generated/priv-mode
 PRIV_MODE_SUPERVISOR_SUPPORTED ?= true
+TRAP_TARGET_DIR ?= generated/trap
+TRAP_SUPERVISOR_SUPPORTED ?= true
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -211,3 +213,10 @@ test-rtl: generate-rtl-test
 
 clean:
 	$(SBT) clean
+
+.PHONY: generate-trap test-trap
+generate-trap:
+	$(SBT) "runMain riscvpipeline.GenerateTrap $(TRAP_TARGET_DIR) $(TRAP_SUPERVISOR_SUPPORTED)"
+
+test-trap:
+	$(SBT) 'testOnly riscvpipeline.privileged.TrapSpec'

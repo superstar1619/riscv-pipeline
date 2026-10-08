@@ -52,7 +52,7 @@ Delegate仅实际陷阱且当前U/S且对应DELEG位。没有事件输出cause0/
 
 文件各模块、Generate入口、Spec及10/11文档。
 `WFI(timeoutCycles:Int=65536)`显式时钟、同步reset。输入Bool ValidM/wfiM/FlushM/TrapM/IntPendingM；输出Bool WFIStallM/WFITimeoutM，WaitCycles UInt(log2Ceil(timeoutCycles+1).W)。
-活跃Valid&&wfi&&!Flush&&!Trap期间无pending时每沿递增并饱和，达到阈值后Timeout；reset/取消/无WFI/pending清零。Stall为活跃&&!pending&&!timeout；未活跃输出Timeout0。计数不受自身stall阻止。
+活跃Valid&&wfi&&!Flush&&!Trap期间无pending时每沿递增并饱和，达到阈值后Timeout；reset/取消/无WFI/pending清零。Stall为活跃&&!pending&&!timeout。Timeout仅受Valid/wfi/Flush资格化，不与Trap组合门控，Trap在沿清计数；避免Timeout→Decode→Trap反馈环。计数不受自身stall阻止。
 Timeout不判断TW/模式，由PrivDecode转换为非法异常；M和未限制S可有界正常恢复。
 `EndianSwap`固定RV32组合RawModule，a/y UInt32、BigEndianM Bool，开启时颠倒4个字节，否则原值。
 - [ ] 手工/随机/复位/阈值最小与非二次幂/取消/唤醒测试先失败后通过。
