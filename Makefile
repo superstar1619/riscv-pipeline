@@ -56,6 +56,7 @@ TRAP_TARGET_DIR ?= generated/trap
 TRAP_SUPERVISOR_SUPPORTED ?= true
 WFI_TARGET_DIR ?= generated/wfi
 WFI_TIMEOUT_CYCLES ?= 65536
+ENDIAN_SWAP_TARGET_DIR ?= generated/endian-swap
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -229,3 +230,10 @@ generate-wfi:
 
 test-wfi:
 	$(SBT) 'testOnly riscvpipeline.privileged.WFISpec'
+
+.PHONY: generate-endian-swap test-endian-swap
+generate-endian-swap:
+	$(SBT) "runMain riscvpipeline.GenerateEndianSwap $(ENDIAN_SWAP_TARGET_DIR)"
+
+test-endian-swap:
+	$(SBT) 'testOnly riscvpipeline.privileged.EndianSwapSpec'
