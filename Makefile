@@ -57,6 +57,11 @@ TRAP_SUPERVISOR_SUPPORTED ?= true
 WFI_TARGET_DIR ?= generated/wfi
 WFI_TIMEOUT_CYCLES ?= 65536
 ENDIAN_SWAP_TARGET_DIR ?= generated/endian-swap
+CSR_TARGET_DIR ?= generated/csr
+CSR_SUPERVISOR_SUPPORTED ?= true
+CSR_BIG_ENDIAN_SUPPORTED ?= true
+CSR_SSTC_SUPPORTED ?= false
+CSR_HPM_COUNTERS ?= 0
 VALIDATION_SUITE ?= all
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
@@ -237,3 +242,10 @@ generate-endian-swap:
 
 test-endian-swap:
 	$(SBT) 'testOnly riscvpipeline.privileged.EndianSwapSpec'
+
+.PHONY: generate-csr test-csr
+generate-csr:
+	$(SBT) "runMain riscvpipeline.GenerateCSR $(CSR_TARGET_DIR) $(CSR_SUPERVISOR_SUPPORTED) $(CSR_BIG_ENDIAN_SUPPORTED) $(CSR_SSTC_SUPPORTED) $(CSR_HPM_COUNTERS)"
+
+test-csr:
+	$(SBT) 'testOnly riscvpipeline.privileged.CSRSpec'
