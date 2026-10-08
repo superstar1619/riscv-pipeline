@@ -1,5 +1,7 @@
 package riscvpipeline.config
 
+import riscvpipeline.privileged.PrivilegedConfig
+
 /** 教材 RV32 五级流水线 CPU 的不可变生成阶段配置，由顶层传递给各单元。
   * imemDepth/dmemDepth 以 32 位字计，resetVector 是字节地址；仅支持 XLEN=32。
   * 配置只决定生成结构、初始镜像与复位值，不是硬件运行时信号。
@@ -9,7 +11,9 @@ final case class CpuConfig(
   imemDepth: Int = 64,
   dmemDepth: Int = 64,
   resetVector: BigInt = 0,
-  instructionInitFile: Option[String] = None
+  instructionInitFile: Option[String] = None,
+  privilegedSupported: Boolean = false,
+  privileged: PrivilegedConfig = PrivilegedConfig()
 ) {
   require(xlen == 32, "The first CPU implementation supports only XLEN=32")
 

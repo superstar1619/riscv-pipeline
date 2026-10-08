@@ -262,3 +262,11 @@ generate-privileged:
 
 test-privileged:
 	$(SBT) 'testOnly riscvpipeline.privileged.PrivilegedSpec'
+
+PRIVILEGED_CPU_TARGET_DIR ?= generated/privileged-pipeline
+.PHONY: generate-privileged-cpu test-chapter8
+generate-privileged-cpu:
+	$(SBT) "runMain riscvpipeline.GeneratePrivilegedPipeline $(IMEM_DEPTH) $(DMEM_DEPTH) $(PRIVILEGED_CPU_TARGET_DIR) $(INSTRUCTION_INIT_FILE) $(RESET_VECTOR) $(PRIVILEGED_SUPERVISOR_SUPPORTED) $(PRIVILEGED_BIG_ENDIAN_SUPPORTED) $(PRIVILEGED_SSTC_SUPPORTED) $(PRIVILEGED_HPM_COUNTERS) $(PRIVILEGED_WFI_TIMEOUT_CYCLES)"
+
+test-chapter8:
+	$(SBT) 'testOnly riscvpipeline.Chapter8AcceptanceSpec'

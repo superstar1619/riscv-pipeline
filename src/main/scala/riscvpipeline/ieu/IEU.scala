@@ -7,10 +7,23 @@ import riscvpipeline.hazard.Hazard
 /** D 级指令/PC 与 M 级存储结果输入；E 级重定向和 M 级访存输出。 */
 final class IEUIO(config: CpuConfig) extends Bundle {
   val InstrD = Input(UInt(32.W))
+  val InstrAccessFaultD = Input(Bool())
+  val StallM = Input(Bool())
+  val FlushM = Input(Bool())
+  val TrapM = Input(Bool())
+  val CSRResultM = Input(UInt(32.W))
   val PCD = Input(UInt(config.xlen.W))
   val PCPlus4D = Input(UInt(config.xlen.W))
   val ValidD = Input(Bool())
   val ReadDataM = Input(UInt(config.xlen.W))
+  val InstrM = Output(UInt(32.W))
+  val PCM = Output(UInt(32.W))
+  val SrcAM = Output(UInt(32.W))
+  val InstrAccessFaultM = Output(Bool())
+  val InstrMisalignedFaultM = Output(Bool())
+  val IllegalIEUInstrM = Output(Bool())
+  val ValidM = Output(Bool())
+  val wfiW = Output(Bool())
   val PCSrcE = Output(Bool())
   val IEUAdrE = Output(UInt(config.xlen.W))
   val MemRWE = Output(UInt(2.W))
@@ -19,6 +32,8 @@ final class IEUIO(config: CpuConfig) extends Bundle {
   val WriteDataM = Output(UInt(config.xlen.W))
   val MemRWM = Output(UInt(2.W))
   val Funct3M = Output(UInt(3.W))
+  val LoadStallD = Output(Bool())
+  val StoreStallD = Output(Bool())
   val StallF = Output(Bool())
   val StallD = Output(Bool())
   val FlushD = Output(Bool())
@@ -47,7 +62,19 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
 
   dp.clk := clk
   dp.reset := reset
+  val SystemD = OpD === "h73".U(7.W)
+  val CSRInstrD = SystemD && Seq(1, 2, 3, 5, 6, 7)
+    .map(n => io.InstrD(14, 12) === n.U(3.W)).reduce(_ || _)
+  val FenceD = OpD === "h0f".U(7.W) &&
+    (io.InstrD(14, 12) === 0.U(3.W) || io.InstrD(14, 12) === 1.U(3.W))
+  val IntegerLegalD = c.io.RegWrite || c.io.Branch || c.io.Jump || c.io.MemRW.orR
   dp.io.InstrD := io.InstrD
+  dp.io.InstrAccessFaultD := io.InstrAccessFaultD
+  dp.io.IllegalIEUInstrD := !IntegerLegalD && !SystemD && !FenceD
+  dp.io.StallM := io.StallM
+  dp.io.FlushM := io.FlushM
+  dp.io.TrapM := io.TrapM
+  dp.io.CSRResultM := io.CSRResultM
   dp.io.PCD := io.PCD
   dp.io.PCPlus4D := io.PCPlus4D
   dp.io.ValidD := io.ValidD
@@ -56,7 +83,7 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
   dp.io.BranchD := c.io.Branch
   dp.io.ResultSrcD := c.io.ResultSrc
   dp.io.ALUSrcD := c.io.ALUSrc
-  dp.io.RegWriteD := c.io.RegWrite
+  dp.io.RegWriteD := c.io.RegWrite || (config.privilegedSupported.B && CSRInstrD)
   dp.io.ImmSrcD := c.io.ImmSrc
   dp.io.ALUControlD := c.io.ALUControl
   dp.io.MemRWD := c.io.MemRW
@@ -67,7 +94,8 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
 
   val UsesRs1D = (c.io.RegWrite &&
     (OpD === 0x33.U || OpD === 0x13.U || OpD === 0x03.U || OpD === 0x67.U)) ||
-    c.io.MemRW(0) || c.io.Branch
+    c.io.MemRW(0) || c.io.Branch ||
+    (config.privilegedSupported.B && CSRInstrD && !io.InstrD(14))
   val UsesRs2D = (c.io.RegWrite && OpD === 0x33.U) || c.io.MemRW(0) || c.io.Branch
   hazard.io.Rs1D := io.InstrD(19, 15)
   hazard.io.Rs2D := io.InstrD(24, 20)
@@ -80,6 +108,7 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
   hazard.io.RdE := dp.io.RdE
   hazard.io.ValidE := dp.io.ValidE
   hazard.io.MemRWE := dp.io.MemRWE
+  hazard.io.LateResultE := dp.io.CSRInstrE
   hazard.io.RdM := dp.io.RdM
   hazard.io.RegWriteM := dp.io.RegWriteM
   hazard.io.ValidM := dp.io.ValidM
@@ -89,6 +118,14 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
   hazard.io.ValidW := dp.io.ValidW
   hazard.io.PCSrcE := dp.io.PCSrcE
 
+  io.InstrM := dp.io.InstrM
+  io.PCM := dp.io.PCM
+  io.SrcAM := dp.io.SrcAM
+  io.InstrAccessFaultM := dp.io.InstrAccessFaultM
+  io.InstrMisalignedFaultM := dp.io.InstrMisalignedFaultM
+  io.IllegalIEUInstrM := dp.io.IllegalIEUInstrM
+  io.ValidM := dp.io.ValidM
+  io.wfiW := dp.io.wfiW
   io.PCSrcE := dp.io.PCSrcE
   io.IEUAdrE := dp.io.IEUAdrE
   io.MemRWE := dp.io.MemRWE
@@ -97,7 +134,9 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
   io.WriteDataM := dp.io.WriteDataM
   io.MemRWM := dp.io.MemRWM
   io.Funct3M := dp.io.Funct3M
-  io.StallF := hazard.io.StallF
-  io.StallD := hazard.io.StallD
-  io.FlushD := hazard.io.FlushD
+  io.LoadStallD := hazard.io.LoadStallD
+  io.StoreStallD := hazard.io.StoreStallD
+  io.StallF := hazard.io.StallF || io.StallM
+  io.StallD := hazard.io.StallD || io.StallM
+  io.FlushD := hazard.io.FlushD || io.FlushM
 }

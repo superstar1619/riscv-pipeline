@@ -7,6 +7,12 @@ import riscvpipeline.config.CpuConfig
 /** D 级译码、E 级前递/冲刷及 M 级读取结果；所有地址均为字节地址。 */
 final class DatapathIO(config: CpuConfig) extends Bundle {
   val InstrD = Input(UInt(32.W))
+  val InstrAccessFaultD = Input(Bool())
+  val IllegalIEUInstrD = Input(Bool())
+  val StallM = Input(Bool())
+  val FlushM = Input(Bool())
+  val TrapM = Input(Bool())
+  val CSRResultM = Input(UInt(32.W))
   val PCD = Input(UInt(config.xlen.W))
   val PCPlus4D = Input(UInt(config.xlen.W))
   val ValidD = Input(Bool())
@@ -23,6 +29,14 @@ final class DatapathIO(config: CpuConfig) extends Bundle {
   val ForwardAE = Input(UInt(2.W))
   val ForwardBE = Input(UInt(2.W))
   val ReadDataM = Input(UInt(config.xlen.W))
+  val InstrM = Output(UInt(32.W))
+  val PCM = Output(UInt(32.W))
+  val SrcAM = Output(UInt(32.W))
+  val InstrAccessFaultM = Output(Bool())
+  val InstrMisalignedFaultM = Output(Bool())
+  val IllegalIEUInstrM = Output(Bool())
+  val CSRInstrE = Output(Bool())
+  val wfiW = Output(Bool())
   val PCSrcE = Output(Bool())
   val IEUAdrE = Output(UInt(config.xlen.W))
   val MemRWE = Output(UInt(2.W))
@@ -45,6 +59,9 @@ final class DatapathIO(config: CpuConfig) extends Bundle {
 }
 
 private class ExecuteState(config: CpuConfig) extends Bundle {
+  val Instr = UInt(32.W)
+  val InstrAccessFault = Bool()
+  val IllegalIEUInstr = Bool()
   val Valid = Bool()
   val R1 = UInt(config.xlen.W)
   val R2 = UInt(config.xlen.W)
@@ -67,6 +84,12 @@ private class ExecuteState(config: CpuConfig) extends Bundle {
 }
 
 private class MemoryState(config: CpuConfig) extends Bundle {
+  val Instr = UInt(32.W)
+  val PC = UInt(32.W)
+  val SrcA = UInt(32.W)
+  val InstrAccessFault = Bool()
+  val InstrMisalignedFault = Bool()
+  val IllegalIEUInstr = Bool()
   val Valid = Bool()
   val IEUAdr = UInt(config.xlen.W)
   val IEUResult = UInt(config.xlen.W)
@@ -79,6 +102,7 @@ private class MemoryState(config: CpuConfig) extends Bundle {
 }
 
 private class WritebackState(config: CpuConfig) extends Bundle {
+  val Instr = UInt(32.W)
   val Valid = Bool()
   val Result = UInt(config.xlen.W)
   val Rd = UInt(5.W)
@@ -128,9 +152,12 @@ final class Datapath(val config: CpuConfig = CpuConfig()) extends RawModule {
   ext.io.Instr := io.InstrD(31, 7)
   ext.io.ImmSrc := io.ImmSrcD
 
-  when(io.FlushE) {
+  when(io.FlushM || (io.FlushE && !io.StallM)) {
     StateE := 0.U.asTypeOf(StateE)
-  }.otherwise {
+  }.elsewhen(!io.StallM) {
+    StateE.Instr := io.InstrD
+    StateE.InstrAccessFault := io.InstrAccessFaultD
+    StateE.IllegalIEUInstr := io.IllegalIEUInstrD
     StateE.Valid := io.ValidD
     StateE.R1 := R1D
     StateE.R2 := R2D
@@ -156,14 +183,18 @@ final class Datapath(val config: CpuConfig = CpuConfig()) extends RawModule {
     MuxLookup(select, original)(Seq(1.U -> ResultW, 2.U -> StateM.IEUResult))
   val ForwardedSrcAE = forwarded(io.ForwardAE, StateE.R1)
   val ForwardedSrcBE = forwarded(io.ForwardBE, StateE.R2)
+  // 停顿期间保存前递值，避免较老W离开后丢失其结果。
+  when(io.StallM && !io.FlushM) {
+    StateE.R1 := ForwardedSrcAE
+    StateE.R2 := ForwardedSrcBE
+  }
   cmp.io.R1 := ForwardedSrcAE
   cmp.io.R2 := ForwardedSrcBE
   val BranchFlagE = MuxLookup(StateE.Funct3(2, 1), false.B)(Seq(
     0.U -> cmp.io.Eq, 2.U -> cmp.io.LT, 3.U -> cmp.io.LTU
   ))
   val BranchTakenE = BranchFlagE ^ StateE.Funct3(0)
-  io.PCSrcE := StateE.Valid && !reset &&
-    (StateE.Jump || (StateE.Branch && BranchTakenE))
+  val TakenE = StateE.Jump || (StateE.Branch && BranchTakenE)
 
   alu.io.SrcA := Mux(StateE.ALUSrc(1), StateE.PC, ForwardedSrcAE)
   alu.io.SrcB := Mux(StateE.ALUSrc(0), StateE.ImmExt, ForwardedSrcBE)
@@ -171,26 +202,54 @@ final class Datapath(val config: CpuConfig = CpuConfig()) extends RawModule {
   alu.io.Funct3 := StateE.Funct3
   val IEUAdrE = Mux(StateE.IsJalr,
     alu.io.IEUAdr & "hfffffffe".U(config.xlen.W), alu.io.IEUAdr)
+  val InstrMisalignedE = config.privilegedSupported.B && TakenE && IEUAdrE(1, 0).orR
+  io.PCSrcE := StateE.Valid && !reset && !io.StallM && !io.FlushM &&
+    TakenE && !InstrMisalignedE
+  private def csrInstruction(instr: UInt): Bool =
+    instr(6, 0) === "h73".U(7.W) && Seq(1, 2, 3, 5, 6, 7)
+      .map(n => instr(14, 12) === n.U(3.W)).reduce(_ || _)
+  val IsCSRM = config.privilegedSupported.B && csrInstruction(StateM.Instr)
   val AltResultE = Mux(StateE.Jump, StateE.PCPlus4, StateE.ImmExt)
   val IEUResultE = Mux(StateE.ALUResultSrc, AltResultE, alu.io.ALUResult)
 
-  StateM.Valid := StateE.Valid
-  StateM.IEUAdr := IEUAdrE
-  StateM.IEUResult := IEUResultE
-  StateM.WriteData := ForwardedSrcBE
-  StateM.Rd := StateE.Rd
-  StateM.Funct3 := StateE.Funct3
-  StateM.ResultSrc := StateE.ResultSrc
-  StateM.RegWrite := StateE.RegWrite
-  StateM.MemRW := StateE.MemRW
+  when(io.FlushM) {
+    StateM := 0.U.asTypeOf(StateM)
+  }.elsewhen(!io.StallM) {
+    StateM.Instr := StateE.Instr
+    StateM.PC := StateE.PC
+    StateM.SrcA := ForwardedSrcAE
+    StateM.InstrAccessFault := StateE.InstrAccessFault
+    StateM.InstrMisalignedFault := InstrMisalignedE
+    StateM.IllegalIEUInstr := StateE.IllegalIEUInstr
+    StateM.Valid := StateE.Valid
+    StateM.IEUAdr := IEUAdrE
+    StateM.IEUResult := IEUResultE
+    StateM.WriteData := ForwardedSrcBE
+    StateM.Rd := StateE.Rd
+    StateM.Funct3 := StateE.Funct3
+    StateM.ResultSrc := StateE.ResultSrc
+    StateM.RegWrite := StateE.RegWrite
+    StateM.MemRW := StateE.MemRW
+  }
 
-  StateW.Valid := StateM.Valid
-  StateW.Result := Mux(StateM.ResultSrc, io.ReadDataM, StateM.IEUResult)
+  StateW.Instr := StateM.Instr
+  StateW.Valid := StateM.Valid && !io.StallM && !io.TrapM
+  StateW.Result := Mux(IsCSRM, io.CSRResultM,
+    Mux(StateM.ResultSrc, io.ReadDataM, StateM.IEUResult))
   StateW.Rd := StateM.Rd
   StateW.RegWrite := StateM.RegWrite
 
+  io.InstrM := StateM.Instr
+  io.PCM := StateM.PC
+  io.SrcAM := StateM.SrcA
+  io.InstrAccessFaultM := StateM.InstrAccessFault
+  io.InstrMisalignedFaultM := StateM.InstrMisalignedFault
+  io.IllegalIEUInstrM := StateM.IllegalIEUInstr
+  io.CSRInstrE := config.privilegedSupported.B && csrInstruction(StateE.Instr)
+  io.wfiW := StateW.Valid && StateW.Instr === "h10500073".U(32.W)
   io.IEUAdrE := IEUAdrE
-  io.MemRWE := Mux(StateE.Valid && !reset, StateE.MemRW, 0.U(2.W))
+  io.MemRWE := Mux(StateE.Valid && !reset && !io.StallM && !io.FlushM,
+    StateE.MemRW, 0.U(2.W))
   io.Funct3E := StateE.Funct3
   io.Rs1E := StateE.Rs1
   io.Rs2E := StateE.Rs2
@@ -202,7 +261,7 @@ final class Datapath(val config: CpuConfig = CpuConfig()) extends RawModule {
   io.Funct3M := StateM.Funct3
   io.RdM := StateM.Rd
   io.RegWriteM := StateM.RegWrite
-  io.ResultSrcM := StateM.ResultSrc
+  io.ResultSrcM := StateM.ResultSrc || IsCSRM
   io.ValidM := StateM.Valid
   io.RdW := StateW.Rd
   io.RegWriteW := RegWriteW

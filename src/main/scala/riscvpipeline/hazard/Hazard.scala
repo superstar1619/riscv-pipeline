@@ -15,6 +15,7 @@ final class HazardIO extends Bundle {
   val RdE = Input(UInt(5.W))
   val ValidE = Input(Bool())
   val MemRWE = Input(UInt(2.W))
+  val LateResultE = Input(Bool())
   val RdM = Input(UInt(5.W))
   val RegWriteM = Input(Bool())
   val ValidM = Input(Bool())
@@ -53,7 +54,7 @@ final class Hazard extends RawModule {
   val MatchDE = io.RdE =/= 0.U &&
     ((io.UsesRs1D && io.Rs1D === io.RdE) ||
       (io.UsesRs2D && io.Rs2D === io.RdE))
-  io.LoadStallD := io.ValidD && io.ValidE && io.MemRWE(1) && MatchDE
+  io.LoadStallD := io.ValidD && io.ValidE && (io.MemRWE(1) || io.LateResultE) && MatchDE
   io.StoreStallD := io.ValidD && io.ValidE && io.MemRWE(0) && io.MemRWD(1)
   val StructuralStallD = io.LoadStallD || io.StoreStallD
   io.StallD := StructuralStallD && !io.PCSrcE
