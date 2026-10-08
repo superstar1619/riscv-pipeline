@@ -249,3 +249,16 @@ generate-csr:
 
 test-csr:
 	$(SBT) 'testOnly riscvpipeline.privileged.CSRSpec'
+
+PRIVILEGED_TARGET_DIR ?= generated/privileged
+PRIVILEGED_SUPERVISOR_SUPPORTED ?= true
+PRIVILEGED_BIG_ENDIAN_SUPPORTED ?= true
+PRIVILEGED_SSTC_SUPPORTED ?= false
+PRIVILEGED_HPM_COUNTERS ?= 0
+PRIVILEGED_WFI_TIMEOUT_CYCLES ?= 65536
+.PHONY: generate-privileged test-privileged
+generate-privileged:
+	$(SBT) "runMain riscvpipeline.GeneratePrivileged $(PRIVILEGED_TARGET_DIR) $(PRIVILEGED_SUPERVISOR_SUPPORTED) $(PRIVILEGED_BIG_ENDIAN_SUPPORTED) $(PRIVILEGED_SSTC_SUPPORTED) $(PRIVILEGED_HPM_COUNTERS) $(PRIVILEGED_WFI_TIMEOUT_CYCLES)"
+
+test-privileged:
+	$(SBT) 'testOnly riscvpipeline.privileged.PrivilegedSpec'
