@@ -5,12 +5,9 @@
 2026-10-08 用户明确授权连续推进剩余阶段，取消中间等待检查；全部完成后统一检查。
 用户在第二轮补充要求：每次继续前先完成上一轮 Git 提交；各轮验证通过后单独提交。
 
-当前已实现 [CSRAccess](01-csr-access.md)、[PrivDecode](02-priv-decode.md)、
-[CSRStatus](03-csr-status.md)、[CSRInterrupt](04-csr-interrupt.md)、
-[CSRMachine](05-csr-machine.md)、[CSRSupervisor](06-csr-supervisor.md)、
-[CSRCounters](07-csr-counters.md) 和 [PrivMode](08-priv-mode.md)，独立于 CPU。
-**独立模块已验证不等于 CPU 已支持 CSR**：现有 `RiscvPipeline` 仍为第七章 RV32I 核心，
-CSR 写回、陷阱、中断和特权转换尚未接入。
+第八章全部 15 阶段已实现。`PrivilegedPipeline` 支持 CSR、精确异常、中断、
+U/S/M 模式转换、WFI 和数据端序；原 `RiscvPipeline` 默认保持第七章行为。
+使用入口见 [流水线集成](14-pipeline.md)，实际测试结果见 [整机验收](15-acceptance.md)。
 
 ## 路线与状态
 
@@ -24,17 +21,17 @@ CSR 写回、陷阱、中断和特权转换尚未接入。
 | 6 | `CSRSupervisor` | S 模式陷阱及配置寄存器 | 已认可并提交：`26f8215` |
 | 7 | `CSRCounters` | 周期、退休指令、时间及性能计数器 | 已认可并提交：`e11b2f7`；复位门控修改：`6fbb536` |
 | 8 | `PrivMode` | 特权级状态及陷阱返回转换 | 已认可并提交：`3fdb5f8` |
-| 9 | `Trap` | 异常/中断仲裁、优先级及委托 | 已实现并验证，连续推进中 |
-| 10 | `WFI` | 等待、唤醒和超时 | 已实现并验证，连续推进中 |
-| 11 | `EndianSwap` | RV32 数据大小端转换 | 已实现并验证，连续推进中 |
-| 12 | `CSR` | CSR 子模块汇总、陷阱记录和向量计算 | 已实现并验证，连续推进中 |
-| 13 | `Privileged` | 特权单元连接 | 未开始 |
-| 14 | 流水线集成 | 检查并修改 IFU、IEU、LSU、Hazard 的必要接口 | 未开始 |
-| 15 | 整机验收 | 陷阱程序、模式转换、中断及第七章回归 | 未开始 |
+| 9 | `Trap` | 异常/中断仲裁、优先级及委托 | 已实现、验证并提交：`c47ad49` |
+| 10 | `WFI` | 等待、唤醒和超时 | 已实现、验证并提交：`1aa0765` |
+| 11 | `EndianSwap` | RV32 数据大小端转换 | 已实现、验证并提交：`2d94a4b` |
+| 12 | `CSR` | CSR 子模块汇总、陷阱记录和向量计算 | 已实现、验证并提交：`c9d3dfd` |
+| 13 | `Privileged` | 特权单元连接 | 已实现、验证并提交：`6083ec4` |
+| 14 | 流水线集成 | 检查并修改 IFU、IEU、LSU、Hazard 的必要接口 | 已实现、验证并提交：`2aa1a68` |
+| 15 | 整机验收 | 陷阱程序、模式转换、中断及第七章回归 | 已实现并验证 |
 
-后续模块的接口以各轮检查后的设计为准。当前 RV32 核心适用范围内实施第八章；
+各模块接口及实际集成边界见对应中文说明。当前 RV32 核心适用范围内实施第八章；
 MMU、PMP、浮点单元、CLINT/PLIC 本体留给后续章节，相关接口和配置限制逐轮记录。
-首轮不重复大型 CoreMark 验收。
+本轮未重复大型 CoreMark 验收。
 
 ## 已交付模块检查入口
 
@@ -71,6 +68,21 @@ verilator --lint-only --top-module PrivMode generated/priv-mode/PrivMode.v
 [CSRSupervisor](06-csr-supervisor.md)、[CSRCounters](07-csr-counters.md)、
 [PrivMode](08-priv-mode.md)。
 
-后续阶段按[连续完成计划](plans/2026-10-08-completion.md)推进，
+全部阶段按[连续完成计划](plans/2026-10-08-completion.md)完成，
 当前新增说明：[Trap](09-trap.md)、[WFI](10-wfi.md)、
 [EndianSwap](11-endian-swap.md)、[CSR 汇总](12-csr.md)。
+
+最终连接与验收：[Privileged](13-privileged.md)、[流水线](14-pipeline.md)、[整机验收](15-acceptance.md)。
+
+## 整体复验入口
+
+```sh
+make test-chapter8 SBT=./scripts/sbt-local.sh
+make generate-privileged-cpu SBT=./scripts/sbt-local.sh
+./scripts/sbt-local.sh compile 'Test / compile' test
+make test-rtl SBT=./scripts/sbt-local.sh
+```
+
+独立叶模块 `Trap/WFI/EndianSwap/CSR/Privileged` 同样提供
+`make test-trap/test-wfi/test-endian-swap/test-csr/test-privileged` 及对应 `generate-*` 目标。
+最终统一检查从 [整机验收](15-acceptance.md) 开始。
