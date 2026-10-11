@@ -253,14 +253,14 @@ VM 代表配置包含 ASID4/9，完整扩展组包含 HPM29；仿真另覆盖 AS
 
 ## 用户检查清单
 
-- [ ] 核对 Exists/Allowed 分离、未知地址与 U/保留模式禁止。
-- [ ] 核对 S TVM 限制与 M 绕过；Sstc 对 S 同时检查 STCE/TM。
-- [ ] 核对无 VM 的 satp 存在、Bare 零值、Sv32 ASID/PPN 掩码。
-- [ ] 核对共享 SIP 软件基值不包含外部 pending，SSTATUS/SIE/SIP 无重复状态。
-- [ ] 核对 U/S 陷阱原子记录、非法来源保持、所有门控及跨组写取消职责。
-- [ ] 核对向量 WARL、计数许可和环境字段支持范围。
-- [ ] 核对 64 位无符号比较、半字保持、复位零和原始 pending 语义。
-- [ ] 复现测试、生成、lint，检查本轮 Git 提交；认可后再继续 CSRCounters。
+- [x] 核对 Exists/Allowed 分离、未知地址与 U/保留模式禁止。
+- [x] 核对 S TVM 限制与 M 绕过；Sstc 对 S 同时检查 STCE/TM。
+- [x] 核对无 VM 的 satp 存在、Bare 零值、Sv32 ASID/PPN 掩码。
+- [x] 核对共享 SIP 软件基值不包含外部 pending，SSTATUS/SIE/SIP 无重复状态。
+- [x] 核对 U/S 陷阱原子记录、非法来源保持、所有门控及跨组写取消职责。
+- [x] 核对向量 WARL、计数许可和环境字段支持范围。
+- [x] 核对 64 位无符号比较、半字保持、复位零和原始 pending 语义。
+- [x] 复现测试、生成、lint，检查本轮 Git 提交；认可后再继续 CSRCounters。
 
 本轮未实现 MMU/TLB、PMP、CLINT/PLIC、计数器本体、Trap 仲裁、特权转换及 CPU 集成。
 通过独立接口仿真与 lint 不等于完整 Sstc/监督模式整机验收，也不证明综合时序收敛。

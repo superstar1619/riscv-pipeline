@@ -86,9 +86,16 @@ final class CSRSupervisor(
   val TimerAllowedM = !TimerAddressM || MachineModeM ||
     (io.ENVCFG_STCE && io.MCOUNTEREN_TM)
   val ReadEntries = Seq(
-    0x100 -> io.SSTATUS_REGW, 0x104 -> io.SIE_REGW.pad(32), 0x105 -> TVec,
-    0x106 -> CounterEnable, 0x10a -> Env, 0x140 -> Scratch,
-    0x141 -> EPC, 0x142 -> Cause, 0x143 -> Tval, 0x144 -> io.SIP_REGW.pad(32),
+    0x100 -> io.SSTATUS_REGW, 
+    0x104 -> io.SIE_REGW.pad(32), 
+    0x105 -> TVec,
+    0x106 -> CounterEnable, 
+    0x10a -> Env, 
+    0x140 -> Scratch,
+    0x141 -> EPC, 
+    0x142 -> Cause, 
+    0x143 -> Tval, 
+    0x144 -> io.SIP_REGW.pad(32),
     0x180 -> Satp
   ) ++ (if (sstcSupported) Seq(0x14d -> CompareLow, 0x15d -> CompareHigh) else Seq.empty)
 
@@ -106,7 +113,7 @@ final class CSRSupervisor(
   io.CSRSModifyValM := Mux(io.CSRSAccessAllowedM, ModifyValueM, 0.U(32.W))
 
   val UpdateM = supervisorSupported.B && io.ValidM && !io.StallW && !io.FlushM
-  val SoftwareWriteM = UpdateM && !reset && !io.STrapM && io.CSRWriteM &&
+  val SoftwareWriteM = UpdateM && !io.STrapM && io.CSRWriteM &&
     io.CSRSAccessAllowedM
   val DirectTVec = Cat(io.CSRWriteValM(31, 2), 0.U(2.W))
   val WrittenTVec = if (vectoredInterruptsSupported) {

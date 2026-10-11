@@ -80,12 +80,25 @@ final class CSRMachine(
 
   // 存在性只依赖地址/配置，不依赖CSRWriteM，允许CSRAccess据此进行授权。
   val ReadEntries = Seq(
-    0x300 -> io.MSTATUS_REGW, 0x301 -> MISA.U(32.W), 0x304 -> io.MIE_REGW.pad(32),
-    0x305 -> TVec, 0x306 -> CounterEnable, 0x30a -> EnvLow,
-    0x310 -> io.MSTATUSH_REGW, 0x31a -> EnvHigh, 0x320 -> CounterInhibit,
-    0x340 -> Scratch, 0x341 -> EPC, 0x342 -> Cause, 0x343 -> Tval,
-    0x344 -> io.MIP_REGW.pad(32), 0xf11 -> 0.U(32.W), 0xf12 -> 0.U(32.W),
-    0xf13 -> 0.U(32.W), 0xf14 -> hartId.U(32.W), 0xf15 -> 0.U(32.W)
+    0x300 -> io.MSTATUS_REGW, 
+    0x301 -> MISA.U(32.W), 
+    0x304 -> io.MIE_REGW.pad(32),
+    0x305 -> TVec, 
+    0x306 -> CounterEnable, 
+    0x30a -> EnvLow,
+    0x310 -> io.MSTATUSH_REGW, 
+    0x31a -> EnvHigh, 
+    0x320 -> CounterInhibit,
+    0x340 -> Scratch, 
+    0x341 -> EPC, 
+    0x342 -> Cause, 
+    0x343 -> Tval,
+    0x344 -> io.MIP_REGW.pad(32), 
+    0xf11 -> 0.U(32.W), 
+    0xf12 -> 0.U(32.W),
+    0xf13 -> 0.U(32.W), 
+    0xf14 -> hartId.U(32.W), 
+    0xf15 -> 0.U(32.W)
   ) ++ (if (supervisorSupported) Seq(0x302 -> ExceptionDeleg.pad(32),
     0x303 -> InterruptDeleg.pad(32)) else Seq.empty)
   io.CSRMExistsM := ReadEntries.map { case (address, _) =>
@@ -97,7 +110,7 @@ final class CSRMachine(
     io.MIP_REGW_writeable.pad(32), io.CSRMReadValM)
 
   val UpdateM = io.ValidM && !io.StallW && !io.FlushM
-  val SoftwareWriteM = UpdateM && !reset && !io.MTrapM && io.CSRWriteM && io.CSRMExistsM
+  val SoftwareWriteM = UpdateM && !io.MTrapM && io.CSRWriteM && io.CSRMExistsM
   val DirectTVec = Cat(io.CSRWriteValM(31, 2), 0.U(2.W))
   val WrittenTVec = if (vectoredInterruptsSupported) {
     Mux(io.CSRWriteValM(0), Cat(io.CSRWriteValM(31, 6), 0.U(5.W), 1.U(1.W)),

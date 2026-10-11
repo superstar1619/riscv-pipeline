@@ -197,11 +197,11 @@ TSR、陷阱不能下降、原始事件优先级、全部 Valid/Stall/Flush 组�
 green、compile、module、generate、generate-no-s、lint、lint-no-s、pipeline、suite。
 沿用已有 ChiselStage 弃用提示，不更改工具链。
 
-- [ ] 核对候选与当前模式的区别，以及返回读取旧 MPP/SPP。
-- [ ] 核对 M 的陷阱不降级、TSR 仅限制 S 中的 SRET。
-- [ ] 核对非法 MPP、关闭 S 和非法原始高优先事件的保持行为。
-- [ ] 核对 Valid/Stall/Flush 同拍门控，以及复位优先且使能不与 reset。
-- [ ] 复现测试和两组 RTL lint，检查本轮 Git 提交。
+- [x] 核对候选与当前模式的区别，以及返回读取旧 MPP/SPP。
+- [x] 核对 M 的陷阱不降级、TSR 仅限制 S 中的 SRET。
+- [x] 核对非法 MPP、关闭 S 和非法原始高优先事件的保持行为。
+- [x] 核对 Valid/Stall/Flush 同拍门控，以及复位优先且使能不与 reset。
+- [x] 复现测试和两组 RTL lint，检查本轮 Git 提交。
 
 本轮验证限于独立模式模块及测试层的状态/译码联动，未完成生产 CPU 陷阱、PC 重定向、
 中断仲裁或整机特权验收。不实现虚拟化模式、MMU/PMP、CLINT/PLIC；不将仿真与 lint

@@ -215,7 +215,7 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
       (a.adr != 0x180 || a.mode == 3 || !a.tvm) &&
       (!Set(0x14d, 0x15d)(a.adr) || a.mode == 3 || (a.stce && a.tm))
     def compare: BigInt = (state(0x15d) << 32) + state(0x14d)
-    def expect(d: CSRSupervisorHarness, a: Inputs, resetting: Boolean): Unit = {
+    def expect(d: CSRSupervisorHarness, a: Inputs): Unit = {
       checkState(d, state)
       val value = if (!allowed(a)) BigInt(0) else a.adr match {
         case 0x100 => a.status
@@ -226,7 +226,7 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
       val modify = if (allowed(a) && a.adr == 0x144) BigInt(a.sw) else value
       read(d, a.adr, value, exists(a.adr), allowed(a), Some(modify))
       val active = a.write && a.valid && !a.stall && !a.flush &&
-        !a.trap && !resetting && allowed(a)
+        !a.trap && allowed(a)
       strobes(d, active && a.adr == 0x100, active && a.adr == 0x104,
         active && a.adr == 0x144)
       d.io.STimerInt.expect((p.s && p.stc && a.time >= compare).B)
@@ -258,16 +258,20 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   behavior of "CSRSupervisor"
 
-  it should "reset every owned register synchronously and suppress reset writes" in {
+  it should "reset every owned register synchronously without gating forwarded writes" in {
     test(new CSRSupervisorHarness(SupervisorParams(vm = true, stc = true, asid = 9))) { d =>
       boot(d)
       for (address <- owned) cycle(d, Inputs(adr = address, word = full, write = true))
       val oldScratch = d.io.SSCRATCH_REGW.peek().litValue
       assert(oldScratch == full)
-      drive(d, Inputs(adr = 0x100, write = true, trap = true, epc = full, cause = 63,
-        tval = full, valid = false, stall = true, flush = true))
       d.reset.poke(true.B)
       d.io.SSCRATCH_REGW.expect(full.U)
+      for (address <- Seq(0x100, 0x104, 0x144)) {
+        drive(d, Inputs(adr = address, word = full, write = true))
+        strobes(d, status = address == 0x100, sie = address == 0x104,
+          sip = address == 0x144)
+      }
+      drive(d, Inputs(word = full, write = true))
       strobes(d)
       d.clock.step()
       checkState(d)
@@ -625,10 +629,10 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
           val resetting = i % 113 == 0
           drive(d, a)
           d.reset.poke(resetting.B)
-          model.expect(d, a, resetting)
+          model.expect(d, a)
           d.clock.step()
           model.update(a, resetting)
-          model.expect(d, a, resetting)
+          model.expect(d, a)
         }
       }
     }

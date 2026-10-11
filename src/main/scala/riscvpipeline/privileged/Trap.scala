@@ -39,7 +39,7 @@ final class TrapIO extends Bundle {
   val CauseM = Output(UInt(5.W))
 }
 
-/** 教材 §8.2.5、CVW trap.sv；纯组合，reset 高电平抑制输出，无状态。 */
+/** 教材 §8.2.5、CVW trap.sv；纯组合，无状态。 */
 final class Trap(val supervisorSupported: Boolean = true) extends RawModule {
   val io = IO(new TrapIO)
 
@@ -48,7 +48,7 @@ final class Trap(val supervisorSupported: Boolean = true) extends RawModule {
   val UserModeM = io.PrivilegeModeW === 0.U(2.W)
   val SupportedModeM = MachineModeM || UserModeM ||
     (supervisorSupported.B && SupervisorModeM)
-  val ActiveM = io.ValidM && !io.reset && SupportedModeM && !io.CommittedF
+  val ActiveM = io.ValidM && SupportedModeM && !io.CommittedF
 
   val SupportedInts = (if (supervisorSupported) 0xaaa else 0x888).U(12.W)
   val PendingIntsM = io.MIP_REGW & io.MIE_REGW & SupportedInts
@@ -61,7 +61,7 @@ final class Trap(val supervisorSupported: Boolean = true) extends RawModule {
   val SupervisorIntsM = Mux(SIntGlobalEnM, PendingIntsM & IntDelegationM, 0.U(12.W))
   val EnabledIntsM = MachineIntsM | SupervisorIntsM
 
-  io.IntPendingM := PendingIntsM.orR && !io.reset
+  io.IntPendingM := PendingIntsM.orR
   io.InterruptM := ActiveM && !io.CommittedM && (!io.wfiM || io.wfiW) &&
     EnabledIntsM.orR
 

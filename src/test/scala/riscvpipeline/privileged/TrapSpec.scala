@@ -67,8 +67,8 @@ class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
     val supported = Set(0, 3).contains(a.mode) || (supportedS && a.mode == 1)
     val allowed = if (supportedS) interrupts else Seq(11, 3, 7)
     val local = allowed.filter(n => (a.mip & a.mie & (1 << n)) != 0)
-    val pending = local.nonEmpty && !a.reset
-    if (a.reset || !a.valid || !supported || a.committedF) {
+    val pending = local.nonEmpty
+    if (!a.valid || !supported || a.committedF) {
       return Expected(pending = pending)
     }
     val candidates = local.filter { n =>
@@ -135,7 +135,9 @@ class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
             wfiM = true)
           check(dut, a, Expected(pending = true))
         }
-        check(dut, Input(reset = true, mip = 0xfff, exceptions = faults.toSet), Expected())
+        check(dut, Input(reset = true, mip = 0xfff, exceptions = faults.toSet),
+          Expected(trap = true, interrupt = true, exception = true,
+            pending = true, cause = 11))
       }
     }
   }

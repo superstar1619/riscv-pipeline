@@ -250,14 +250,14 @@ RTL 生成/lint 采用十组配置：U/M、基本 S、S+VM、S+Sstc、S+VM+Sstc 
 
 ## 用户检查清单
 
-- [ ] 核对机器 CSR 地址、未知/PMP/计数器本体不存在的边界。
-- [ ] 核对固定 misa 与本项目标识值，不把写忽略误当非法访问。
-- [ ] 核对陷阱原子记录、旧值读取、所有门控及转发写抑制。
-- [ ] 核对 EPC/Cause 格式和 Direct/Vectored 的 WARL 对齐规则。
-- [ ] 核对 S/VM 委托掩码、计数控制范围及 TM 不能 inhibit。
-- [ ] 核对 MENVCFG 高低半保持和未实现扩展固定零。
-- [ ] 复现测试、生成、lint，检查独立 Git 提交。
-- [ ] 明确认可本轮后，再继续 CSRSupervisor。
+- [x] 核对机器 CSR 地址、未知/PMP/计数器本体不存在的边界。
+- [x] 核对固定 misa 与本项目标识值，不把写忽略误当非法访问。
+- [x] 核对陷阱原子记录、旧值读取、所有门控及转发写抑制。
+- [x] 核对 EPC/Cause 格式和 Direct/Vectored 的 WARL 对齐规则。
+- [x] 核对 S/VM 委托掩码、计数控制范围及 TM 不能 inhibit。
+- [x] 核对 MENVCFG 高低半保持和未实现扩展固定零。
+- [x] 复现测试、生成、lint，检查独立 Git 提交。
+- [x] 明确认可本轮后，再继续 CSRSupervisor。
 
 本轮通过的是独立机器寄存器和接口验证，不等于 CPU 已支持 CSR、陷阱或中断。
 PMP、MMU、完整 Sstc、计数器本体、特权转换、Trap 仲裁及 PC 入口计算仍留在后续范围。

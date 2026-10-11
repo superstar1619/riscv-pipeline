@@ -206,11 +206,11 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
       case adr if exists(adr) => state.getOrElse(adr, BigInt(0))
       case _ => BigInt(0)
     }
-    def expect(d: CSRMachineHarness, a: Inputs, resetting: Boolean): Unit = {
+    def expect(d: CSRMachineHarness, a: Inputs): Unit = {
       checkState(d, state)
       read(d, a.adr, value(a), exists(a.adr),
         if (a.adr == 0x344) Some(BigInt(a.sw)) else None)
-      val active = a.valid && !a.stall && !a.flush && !resetting && !a.trap && a.write
+      val active = a.valid && !a.stall && !a.flush && !a.trap && a.write
       strobes(d, active && a.adr == 0x300, active && a.adr == 0x310,
         active && a.adr == 0x304, active && a.adr == 0x344)
     }
@@ -244,14 +244,18 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   behavior of "CSRMachine"
 
-  it should "reset synchronously and suppress forwarded writes before the reset edge" in {
+  it should "reset synchronously without gating forwarded writes with reset" in {
     test(new CSRMachineHarness) { d =>
       boot(d)
       cycle(d, Inputs(word = full, write = true))
-      drive(d, Inputs(adr = 0x300, write = true, trap = true, epc = full,
-        cause = 63, tval = full, valid = false, stall = true, flush = true))
       d.reset.poke(true.B)
       checkState(d, Map(0x340 -> full))
+      for (address <- Seq(0x300, 0x310, 0x304, 0x344)) {
+        drive(d, Inputs(adr = address, word = full, write = true))
+        strobes(d, status = address == 0x300, high = address == 0x310,
+          mie = address == 0x304, mip = address == 0x344)
+      }
+      drive(d, Inputs(word = full, write = true))
       strobes(d)
       d.clock.step()
       checkState(d)
@@ -327,7 +331,8 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
         }
         drive(d, Inputs(adr = address, write = true))
         d.reset.poke(true.B)
-        strobes(d)
+        strobes(d, address == 0x300, address == 0x310,
+          address == 0x304, address == 0x344)
         d.reset.poke(false.B)
       }
     }
@@ -550,10 +555,10 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
           val resetting = i % 113 == 0
           drive(d, a)
           d.reset.poke(resetting.B)
-          model.expect(d, a, resetting)
+          model.expect(d, a)
           d.clock.step()
           model.update(a, resetting)
-          model.expect(d, a, resetting)
+          model.expect(d, a)
         }
       }
     }
