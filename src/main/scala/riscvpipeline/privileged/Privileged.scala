@@ -80,7 +80,7 @@ final class Privileged(config: PrivilegedConfig = PrivilegedConfig()) extends Ra
   csr.reset := reset
   mode.reset := reset
   wfi.reset := reset
-  val ActiveM = io.ValidM && !io.FlushM && !reset
+  val ActiveM = io.ValidM && !io.FlushM
   // 候选Trap可清WFI计数，但外部停顿期间不能丢失已经到期的异常。
   // 仅寄存器采样StallW，避免StallW与WFIStall之间的组合反馈。
   val TimeoutHeldM = withClockAndReset(clk, reset) { RegInit(false.B) }

@@ -213,12 +213,22 @@ class PrivilegedSpec extends AnyFlatSpec with ChiselScalatestTester {
       }
       drive(d, csr(CSR.MSCRATCH, CSRFunction.RS, 1, 0))
       d.io.CSRResultM.expect(0.U)
+      write(d, CSR.MSCRATCH, 0x55)
+      drive(d, csr(CSR.MSCRATCH, CSRFunction.RS, 1, 0))
       d.reset.poke(true.B)
+      d.io.CSRReadM.expect(true.B)
+      d.io.CSRResultM.expect(0x55.U)
+      drive(d, csr(CSR.MSCRATCH), src = 0x99)
+      d.io.CSRWriteM.expect(true.B)
+      d.io.RedirectM.expect(true.B)
       d.clock.step()
       d.io.PrivilegeModeW.expect(Privilege.MACHINE.U)
       d.io.MSTATUS_REGW.expect(0.U)
       d.io.MCYCLE_REGW.expect(0.U)
       d.io.MINSTRET_REGW.expect(0.U)
+      drive(d, csr(CSR.MSCRATCH, CSRFunction.RS, 1, 0))
+      d.io.CSRResultM.expect(0.U)
+      d.reset.poke(false.B)
     }
   }
 

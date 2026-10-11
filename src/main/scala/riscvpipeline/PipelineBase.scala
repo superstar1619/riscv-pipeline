@@ -74,7 +74,7 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
     p.io.CommittedM := false.B
     p.io.CommittedF := false.B
     p.io.wfiW := ieu.io.wfiW
-    val InstrRetiredM = ieu.io.ValidM && !TrapM && !StallM && !reset
+    val InstrRetiredM = ieu.io.ValidM && !TrapM && !StallM
     p.io.InstrRetiredM := InstrRetiredM
     p.io.InstrM := ieu.io.InstrM
     p.io.PCM := ieu.io.PCM
