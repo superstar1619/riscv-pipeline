@@ -7,11 +7,13 @@ import riscvpipeline.privileged.{Privileged, PrivilegedConfig}
 object GeneratePrivileged extends App {
   require(args.length <= 6, "Usage: GeneratePrivileged [dir] [S] [BE] [Sstc] [HPM] [WFI]")
   val targetDir = args.headOption.getOrElse("generated/privileged")
+  val defaults = PrivilegedConfig()
   val config = PrivilegedConfig(
-    supervisorSupported = args.lift(1).map(_.toBoolean).getOrElse(true),
-    bigEndianSupported = args.lift(2).map(_.toBoolean).getOrElse(true),
-    sstcSupported = args.lift(3).map(_.toBoolean).getOrElse(false),
-    hpmCounters = args.lift(4).map(_.toInt).getOrElse(0),
-    wfiTimeoutCycles = args.lift(5).map(_.toInt).getOrElse(65536))
+    supervisorSupported =
+      args.lift(1).map(_.toBoolean).getOrElse(defaults.supervisorSupported),
+    bigEndianSupported = args.lift(2).map(_.toBoolean).getOrElse(defaults.bigEndianSupported),
+    sstcSupported = args.lift(3).map(_.toBoolean).getOrElse(defaults.sstcSupported),
+    hpmCounters = args.lift(4).map(_.toInt).getOrElse(defaults.hpmCounters),
+    wfiTimeoutCycles = args.lift(5).map(_.toInt).getOrElse(defaults.wfiTimeoutCycles))
   (new ChiselStage).emitVerilog(new Privileged(config), Array("--target-dir", targetDir))
 }

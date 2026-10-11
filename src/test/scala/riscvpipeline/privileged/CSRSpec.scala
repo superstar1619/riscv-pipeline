@@ -1,5 +1,6 @@
 package riscvpipeline.privileged
 
+import riscvpipeline.TestEncoding.{CSR, CSRFunction, Opcode, Privilege}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -19,15 +20,15 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
   private def hex(s: String): BigInt = BigInt(s, 16)
   private def csr(adr: Int, funct: Int, rs: Int = 1, rd: Int = 1): BigInt =
     (BigInt(adr) << 20) | (BigInt(rs) << 15) | (BigInt(funct) << 12) |
-      (BigInt(rd) << 7) | 0x73
+      (BigInt(rd) << 7) | Opcode.SYSTEM
 
   private def idle(d: CSRHarness): Unit = {
     d.io.InstrM.poke(0.U)
     d.io.PCM.poke(0x804.U)
     d.io.IEUAdrM.poke(0xcafe.U)
     d.io.SrcAM.poke(0.U)
-    d.io.PrivilegeModeW.poke(3.U)
-    d.io.NextPrivilegeModeM.poke(3.U)
+    d.io.PrivilegeModeW.poke(Privilege.MACHINE.U)
+    d.io.NextPrivilegeModeM.poke(Privilege.MACHINE.U)
     d.io.CauseM.poke(0.U)
     d.io.HPMEventsM.poke(0.U)
     d.io.TIME_REGW.poke(0.U)
@@ -51,20 +52,22 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
     d.reset.poke(false.B)
   }
   private def transaction(d: CSRHarness, adr: Int, funct: Int, src: BigInt = 0,
-      rs: Int = 1, rd: Int = 1, mode: Int = 3): Unit = {
+      rs: Int = 1, rd: Int = 1, mode: Int = Privilege.MACHINE): Unit = {
     idle(d)
     d.io.InstrM.poke(csr(adr, funct, rs, rd).U)
     d.io.SrcAM.poke(src.U)
     d.io.PrivilegeModeW.poke(mode.U)
   }
-  private def write(d: CSRHarness, adr: Int, value: BigInt, mode: Int = 3): Unit = {
-    transaction(d, adr, 1, value, mode = mode)
+  private def write(d: CSRHarness, adr: Int, value: BigInt,
+    mode: Int = Privilege.MACHINE): Unit = {
+    transaction(d, adr, CSRFunction.RW, value, mode = mode)
     d.io.IllegalCSRAccessM.expect(false.B)
     d.io.CSRWriteM.expect(true.B)
     d.clock.step()
   }
-  private def read(d: CSRHarness, adr: Int, value: BigInt, mode: Int = 3): Unit = {
-    transaction(d, adr, 2, rs = 0, mode = mode)
+  private def read(d: CSRHarness, adr: Int, value: BigInt,
+    mode: Int = Privilege.MACHINE): Unit = {
+    transaction(d, adr, CSRFunction.RS, rs = 0, mode = mode)
     d.io.IllegalCSRAccessM.expect(false.B)
     d.io.CSRReadM.expect(true.B)
     d.io.CSRWriteM.expect(false.B)
@@ -76,9 +79,9 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "execute six instructions across machine supervisor and counter groups" in {
     test(new CSRHarness) { d =>
       boot(d)
-      write(d, 0x320, 5) // 周期与退休禁止自动增长，计数器读写可独立核对。
-      write(d, 0xb00, 0)
-      for (adr <- Seq(0x340, 0x140, 0xb00)) {
+      write(d, CSR.MCOUNTINHIBIT, 5) // 周期与退休禁止自动增长，计数器读写可独立核对。
+      write(d, CSR.MCYCLE, 0)
+      for (adr <- Seq(CSR.MSCRATCH, CSR.SSCRATCH, CSR.MCYCLE)) {
         var expected = BigInt(0)
         val rows = Seq((1, 1, BigInt(0x13579bdf)), (2, 1, BigInt(0x00ff0000)),
           (3, 1, BigInt(0x00070000)), (5, 13, BigInt(0)),
@@ -98,12 +101,12 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
           d.clock.step()
           read(d, adr, expected)
         }
-        transaction(d, adr, 1, 0x55, rd = 0)
+        transaction(d, adr, CSRFunction.RW, 0x55, rd = 0)
         d.io.CSRReadM.expect(false.B)
         d.io.CSRResultM.expect(0.U)
         d.io.CSRWriteM.expect(true.B)
         d.clock.step()
-        for (funct <- Seq(2, 3, 6, 7)) {
+        for (funct <- Seq(CSRFunction.RS, CSRFunction.RC, CSRFunction.RSI, CSRFunction.RCI)) {
           transaction(d, adr, funct, 0xffffffffL, rs = 0)
           d.io.CSRWriteM.expect(false.B)
           d.io.CSRResultM.expect(0x55.U)
@@ -116,17 +119,21 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
     for (config <- Seq(PrivilegedConfig(), PrivilegedConfig(supervisorSupported = false))) {
       test(new CSRHarness(config)) { d =>
         boot(d)
-        for (mode <- 0 to 3; adr <- Seq(0x340, 0x140, 0xfff, 0xf14, 0xc00);
-             funct <- Seq(1, 2, 3, 5, 6, 7); trap <- Seq(false, true)) {
+        for (mode <- 0 to 3; adr <- Seq(CSR.MSCRATCH, CSR.SSCRATCH, 0xfff, CSR.MHARTID,
+          CSR.CYCLE);
+             funct <- Seq(CSRFunction.RW, CSRFunction.RS, CSRFunction.RC, CSRFunction.RWI,
+               CSRFunction.RSI, CSRFunction.RCI); trap <- Seq(false, true)) {
           transaction(d, adr, funct, 1, mode = mode)
           d.io.TrapM.poke(trap.B)
-          val missing = adr == 0xfff || (adr == 0x140 && !config.supervisorSupported)
-          val lower = mode == 2 || (adr == 0x140 && mode == 0) ||
-            (Set(0x340, 0xf14)(adr) && mode != 3) || (adr == 0xc00 && mode != 3)
-          val readonly = Set(0xf14, 0xc00)(adr)
+          val missing = adr == 0xfff || (adr == CSR.SSCRATCH && !config.supervisorSupported)
+          val lower = mode == Privilege.RESERVED || (adr == CSR.SSCRATCH &&
+            mode == Privilege.USER) ||
+            (Set(CSR.MSCRATCH, CSR.MHARTID)(adr) && mode != Privilege.MACHINE) ||
+              (adr == CSR.CYCLE && mode != Privilege.MACHINE)
+          val readonly = Set(CSR.MHARTID, CSR.CYCLE)(adr)
           d.io.IllegalCSRAccessM.expect((missing || lower || readonly).B)
         }
-        read(d, 0xf14, 0)
+        read(d, CSR.MHARTID, 0)
         transaction(d, 0xfff, 1)
         d.io.ValidM.poke(false.B)
         d.io.IllegalCSRAccessM.expect(false.B)
@@ -137,26 +144,26 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "share CSR views and avoid capturing hardware pending in software" in {
     test(new CSRHarness) { d =>
       boot(d)
-      write(d, 0x303, 0x222)
-      write(d, 0x304, 0xaaa)
-      read(d, 0x104, 0x222, mode = 1)
-      write(d, 0x104, 2, mode = 1)
+      write(d, CSR.MIDELEG, 0x222)
+      write(d, CSR.MIE, 0xaaa)
+      read(d, CSR.SIE, 0x222, mode = Privilege.SUPERVISOR)
+      write(d, CSR.SIE, 2, mode = Privilege.SUPERVISOR)
       d.io.MIE_REGW.expect(0x88a.U)
-      write(d, 0x300, 0x180a)
-      read(d, 0x100, 2, mode = 1)
-      write(d, 0x100, 0x22, mode = 1)
+      write(d, CSR.MSTATUS, 0x180a)
+      read(d, CSR.SSTATUS, 2, mode = Privilege.SUPERVISOR)
+      write(d, CSR.SSTATUS, 0x22, mode = Privilege.SUPERVISOR)
       d.io.MSTATUS_REGW.expect(0x182a.U)
-      transaction(d, 0x344, 6, rs = 2)
+      transaction(d, CSR.MIP, CSRFunction.RSI, rs = 2)
       d.io.SExtInt.poke(true.B)
       d.io.CSRResultM.expect(0x200.U)
       d.clock.step()
-      read(d, 0x344, 2)
-      transaction(d, 0x144, 7, rs = 2, mode = 1)
+      read(d, CSR.MIP, 2)
+      transaction(d, CSR.SIP, CSRFunction.RCI, rs = 2, mode = Privilege.SUPERVISOR)
       d.io.SExtInt.poke(true.B)
       d.io.CSRResultM.expect(0x202.U)
       d.clock.step()
-      read(d, 0x144, 0, mode = 1)
-      transaction(d, 0x344, 2, rs = 0)
+      read(d, CSR.SIP, 0, mode = Privilege.SUPERVISOR)
+      transaction(d, CSR.MIP, CSRFunction.RS, rs = 0)
       d.io.MExtInt.poke(true.B)
       d.io.MTimerInt.poke(true.B)
       d.io.MSwInt.poke(true.B)
@@ -167,17 +174,17 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "cancel every software group for either trap destination" in {
     test(new CSRHarness) { d =>
       boot(d)
-      write(d, 0x320, 5)
-      val initial = Seq(0x340 -> 0x11, 0x140 -> 0x22, 0xb00 -> 0x33,
-        0x304 -> 0xaaa, 0x344 -> 2, 0x300 -> 0x40)
+      write(d, CSR.MCOUNTINHIBIT, 5)
+      val initial = Seq(CSR.MSCRATCH -> 0x11, CSR.SSCRATCH -> 0x22, CSR.MCYCLE -> 0x33,
+        CSR.MIE -> 0xaaa, CSR.MIP -> 2, CSR.MSTATUS -> 0x40)
       for ((adr, value) <- initial) write(d, adr, value)
-      for (next <- Seq(1, 3); adr <- initial.map(_._1)) {
-        transaction(d, adr, 1, 0xffffffffL)
+      for (next <- Seq(Privilege.SUPERVISOR, Privilege.MACHINE); adr <- initial.map(_._1)) {
+        transaction(d, adr, CSRFunction.RW, 0xffffffffL)
         d.io.TrapM.poke(true.B)
         d.io.NextPrivilegeModeM.poke(next.U)
         d.io.CauseM.poke(8.U)
         d.clock.step()
-        for ((a, value) <- initial.filterNot(_._1 == 0x300)) read(d, a, value)
+        for ((a, value) <- initial.filterNot(_._1 == CSR.MSTATUS)) read(d, a, value)
         // 当前M不允许降到S；M陷阱只改变栈字段，UBE始终保持。
         assert(d.io.MSTATUS_REGW.peek().litValue.testBit(6))
       }
@@ -187,9 +194,10 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "record exact EPC interrupt cause and cause-dependent tval in both modes" in {
     test(new CSRHarness) { d =>
       boot(d)
-      for (next <- Seq(1, 3); interrupt <- Seq(false, true); cause <- 0 until 32) {
+      for (next <- Seq(Privilege.SUPERVISOR, Privilege.MACHINE); interrupt <- Seq(false,
+        true); cause <- 0 until 32) {
         idle(d)
-        d.io.PrivilegeModeW.poke(0.U)
+        d.io.PrivilegeModeW.poke(Privilege.USER.U)
         d.io.NextPrivilegeModeM.poke(next.U)
         d.io.TrapM.poke(true.B)
         d.io.InterruptM.poke(interrupt.B)
@@ -198,7 +206,7 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
         d.io.InstrM.poke(0xdeadbeefL.U)
         d.io.IEUAdrM.poke(0xa5a5f00dL.U)
         d.clock.step()
-        val base = if (next == 3) 0x340 else 0x140
+        val base = if (next == Privilege.MACHINE) CSR.MSCRATCH else CSR.SSCRATCH
         read(d, base + 1, 0x80001234L)
         read(d, base + 2, BigInt(cause) + (if (interrupt) BigInt(1) << 31 else 0))
         val tval = if (interrupt || Set(8, 9, 11)(cause)) BigInt(0)
@@ -214,16 +222,17 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
     for (vector <- Seq(false, true)) {
       test(new CSRHarness(PrivilegedConfig(vectoredInterruptsSupported = vector))) { d =>
         boot(d)
-        write(d, 0x305, 0x8000013dL)
-        write(d, 0x105, 0x8000027dL)
-        write(d, 0x341, 0x80001003L)
-        write(d, 0x141, 0x80002003L)
-        for (next <- Seq(1, 3); interrupt <- Seq(false, true); cause <- Seq(0, 5, 11, 31)) {
+        write(d, CSR.MTVEC, 0x8000013dL)
+        write(d, CSR.STVEC, 0x8000027dL)
+        write(d, CSR.MEPC, 0x80001003L)
+        write(d, CSR.SEPC, 0x80002003L)
+        for (next <- Seq(Privilege.SUPERVISOR, Privilege.MACHINE); interrupt <- Seq(false,
+          true); cause <- Seq(0, 5, 11, 31)) {
           idle(d)
           d.io.NextPrivilegeModeM.poke(next.U)
           d.io.InterruptM.poke(interrupt.B)
           d.io.CauseM.poke(cause.U)
-          val base = if (next == 3) hex(if (vector) "80000100" else "8000013c")
+          val base = if (next == Privilege.MACHINE) hex(if (vector) "80000100" else "8000013c")
             else hex(if (vector) "80000240" else "8000027c")
           d.io.TrapVectorM.expect((base + (if (vector && interrupt) 4 * cause else 0)).U)
           d.io.mretM.poke(true.B)
@@ -238,25 +247,25 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "hold committed state for invalid stall flush and synchronous reset" in {
     test(new CSRHarness) { d =>
       boot(d)
-      write(d, 0x340, 0x55)
-      write(d, 0x341, 0x100)
-      write(d, 0x304, 0xaaa)
+      write(d, CSR.MSCRATCH, 0x55)
+      write(d, CSR.MEPC, 0x100)
+      write(d, CSR.MIE, 0xaaa)
       for (valid <- Seq(false, true); stall <- Seq(false, true);
            flush <- Seq(false, true) if !valid || stall || flush;
-           adr <- Seq(0x340, 0x300, 0x304); trap <- Seq(false, true)) {
-        transaction(d, adr, 1, 0xffffffffL)
+           adr <- Seq(CSR.MSCRATCH, CSR.MSTATUS, CSR.MIE); trap <- Seq(false, true)) {
+        transaction(d, adr, CSRFunction.RW, 0xffffffffL)
         d.io.ValidM.poke(valid.B)
         d.io.StallW.poke(stall.B)
         d.io.FlushM.poke(flush.B)
         d.io.TrapM.poke(trap.B)
         d.io.PCM.poke(0xabc.U)
         d.clock.step()
-        read(d, 0x340, 0x55)
-        read(d, 0x341, 0x100)
+        read(d, CSR.MSCRATCH, 0x55)
+        read(d, CSR.MEPC, 0x100)
         d.io.MIE_REGW.expect(0xaaa.U)
         d.io.MSTATUS_REGW.expect(0.U)
       }
-      transaction(d, 0x304, 1, 0xffffffffL)
+      transaction(d, CSR.MIE, CSRFunction.RW, 0xffffffffL)
       d.reset.poke(true.B)
       d.io.MIE_REGW.expect(0xaaa.U)
       d.clock.step()
@@ -264,31 +273,31 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.MSTATUS_REGW.expect(0.U)
       d.io.MCYCLE_REGW.expect(0.U)
       d.reset.poke(false.B)
-      read(d, 0x340, 0)
+      read(d, CSR.MSCRATCH, 0)
     }
   }
 
   it should "wire counter permissions inhibit retirement HPM events and time" in {
     test(new CSRHarness(PrivilegedConfig(hpmCounters = 1))) { d =>
       boot(d)
-      write(d, 0x320, 5)
-      write(d, 0xb00, 0x89abcdefL)
-      write(d, 0xb80, 0x01234567)
+      write(d, CSR.MCOUNTINHIBIT, 5)
+      write(d, CSR.MCYCLE, 0x89abcdefL)
+      write(d, CSR.MCYCLEH, 0x01234567)
       d.io.MCYCLE_REGW.expect(hex("0123456789abcdef").U)
-      transaction(d, 0xc01, 2, rs = 0)
+      transaction(d, CSR.TIME, CSRFunction.RS, rs = 0)
       d.io.TIME_REGW.poke(hex("fedcba9876543210").U)
       d.io.CSRResultM.expect(0x76543210L.U)
-      d.io.InstrM.poke(csr(0xc81, 2, rs = 0).U)
+      d.io.InstrM.poke(csr(CSR.TIMEH, CSRFunction.RS, rs = 0).U)
       d.io.CSRResultM.expect(0xfedcba98L.U)
-      transaction(d, 0xc00, 2, rs = 0, mode = 1)
+      transaction(d, CSR.CYCLE, CSRFunction.RS, rs = 0, mode = Privilege.SUPERVISOR)
       d.io.IllegalCSRAccessM.expect(true.B)
-      write(d, 0x306, 15)
-      read(d, 0xc00, 0x89abcdefL, mode = 1)
-      transaction(d, 0xc00, 2, rs = 0, mode = 0)
+      write(d, CSR.MCOUNTEREN, 15)
+      read(d, CSR.CYCLE, 0x89abcdefL, mode = Privilege.SUPERVISOR)
+      transaction(d, CSR.CYCLE, CSRFunction.RS, rs = 0, mode = Privilege.USER)
       d.io.IllegalCSRAccessM.expect(true.B)
-      write(d, 0x106, 15)
-      read(d, 0xc00, 0x89abcdefL, mode = 0)
-      write(d, 0x320, 1)
+      write(d, CSR.SCOUNTEREN, 15)
+      read(d, CSR.CYCLE, 0x89abcdefL, mode = Privilege.USER)
+      write(d, CSR.MCOUNTINHIBIT, 1)
       idle(d)
       d.io.InstrRetiredM.poke(true.B)
       d.clock.step()
@@ -296,42 +305,42 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.TrapM.poke(true.B)
       d.clock.step()
       d.io.MINSTRET_REGW.expect(1.U)
-      write(d, 0x323, 1)
+      write(d, CSR.MHPMEVENT3, 1)
       idle(d)
       d.io.HPMEventsM.poke(1.U)
       d.clock.step(3)
-      read(d, 0xb03, 3)
-      read(d, 0xb04, 0) // 未激活槽是存在的零CSR。
+      read(d, CSR.MHPMCOUNTER3, 3)
+      read(d, CSR.MHPMCOUNTER4, 0) // 未激活槽是存在的零CSR。
     }
   }
 
   it should "route STCE bit63 comparator and Sstc permissions through real leaves" in {
     test(new CSRHarness(PrivilegedConfig(sstcSupported = true))) { d =>
       boot(d)
-      write(d, 0x303, 0x20)
-      write(d, 0x344, 0x20)
-      write(d, 0x14d, 10)
-      write(d, 0x15d, 1)
-      transaction(d, 0x14d, 2, rs = 0, mode = 1)
+      write(d, CSR.MIDELEG, 0x20)
+      write(d, CSR.MIP, 0x20)
+      write(d, CSR.STIMECMP, 10)
+      write(d, CSR.STIMECMPH, 1)
+      transaction(d, CSR.STIMECMP, CSRFunction.RS, rs = 0, mode = Privilege.SUPERVISOR)
       d.io.IllegalCSRAccessM.expect(true.B)
-      write(d, 0x306, 2)
-      transaction(d, 0x14d, 2, rs = 0, mode = 1)
+      write(d, CSR.MCOUNTEREN, 2)
+      transaction(d, CSR.STIMECMP, CSRFunction.RS, rs = 0, mode = Privilege.SUPERVISOR)
       d.io.IllegalCSRAccessM.expect(true.B)
-      write(d, 0x31a, 0x80000000L)
-      read(d, 0x14d, 10, mode = 1)
+      write(d, CSR.MENVCFGH, 0x80000000L)
+      read(d, CSR.STIMECMP, 10, mode = Privilege.SUPERVISOR)
       d.io.MIP_REGW.expect(0.U)
       d.io.TIME_REGW.poke(hex("0000000100000009").U)
       d.io.MIP_REGW.expect(0.U)
       d.io.TIME_REGW.poke(hex("000000010000000a").U)
       d.io.MIP_REGW.expect(0x20.U)
-      transaction(d, 0x144, 2, rs = 0, mode = 1)
+      transaction(d, CSR.SIP, CSRFunction.RS, rs = 0, mode = Privilege.SUPERVISOR)
       d.io.TIME_REGW.poke(hex("000000010000000a").U)
       d.io.CSRResultM.expect(0x20.U)
-      write(d, 0x31a, 0)
+      write(d, CSR.MENVCFGH, 0)
       d.io.MIP_REGW.expect(0x20.U) // 切换STCE保留内部软件STIP。
-      write(d, 0x31a, 0x80000000L)
-      write(d, 0x344, 0x20) // STCE=1整字写清除潜藏软件STIP。
-      write(d, 0x31a, 0)
+      write(d, CSR.MENVCFGH, 0x80000000L)
+      write(d, CSR.MIP, 0x20) // STCE=1整字写清除潜藏软件STIP。
+      write(d, CSR.MENVCFGH, 0)
       d.io.MIP_REGW.expect(0.U)
     }
   }
@@ -340,33 +349,33 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
     for (big <- Seq(false, true)) {
       test(new CSRHarness(PrivilegedConfig(bigEndianSupported = big))) { d =>
         boot(d)
-        write(d, 0x310, 0x30)
+        write(d, CSR.MSTATUSH, 0x30)
         d.io.BigEndianM.expect(big.B)
-        write(d, 0x300, 0x20040) // MPRV=1, MPP=U, UBE=1。
+        write(d, CSR.MSTATUS, 0x20040) // MPRV=1, MPP=U, UBE=1。
         d.io.BigEndianM.expect(big.B)
-        write(d, 0x300, 0x20800) // MPRV=1, MPP=S；SBE由mstatush提供。
+        write(d, CSR.MSTATUS, 0x20800) // MPRV=1, MPP=S；SBE由mstatush提供。
         d.io.BigEndianM.expect(big.B)
-        write(d, 0x300, 0x1808)
+        write(d, CSR.MSTATUS, 0x1808)
         idle(d)
         d.io.TrapM.poke(true.B)
         d.clock.step()
         d.io.STATUS_MIE.expect(false.B)
-        d.io.STATUS_MPP.expect(3.U)
+        d.io.STATUS_MPP.expect(Privilege.MACHINE.U)
         idle(d)
         d.io.mretM.poke(true.B)
         d.clock.step()
         d.io.STATUS_MIE.expect(true.B)
-        d.io.STATUS_MPP.expect(0.U)
-        write(d, 0x100, 2)
+        d.io.STATUS_MPP.expect(Privilege.USER.U)
+        write(d, CSR.SSTATUS, 2)
         idle(d)
-        d.io.PrivilegeModeW.poke(1.U)
-        d.io.NextPrivilegeModeM.poke(1.U)
+        d.io.PrivilegeModeW.poke(Privilege.SUPERVISOR.U)
+        d.io.NextPrivilegeModeM.poke(Privilege.SUPERVISOR.U)
         d.io.TrapM.poke(true.B)
         d.clock.step()
         d.io.STATUS_SIE.expect(false.B)
         d.io.STATUS_SPP.expect(true.B)
         idle(d)
-        d.io.PrivilegeModeW.poke(1.U)
+        d.io.PrivilegeModeW.poke(Privilege.SUPERVISOR.U)
         d.io.sretM.poke(true.B)
         d.clock.step()
         d.io.STATUS_SIE.expect(true.B)
@@ -379,18 +388,19 @@ class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new CSRHarness(PrivilegedConfig(supervisorSupported = false,
       hartId = hex("fedcba98")))) { d =>
       boot(d)
-      read(d, 0xf14, hex("fedcba98"))
-      for (adr <- Seq(0x100, 0x104, 0x140, 0x180, 0x302, 0x303, 0x14d)) {
-        transaction(d, adr, 2, rs = 0)
+      read(d, CSR.MHARTID, hex("fedcba98"))
+      for (adr <- Seq(CSR.SSTATUS, CSR.SIE, CSR.SSCRATCH, CSR.SATP, CSR.MEDELEG,
+        CSR.MIDELEG, CSR.STIMECMP)) {
+        transaction(d, adr, CSRFunction.RS, rs = 0)
         d.io.IllegalCSRAccessM.expect(true.B)
       }
-      write(d, 0x304, 0xfff)
+      write(d, CSR.MIE, 0xfff)
       d.io.MIE_REGW.expect(0x888.U)
-      write(d, 0x344, 0xfff)
+      write(d, CSR.MIP, 0xfff)
       d.io.MIP_REGW.expect(0.U)
-      write(d, 0x306, 7)
-      write(d, 0x320, 5)
-      read(d, 0xc00, d.io.MCYCLE_REGW.peek().litValue, mode = 0)
+      write(d, CSR.MCOUNTEREN, 7)
+      write(d, CSR.MCOUNTINHIBIT, 5)
+      read(d, CSR.CYCLE, d.io.MCYCLE_REGW.peek().litValue, mode = Privilege.USER)
       idle(d)
       d.io.mretM.poke(false.B)
       d.io.EPCM.expect(0.U)

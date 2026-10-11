@@ -1,6 +1,7 @@
 package riscvpipeline.ieu
 
 import chisel3._
+import riscvpipeline.isa.Architecture._
 
 /** 寄存器比较接口，保留教材 R1/R2/Eq/LT/LTU 名称；输入为同宽二补码位型。 */
 final class CmpIO(dataWidth: Int) extends Bundle {
@@ -14,7 +15,7 @@ final class CmpIO(dataWidth: Int) extends Bundle {
 /** 教材第 7 章 §7.1.3.6，Code Example 7.1，pp. 308–311：相等及大小比较。
   * 纯组合，无时钟、复位或状态；独立参数化字宽不表示整机支持 RV64。
   */
-final class Cmp(val dataWidth: Int = 32) extends RawModule {
+final class Cmp(val dataWidth: Int = XLEN) extends RawModule {
   require(dataWidth > 0, "Cmp dataWidth must be > 0")
 
   val io = IO(new CmpIO(dataWidth))

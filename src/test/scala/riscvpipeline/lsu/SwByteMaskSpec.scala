@@ -1,5 +1,6 @@
 package riscvpipeline.lsu
 
+import riscvpipeline.TestEncoding.{MemoryFunction}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -18,7 +19,8 @@ private class SwByteMaskHarness(dataWidth: Int) extends Module {
 class SwByteMaskSpec extends AnyFlatSpec with ChiselScalatestTester {
   // Use byte membership rather than the hardware's shifted base mask.
   private def reference(dataWidth: Int, funct3: Int, offset: Int): BigInt = {
-    val size = Map(0 -> 1, 1 -> 2, 2 -> 4, 3 -> 8).getOrElse(funct3, 0)
+    val size = Map(MemoryFunction.BYTE -> 1, MemoryFunction.HALF -> 2,
+      MemoryFunction.WORD -> 4, MemoryFunction.DOUBLE -> 8).getOrElse(funct3, 0)
     if (size == 0 || size > dataWidth / 8 || offset % size != 0) BigInt(0)
     else (0 until dataWidth / 8).foldLeft(BigInt(0)) { (mask, lane) =>
       if (lane >= offset && lane < offset + size) mask.setBit(lane) else mask
@@ -42,13 +44,19 @@ class SwByteMaskSpec extends AnyFlatSpec with ChiselScalatestTester {
     it should s"select every naturally aligned store lane at $dataWidth bits" in {
       test(new SwByteMaskHarness(dataWidth)) { dut =>
         val cases = if (dataWidth == 32) Seq(
-          (0, 0, 0x1), (0, 1, 0x2), (0, 2, 0x4), (0, 3, 0x8),
-          (1, 0, 0x3), (1, 2, 0xc), (2, 0, 0xf)
+          (MemoryFunction.BYTE, 0, 0x1), (MemoryFunction.BYTE, 1, 0x2),
+            (MemoryFunction.BYTE, 2, 0x4), (MemoryFunction.BYTE, 3, 0x8),
+          (MemoryFunction.HALF, 0, 0x3), (MemoryFunction.HALF, 2, 0xc),
+            (MemoryFunction.WORD, 0, 0xf)
         ) else Seq(
-          (0, 0, 0x01), (0, 1, 0x02), (0, 2, 0x04), (0, 3, 0x08),
-          (0, 4, 0x10), (0, 5, 0x20), (0, 6, 0x40), (0, 7, 0x80),
-          (1, 0, 0x03), (1, 2, 0x0c), (1, 4, 0x30), (1, 6, 0xc0),
-          (2, 0, 0x0f), (2, 4, 0xf0), (3, 0, 0xff)
+          (MemoryFunction.BYTE, 0, 0x01), (MemoryFunction.BYTE, 1, 0x02),
+            (MemoryFunction.BYTE, 2, 0x04), (MemoryFunction.BYTE, 3, 0x08),
+          (MemoryFunction.BYTE, 4, 0x10), (MemoryFunction.BYTE, 5, 0x20),
+            (MemoryFunction.BYTE, 6, 0x40), (MemoryFunction.BYTE, 7, 0x80),
+          (MemoryFunction.HALF, 0, 0x03), (MemoryFunction.HALF, 2, 0x0c),
+            (MemoryFunction.HALF, 4, 0x30), (MemoryFunction.HALF, 6, 0xc0),
+          (MemoryFunction.WORD, 0, 0x0f), (MemoryFunction.WORD, 4, 0xf0),
+            (MemoryFunction.DOUBLE, 0, 0xff)
         )
         for ((funct3, offset, expected) <- cases) {
           expectMask(dut, funct3, offset, BigInt(expected))
@@ -70,12 +78,13 @@ class SwByteMaskSpec extends AnyFlatSpec with ChiselScalatestTester {
 
     it should s"clear stale masks and recover without a clock edge at $dataWidth bits" in {
       test(new SwByteMaskHarness(dataWidth)) { dut =>
-        expectMask(dut, 2, 0, BigInt(0x0f))
+        expectMask(dut, MemoryFunction.WORD, 0, BigInt(0x0f))
         expectMask(dut, 6, 0, BigInt(0)) // Full Funct3, not just its low two bits.
-        expectMask(dut, 1, 0, BigInt(3))
-        expectMask(dut, 1, 1, BigInt(0)) // Same size, invalid alignment.
-        expectMask(dut, 0, 1, BigInt(2))
-        expectMask(dut, 2, dataWidth / 8 - 1, BigInt(0)) // Would cross a word.
+        expectMask(dut, MemoryFunction.HALF, 0, BigInt(3))
+        expectMask(dut, MemoryFunction.HALF, 1, BigInt(0)) // Same size, invalid alignment.
+        expectMask(dut, MemoryFunction.BYTE, 1, BigInt(2))
+        expectMask(dut, MemoryFunction.WORD, dataWidth / 8 - 1,
+          BigInt(0)) // Would cross a word.
       }
     }
   }

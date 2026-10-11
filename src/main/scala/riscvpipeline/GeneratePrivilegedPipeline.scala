@@ -9,23 +9,26 @@ object GeneratePrivilegedPipeline extends App {
   require(args.length <= 10,
     "Usage: GeneratePrivilegedPipeline [imem] [dmem] [dir] [file|-] " +
       "[resetVector] [S] [BE] [Sstc] [HPM] [WFI]")
-  val file = args.lift(3).getOrElse("programs/riscvtest.memfile")
+  val file = args.lift(3).getOrElse(CpuConfig.DEFAULT_PROGRAM_FILE)
   val resetVector = args.lift(4).map { value =>
     if (value.startsWith("0x") || value.startsWith("0X")) BigInt(value.drop(2), 16)
     else BigInt(value)
-  }.getOrElse(BigInt(0))
+  }.getOrElse(CpuConfig.DEFAULT_RESET_VECTOR)
+  val defaults = PrivilegedConfig()
   val config = CpuConfig(
-    imemDepth = args.headOption.map(_.toInt).getOrElse(64),
-    dmemDepth = args.lift(1).map(_.toInt).getOrElse(64),
+    imemDepth = args.headOption.map(_.toInt).getOrElse(CpuConfig.DEFAULT_IMEM_DEPTH),
+    dmemDepth = args.lift(1).map(_.toInt).getOrElse(CpuConfig.DEFAULT_DMEM_DEPTH),
     instructionInitFile = if (file == "-") None else Some(file),
     resetVector = resetVector,
     privilegedSupported = true,
     privileged = PrivilegedConfig(
-      supervisorSupported = args.lift(5).map(_.toBoolean).getOrElse(true),
-      bigEndianSupported = args.lift(6).map(_.toBoolean).getOrElse(true),
-      sstcSupported = args.lift(7).map(_.toBoolean).getOrElse(false),
-      hpmCounters = args.lift(8).map(_.toInt).getOrElse(0),
-      wfiTimeoutCycles = args.lift(9).map(_.toInt).getOrElse(65536)))
+      supervisorSupported =
+        args.lift(5).map(_.toBoolean).getOrElse(defaults.supervisorSupported),
+      bigEndianSupported =
+        args.lift(6).map(_.toBoolean).getOrElse(defaults.bigEndianSupported),
+      sstcSupported = args.lift(7).map(_.toBoolean).getOrElse(defaults.sstcSupported),
+      hpmCounters = args.lift(8).map(_.toInt).getOrElse(defaults.hpmCounters),
+      wfiTimeoutCycles = args.lift(9).map(_.toInt).getOrElse(defaults.wfiTimeoutCycles)))
   (new ChiselStage).emitVerilog(new PrivilegedPipeline(config),
     Array("--target-dir", args.lift(2).getOrElse("generated/privileged-pipeline")))
 }

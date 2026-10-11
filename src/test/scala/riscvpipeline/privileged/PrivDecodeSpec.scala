@@ -1,5 +1,6 @@
 package riscvpipeline.privileged
 
+import riscvpipeline.TestEncoding.{CSR, CSRFunction, Mask, Opcode, Privilege, SystemFunction}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -63,10 +64,11 @@ class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
   private val mret = hex("30200073")
   private val wfi = hex("10500073")
   private val sfence = hex("12000073")
-  private val csrCodes = Set(1, 2, 3, 5, 6, 7)
+  private val csrCodes = Set(CSRFunction.RW, CSRFunction.RS, CSRFunction.RC,
+    CSRFunction.RWI, CSRFunction.RSI, CSRFunction.RCI)
 
   private case class Input(
-    instr: BigInt, mode: Int = 3, valid: Boolean = true, tsr: Boolean = false,
+    instr: BigInt, mode: Int = Privilege.MACHINE, valid: Boolean = true, tsr: Boolean = false,
     tvm: Boolean = false, tw: Boolean = false, timeout: Boolean = false,
     ieuIllegal: Boolean = false, csrIllegal: Boolean = false
   )
@@ -103,23 +105,26 @@ class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
   // 软件按完整字模式匹配，再查允许的模式集合，不调用硬件逻辑。
   private def reference(a: Input, s: Boolean, vm: Boolean): Expected = {
     if (!a.valid) return Expected()
-    val system = a.instr % 128 == 0x73
+    val system = a.instr % 128 == Opcode.SYSTEM
     val funct3 = ((a.instr / 4096) % 8).toInt
     val isCSR = system && csrCodes.contains(funct3)
-    val supported = Set(0, 3).contains(a.mode) || (s && a.mode == 1)
-    val sfenceWords = (a.instr & hex("fe007fff")) == sfence
+    val supported = Set(Privilege.USER, Privilege.MACHINE).contains(a.mode) || (s &&
+      a.mode == Privilege.SUPERVISOR)
+    val sfenceWords = (a.instr & Mask.SFENCE_VMA) == sfence
     val kind = Map(ecall -> "ecall", ebreak -> "break", sret -> "sret",
       mret -> "mret", wfi -> "wfi").get(a.instr)
       .orElse(if (sfenceWords) Some("sfence") else None)
     val permitted = kind.exists {
       case "ecall" | "break" | "wfi" => supported
-      case "mret" => a.mode == 3
-      case "sret" => s && (a.mode == 3 || (a.mode == 1 && !a.tsr))
-      case "sfence" => vm && s && (a.mode == 3 || (a.mode == 1 && !a.tvm))
+      case "mret" => a.mode == Privilege.MACHINE
+      case "sret" => s && (a.mode == Privilege.MACHINE || (a.mode == Privilege.SUPERVISOR &&
+        !a.tsr))
+      case "sfence" => vm && s && (a.mode == Privilege.MACHINE ||
+        (a.mode == Privilege.SUPERVISOR && !a.tvm))
     }
     val local = system && (!supported || (!isCSR && !permitted))
-    val expired = kind.contains("wfi") && supported && a.mode != 3 &&
-      a.timeout && (a.tw || (s && a.mode == 0))
+    val expired = kind.contains("wfi") && supported && a.mode != Privilege.MACHINE &&
+      a.timeout && (a.tw || (s && a.mode == Privilege.USER))
     val fault = local || expired || a.ieuIllegal || a.csrIllegal
     val active = permitted && !fault
     Expected(active && kind.contains("ecall"), active && kind.contains("break"),
@@ -144,31 +149,33 @@ class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new PrivDecodeHarness) { dut =>
       for (tsr <- Seq(false, true)) {
         val rows = Seq(
-          (0, localIllegal, localIllegal),
-          (1, localIllegal, if (tsr) localIllegal else Expected(sret = true)),
-          (2, localIllegal, localIllegal),
-          (3, Expected(mret = true), Expected(sret = true))
+          (Privilege.USER, localIllegal, localIllegal),
+          (Privilege.SUPERVISOR, localIllegal,
+            if (tsr) localIllegal else Expected(sret = true)),
+          (Privilege.RESERVED, localIllegal, localIllegal),
+          (Privilege.MACHINE, Expected(mret = true), Expected(sret = true))
         )
         rows.foreach { case (mode, m, s) =>
           check(dut, Input(mret, mode = mode, tsr = tsr), m)
           check(dut, Input(sret, mode = mode, tsr = tsr), s)
         }
       }
-      for (mode <- Seq(0, 1, 3)) {
+      for (mode <- Seq(Privilege.USER, Privilege.SUPERVISOR, Privilege.MACHINE)) {
         check(dut, Input(ecall, mode), Expected(ecall = true))
         check(dut, Input(ebreak, mode), Expected(breakpoint = true))
       }
-      check(dut, Input(ecall, 2), localIllegal)
-      check(dut, Input(ebreak, 2), localIllegal)
+      check(dut, Input(ecall, Privilege.RESERVED), localIllegal)
+      check(dut, Input(ebreak, Privilege.RESERVED), localIllegal)
     }
   }
 
   it should "gate WFI timeouts by the instruction mode TW and S support" in {
     // 三行分别为U/S/M，列为(TW=0,超时0/1)、(TW=1,超时0/1)。
-    val withS = Map(0 -> Seq(false, true, false, true),
-      1 -> Seq(false, false, false, true), 3 -> Seq(false, false, false, false))
-    val withoutS = Map(0 -> Seq(false, false, false, true),
-      3 -> Seq(false, false, false, false))
+    val withS = Map(Privilege.USER -> Seq(false, true, false, true),
+      Privilege.SUPERVISOR -> Seq(false, false, false, true),
+        Privilege.MACHINE -> Seq(false, false, false, false))
+    val withoutS = Map(Privilege.USER -> Seq(false, false, false, true),
+      Privilege.MACHINE -> Seq(false, false, false, false))
     for (s <- Seq(false, true)) {
       test(new PrivDecodeHarness(s)) { dut =>
         val table = if (s) withS else withoutS
@@ -178,10 +185,11 @@ class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
           check(dut, Input(wfi, mode, tw = tw, timeout = expired),
             Expected(wfi = true, illegal = results(column)))
         }
-        check(dut, Input(wfi, 2, timeout = true, tw = true), localIllegal)
-        if (!s) check(dut, Input(wfi, 1), localIllegal)
+        check(dut, Input(wfi, Privilege.RESERVED, timeout = true, tw = true), localIllegal)
+        if (!s) check(dut, Input(wfi, Privilege.SUPERVISOR), localIllegal)
         check(dut, Input(mret, tw = true, timeout = true), Expected(mret = true))
-        check(dut, Input(ecall, 0, tw = true, timeout = true), Expected(ecall = true))
+        check(dut, Input(ecall, Privilege.USER, tw = true, timeout = true),
+          Expected(ecall = true))
       }
     }
   }
@@ -191,10 +199,10 @@ class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
       for (rs1 <- 0 until 32; rs2 <- 0 until 32) {
         val word = sfence | (BigInt(rs1) << 15) | (BigInt(rs2) << 20)
         check(dut, Input(word, tvm = true), Expected(sfence = true))
-        check(dut, Input(word, 1), Expected(sfence = true))
+        check(dut, Input(word, Privilege.SUPERVISOR), Expected(sfence = true))
       }
       for (mode <- 0 until 4; tvm <- Seq(false, true)) {
-        val expected = if (mode == 3 || (mode == 1 && !tvm))
+        val expected = if (mode == Privilege.MACHINE || (mode == Privilege.SUPERVISOR && !tvm))
           Expected(sfence = true) else localIllegal
         check(dut, Input(sfence, mode, tvm = tvm), expected)
       }
@@ -208,9 +216,9 @@ class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
         check(dut, Input(sfence, mode), localIllegal)
       }
       for (word <- Seq(ecall, ebreak, mret, wfi, hex("34001073"))) {
-        check(dut, Input(word, 1), localIllegal)
+        check(dut, Input(word, Privilege.SUPERVISOR), localIllegal)
       }
-      check(dut, Input(ecall, 0), Expected(ecall = true))
+      check(dut, Input(ecall, Privilege.USER), Expected(ecall = true))
       check(dut, Input(mret), Expected(mret = true))
     }
   }
@@ -229,11 +237,12 @@ class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "classify all funct12 values and reject unsupported SYSTEM extensions" in {
     test(new PrivDecodeHarness) { dut =>
-      val known = Map(0 -> Expected(ecall = true), 1 -> Expected(breakpoint = true),
-        0x102 -> Expected(sret = true), 0x302 -> Expected(mret = true),
-        0x105 -> Expected(wfi = true))
+      val known = Map(SystemFunction.ECALL -> Expected(ecall = true),
+        SystemFunction.EBREAK -> Expected(breakpoint = true),
+        SystemFunction.SRET -> Expected(sret = true), SystemFunction.MRET -> Expected(mret = true),
+        SystemFunction.WFI -> Expected(wfi = true))
       for (f <- 0 until 4096) {
-        check(dut, Input((BigInt(f) << 20) | 0x73), known.getOrElse(f, localIllegal))
+        check(dut, Input((BigInt(f) << 20) | Opcode.SYSTEM), known.getOrElse(f, localIllegal))
       }
       // URET、SINVAL.VMA、SFENCE.W.INVAL、SFENCE.INVAL.IR、保留funct3=100。
       for (word <- Seq("00200073", "16000073", "18000073", "18100073", "00004073")) {
@@ -253,8 +262,8 @@ class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
             Expected(illegal = true, illegalPriv = word == sfence))
         }
       }
-      for (opcode <- 0 until 128 if opcode != 0x73) {
-        check(dut, Input((mret & hex("ffffff80")) | opcode, mode = 2,
+      for (opcode <- 0 until 128 if opcode != Opcode.SYSTEM) {
+        check(dut, Input((mret & hex("ffffff80")) | opcode, mode = Privilege.RESERVED,
           tsr = true, tvm = true, tw = true, timeout = true), Expected())
       }
     }
@@ -262,14 +271,16 @@ class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "route all six CSR encodings to CSRAccess without privileged false positives" in {
     test(new CSRPrivDecodeHarness) { dut =>
-      for (f <- Seq(1, 2, 3, 5, 6, 7); rd <- Seq(0, 1);
+      for (f <- Seq(CSRFunction.RW, CSRFunction.RS, CSRFunction.RC, CSRFunction.RWI,
+        CSRFunction.RSI, CSRFunction.RCI); rd <- Seq(0, 1);
            field <- Seq(0, 1); valid <- Seq(false, true);
            (adr, mode, exists, allowed, legal) <- Seq(
-             (0x340, 3, true, true, true), (0x340, 0, true, true, false),
-             (0xf11, 3, true, true, f != 1 && f != 5 && field == 0),
-             (0x340, 3, false, true, false), (0x340, 3, true, false, false))) {
+             (CSR.MSCRATCH, 3, true, true, true), (CSR.MSCRATCH, 0, true, true, false),
+             (CSR.MVENDORID, 3, true, true, f != CSRFunction.RW && f != CSRFunction.RWI &&
+               field == 0),
+             (CSR.MSCRATCH, 3, false, true, false), (CSR.MSCRATCH, 3, true, false, false))) {
         val word = (BigInt(adr) << 20) | (BigInt(field) << 15) |
-          (BigInt(f) << 12) | (BigInt(rd) << 7) | 0x73
+          (BigInt(f) << 12) | (BigInt(rd) << 7) | Opcode.SYSTEM
         dut.io.InstrM.poke(word.U)
         dut.io.ValidM.poke(valid.B)
         dut.io.Mode.poke(mode.U)
@@ -277,8 +288,10 @@ class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
         dut.io.Allowed.poke(allowed.B)
         dut.io.Illegal.expect((valid && !legal).B)
         dut.io.IllegalPriv.expect(false.B)
-        dut.io.Read.expect((valid && legal && (!(f == 1 || f == 5) || rd != 0)).B)
-        dut.io.Write.expect((valid && legal && (f == 1 || f == 5 || field != 0)).B)
+        dut.io.Read.expect((valid && legal && (!(f == CSRFunction.RW ||
+          f == CSRFunction.RWI) || rd != 0)).B)
+        dut.io.Write.expect((valid && legal && (f == CSRFunction.RW ||
+          f == CSRFunction.RWI || field != 0)).B)
         dut.io.Ret.expect(false.B)
       }
     }
@@ -295,7 +308,7 @@ class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
           val word = i % 4 match {
             case 0 => base
             case 1 => base ^ (BigInt(1) << random.nextInt(32))
-            case 2 => (BigInt(25, random) << 7) | 0x73
+            case 2 => (BigInt(25, random) << 7) | Opcode.SYSTEM
             case _ => BigInt(32, random)
           }
           val a = Input(word, mode = random.nextInt(4), valid = i % 7 != 0,

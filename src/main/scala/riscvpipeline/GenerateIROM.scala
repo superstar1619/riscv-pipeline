@@ -10,9 +10,9 @@ object GenerateIROM extends App {
     args.length <= 3,
     "Usage: GenerateIROM [imemDepth] [targetDir] [instructionInitFile|-]"
   )
-  val depth = args.headOption.map(_.toInt).getOrElse(64)
+  val depth = args.headOption.map(_.toInt).getOrElse(CpuConfig.DEFAULT_IMEM_DEPTH)
   val targetDir = args.lift(1).getOrElse("generated/irom")
-  val file = args.lift(2).getOrElse("programs/riscvtest.memfile")
+  val file = args.lift(2).getOrElse(CpuConfig.DEFAULT_PROGRAM_FILE)
   val config = CpuConfig(imemDepth = depth,
     instructionInitFile = if (file == "-") None else Some(file))
   (new ChiselStage).emitVerilog(

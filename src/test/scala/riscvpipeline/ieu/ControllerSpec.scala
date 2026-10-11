@@ -1,5 +1,7 @@
 package riscvpipeline.ieu
 
+import riscvpipeline.TestEncoding.{ALUFunction, BranchFunction, Control, Immediate, Mask,
+  MemoryFunction, Opcode}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -44,40 +46,51 @@ class ControllerSpec extends AnyFlatSpec with ChiselScalatestTester {
   // Independent behavioral table; this reference never packs control bits.
   private case class MainControls(
     regWrite: Boolean = false,
-    immSrc: Int = 0,
-    aluSrc: Int = 0,
+    immSrc: Int = Immediate.I,
+    aluSrc: Int = Control.SRC_REGISTERS,
     aluOp: Boolean = false,
     aluResultSrc: Boolean = false,
-    memRW: Int = 0,
+    memRW: Int = Control.MEM_NONE,
     resultSrc: Boolean = false,
     branch: Boolean = false,
     jump: Boolean = false
   )
   private val mainTable = Map(
-    0x33 -> MainControls(regWrite = true, aluOp = true),
-    0x13 -> MainControls(regWrite = true, aluSrc = 1, aluOp = true),
-    0x03 -> MainControls(regWrite = true, aluSrc = 1, memRW = 2, resultSrc = true),
-    0x23 -> MainControls(immSrc = 1, aluSrc = 1, memRW = 1),
-    0x63 -> MainControls(immSrc = 2, aluSrc = 3, branch = true),
-    0x6f -> MainControls(regWrite = true, immSrc = 3, aluSrc = 3,
+    Opcode.OP -> MainControls(regWrite = true, aluOp = true),
+    Opcode.OP_IMM -> MainControls(regWrite = true, aluSrc = Control.SRC_IMMEDIATE,
+      aluOp = true),
+    Opcode.LOAD -> MainControls(regWrite = true, aluSrc = Control.SRC_IMMEDIATE,
+      memRW = Control.MEM_READ, resultSrc = true),
+    Opcode.STORE -> MainControls(immSrc = Immediate.S, aluSrc = Control.SRC_IMMEDIATE,
+      memRW = Control.MEM_WRITE),
+    Opcode.BRANCH -> MainControls(immSrc = Immediate.B, aluSrc = Control.SRC_PC_IMMEDIATE,
+      branch = true),
+    Opcode.JAL -> MainControls(regWrite = true, immSrc = Immediate.J,
+      aluSrc = Control.SRC_PC_IMMEDIATE,
       aluResultSrc = true, jump = true),
-    0x67 -> MainControls(regWrite = true, aluSrc = 1, aluResultSrc = true, jump = true),
-    0x37 -> MainControls(regWrite = true, immSrc = 4, aluResultSrc = true),
-    0x17 -> MainControls(regWrite = true, immSrc = 4, aluSrc = 3)
+    Opcode.JALR -> MainControls(regWrite = true, aluSrc = Control.SRC_IMMEDIATE,
+      aluResultSrc = true, jump = true),
+    Opcode.LUI -> MainControls(regWrite = true, immSrc = Immediate.U, aluResultSrc = true),
+    Opcode.AUIPC -> MainControls(regWrite = true, immSrc = Immediate.U,
+      aluSrc = Control.SRC_PC_IMMEDIATE)
   )
 
   private def legal(op: Int, f3: Int, f7: Int): Boolean = op match {
-    case 0x33 => f7 == 0 || (f7 == 0x20 && Set(0, 5).contains(f3))
-    case 0x13 => f3 match {
-      case 1 => f7 == 0
-      case 5 => Set(0, 0x20).contains(f7)
+    case Opcode.OP => f7 == 0 || (f7 == Mask.FUNCT7_ALTERNATE && Set(ALUFunction.ADD_SUB,
+      ALUFunction.SR).contains(f3))
+    case Opcode.OP_IMM => f3 match {
+      case ALUFunction.SLL => f7 == 0
+      case ALUFunction.SR => Set(0, Mask.FUNCT7_ALTERNATE).contains(f7)
       case _ => true
     }
-    case 0x03 => Set(0, 1, 2, 4, 5).contains(f3)
-    case 0x23 => Set(0, 1, 2).contains(f3)
-    case 0x63 => Set(0, 1, 4, 5, 6, 7).contains(f3)
-    case 0x67 => f3 == 0
-    case 0x6f | 0x37 | 0x17 => true
+    case Opcode.LOAD => Set(MemoryFunction.BYTE, MemoryFunction.HALF, MemoryFunction.WORD,
+      MemoryFunction.BYTE_UNSIGNED, MemoryFunction.HALF_UNSIGNED).contains(f3)
+    case Opcode.STORE => Set(MemoryFunction.BYTE, MemoryFunction.HALF,
+      MemoryFunction.WORD).contains(f3)
+    case Opcode.BRANCH => Set(BranchFunction.EQ, BranchFunction.NE, BranchFunction.LT,
+      BranchFunction.GE, BranchFunction.LTU, BranchFunction.GEU).contains(f3)
+    case Opcode.JALR => f3 == 0
+    case Opcode.JAL | Opcode.LUI | Opcode.AUIPC => true
     case _ => false
   }
 
@@ -92,15 +105,16 @@ class ControllerSpec extends AnyFlatSpec with ChiselScalatestTester {
     val eq = (flags & 1) != 0
     val lt = (flags & 2) != 0
     val ltu = (flags & 4) != 0
-    val subtract = expected.aluOp && (f3 == 2 || f3 == 3 ||
-      (f3 == 5 && (f7 & 32) != 0) || (op == 0x33 && f3 == 0 && (f7 & 32) != 0))
+    val subtract = expected.aluOp && (f3 == ALUFunction.SLT || f3 == ALUFunction.SLTU ||
+      (f3 == ALUFunction.SR && (f7 & Mask.FUNCT7_ALTERNATE) != 0) || (op == Opcode.OP &&
+        f3 == ALUFunction.ADD_SUB && (f7 & Mask.FUNCT7_ALTERNATE) != 0))
     val taken = f3 match {
-      case 0 => eq
-      case 1 => !eq
-      case 4 => lt
-      case 5 => !lt
-      case 6 => ltu
-      case 7 => !ltu
+      case BranchFunction.EQ => eq
+      case BranchFunction.NE => !eq
+      case BranchFunction.LT => lt
+      case BranchFunction.GE => !lt
+      case BranchFunction.LTU => ltu
+      case BranchFunction.GEU => !ltu
       case _ => false
     }
     dut.io.Op.poke(op.U)
@@ -114,9 +128,10 @@ class ControllerSpec extends AnyFlatSpec with ChiselScalatestTester {
     dut.io.ALUSrc.expect(expected.aluSrc.U)
     dut.io.ALUResultSrc.expect(expected.aluResultSrc.B)
     dut.io.MemRW.expect(expected.memRW.U)
-    dut.io.MemWrite.expect(((expected.memRW & 1) != 0).B)
+    dut.io.MemWrite.expect(((expected.memRW & Control.MEM_WRITE) != 0).B)
     dut.io.ResultSrc.expect(expected.resultSrc.B)
-    dut.io.ALUControl.expect(((if (subtract) 2 else 0) | (if (expected.aluOp) 1 else 0)).U)
+    dut.io.ALUControl.expect(((if (subtract) Control.ALU_SUBTRACT else Control.ALU_ADD) |
+      (if (expected.aluOp) Control.ALU_FUNCTION else Control.ALU_ADD)).U)
     dut.io.Jump.expect(expected.jump.B)
     dut.io.PCSrc.expect((expected.jump || (expected.branch && taken)).B)
   }
@@ -137,8 +152,9 @@ class ControllerSpec extends AnyFlatSpec with ChiselScalatestTester {
     "flag combinations") in {
     test(new ControllerHarness) { dut =>
       for (f3 <- 0 until 8; f7 <- 0 until 128; flags <- 0 until 8) {
-        val expected = if (legal(0x63, f3, f7)) mainTable(0x63) else MainControls()
-        check(dut, 0x63, f3, f7, flags, expected)
+        val expected = if (legal(Opcode.BRANCH, f3,
+          f7)) mainTable(Opcode.BRANCH) else MainControls()
+        check(dut, Opcode.BRANCH, f3, f7, flags, expected)
       }
     }
   }
@@ -171,31 +187,31 @@ class ControllerSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new ControllerALUHarness) { dut =>
       // op, funct3, full funct7, a, b, result, address; literal hand-checked outputs.
       val vectors = Seq(
-        (0x33, 0, 0, 5L, 7L, 12L, 12L),
-        (0x33, 0, 32, 5L, 7L, 0xfffffffeL, 0xfffffffeL),
-        (0x33, 1, 0, 3L, 4L, 48L, 7L),
-        (0x33, 2, 0, 0x80000000L, 0x7fffffffL, 1L, 1L),
-        (0x33, 3, 0, 0L, 0xffffffffL, 1L, 1L),
-        (0x33, 4, 0, 0x55L, 0xfL, 0x5aL, 0x64L),
-        (0x33, 5, 0, 0x80000000L, 1L, 0x40000000L, 0x80000001L),
-        (0x33, 5, 32, 0x80000000L, 1L, 0xc0000000L, 0x7fffffffL),
-        (0x33, 6, 0, 0x55L, 0xfL, 0x5fL, 0x64L),
-        (0x33, 7, 0, 0x55L, 0xfL, 5L, 0x64L),
-        (0x13, 0, 127, 5L, 0xffffffffL, 4L, 4L),
-        (0x13, 1, 0, 3L, 4L, 48L, 7L),
-        (0x13, 2, 127, 0L, 0xffffffffL, 0L, 1L),
-        (0x13, 3, 127, 0L, 0xffffffffL, 1L, 1L),
-        (0x13, 4, 127, 0x55L, 0xffffffffL, 0xffffffaaL, 0x54L),
-        (0x13, 5, 0, 0x80000000L, 1L, 0x40000000L, 0x80000001L),
-        (0x13, 5, 32, 0x80000000L, 1L, 0xc0000000L, 0x7fffffffL),
-        (0x13, 6, 127, 0x55L, 0xffffffffL, 0xffffffffL, 0x54L),
-        (0x13, 7, 127, 0x55L, 0xffffffffL, 0x55L, 0x54L),
-        (0x03, 0, 127, 20L, 12L, 32L, 32L),
-        (0x23, 2, 127, 20L, 12L, 32L, 32L),
-        (0x63, 6, 127, 32L, 8L, 40L, 40L),
-        (0x6f, 7, 127, 32L, 8L, 40L, 40L),
-        (0x67, 0, 127, 32L, 8L, 40L, 40L),
-        (0x17, 3, 127, 32L, 4096L, 4128L, 4128L)
+        (Opcode.OP, 0, 0, 5L, 7L, 12L, 12L),
+        (Opcode.OP, 0, 32, 5L, 7L, 0xfffffffeL, 0xfffffffeL),
+        (Opcode.OP, 1, 0, 3L, 4L, 48L, 7L),
+        (Opcode.OP, 2, 0, 0x80000000L, 0x7fffffffL, 1L, 1L),
+        (Opcode.OP, 3, 0, 0L, 0xffffffffL, 1L, 1L),
+        (Opcode.OP, 4, 0, 0x55L, 0xfL, 0x5aL, 0x64L),
+        (Opcode.OP, 5, 0, 0x80000000L, 1L, 0x40000000L, 0x80000001L),
+        (Opcode.OP, 5, 32, 0x80000000L, 1L, 0xc0000000L, 0x7fffffffL),
+        (Opcode.OP, 6, 0, 0x55L, 0xfL, 0x5fL, 0x64L),
+        (Opcode.OP, 7, 0, 0x55L, 0xfL, 5L, 0x64L),
+        (Opcode.OP_IMM, 0, 127, 5L, 0xffffffffL, 4L, 4L),
+        (Opcode.OP_IMM, 1, 0, 3L, 4L, 48L, 7L),
+        (Opcode.OP_IMM, 2, 127, 0L, 0xffffffffL, 0L, 1L),
+        (Opcode.OP_IMM, 3, 127, 0L, 0xffffffffL, 1L, 1L),
+        (Opcode.OP_IMM, 4, 127, 0x55L, 0xffffffffL, 0xffffffaaL, 0x54L),
+        (Opcode.OP_IMM, 5, 0, 0x80000000L, 1L, 0x40000000L, 0x80000001L),
+        (Opcode.OP_IMM, 5, 32, 0x80000000L, 1L, 0xc0000000L, 0x7fffffffL),
+        (Opcode.OP_IMM, 6, 127, 0x55L, 0xffffffffL, 0xffffffffL, 0x54L),
+        (Opcode.OP_IMM, 7, 127, 0x55L, 0xffffffffL, 0x55L, 0x54L),
+        (Opcode.LOAD, 0, 127, 20L, 12L, 32L, 32L),
+        (Opcode.STORE, 2, 127, 20L, 12L, 32L, 32L),
+        (Opcode.BRANCH, 6, 127, 32L, 8L, 40L, 40L),
+        (Opcode.JAL, 7, 127, 32L, 8L, 40L, 40L),
+        (Opcode.JALR, 0, 127, 32L, 8L, 40L, 40L),
+        (Opcode.AUIPC, 3, 127, 32L, 4096L, 4128L, 4128L)
       )
       for ((op, f3, f7, a, b, result, address) <- vectors) {
         dut.io.Op.poke(op.U)

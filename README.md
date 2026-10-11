@@ -12,6 +12,8 @@ Scala 包名为 `riscvpipeline`，顶层为 `RiscvPipeline`，接口为 `RiscvPi
 模块和中文说明见 [第八章实施记录](docs/chapter8/README.md)，
 顶层接口与提交时序见 [流水线集成](docs/chapter8/14-pipeline.md)，
 真实指令测试及回归见 [整机验收](docs/chapter8/15-acceptance.md)。
+架构常量、CSR 地址及各字段与指令集的对应关系见
+[常量重构与字段对照报告](docs/constants-refactor/README.md)。
 下方第七章接口和地址回绕说明对应 `RiscvPipeline` 的默认配置。
 
 工具链保持 JDK 17、sbt 1.10.7、Scala 2.13.14、Chisel 3.6.1、chiseltest 0.6.2。

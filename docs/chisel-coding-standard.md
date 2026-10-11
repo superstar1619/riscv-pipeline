@@ -31,6 +31,21 @@
 `val LoadOpcode = 3.U(7.W)` 是硬件字面量。
 已有通用模块的 `a`、`b`、`y`、`rd` 等公开端口保持兼容，不为风格更名。
 
+固定架构编码按职责集中：`isa.Architecture` 定义架构尺寸，`isa.InstructionEncoding`
+定义指令编码，`control.ControlEncoding` 定义流水线内部控制协议，
+`privileged.CSRAddresses` 定义 CSR 地址，`privileged.PrivilegedConstants`
+按权限、异常、中断、计数器及状态字段分组。只在单模块使用的常量放在其伴生对象中。
+同一个数值在不同语义下分别命名，例如指令长度和数据字节数不共用一个含糊的 `FOUR`。
+
+这些对象只保存 Scala `Int`、`BigInt` 等不可变值；使用处写
+`CSRAddresses.MSTATUS.U(CSRAddresses.ADDRESS_WIDTH.W)`，不要在全局对象中缓存
+Chisel `UInt`，以免跨模块共享硬件绑定。地址和编码的原始数值保留在常量定义处，
+读表、写译码及权限检查统一引用名称。零初始化、自然计数和清晰的位切片无需机械包装。
+配置默认值由配置类及伴生对象提供，固定 ISA 编码不作为可调构造参数。
+
+测试中的命名常量位于测试源码，独立定义预期架构值；参考模型不导入生产常量或译码
+辅助函数。保留明确的机器码样本与非法输入向量，使错误编码仍能被独立预期检出。
+
 仅在真实流水设计中使用 `F/D/E/M/W` 后缀，例如 `PCF`、`InstrD`。
 流水线产生的信号以产生级命名；危险处理等外部控制按使用级命名。
 单周期 CPU 不添加虚假的流水级后缀。

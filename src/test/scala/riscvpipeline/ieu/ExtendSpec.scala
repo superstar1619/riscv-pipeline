@@ -1,5 +1,6 @@
 package riscvpipeline.ieu
 
+import riscvpipeline.TestEncoding.{Immediate}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -69,8 +70,8 @@ class ExtendSpec extends AnyFlatSpec with ChiselScalatestTester {
         for (selector <- 0 until 5) {
           val mapping = positions(selector)
           val halfRange = BigInt(1) << (mapping.length - 1)
-          val step = if (selector == 4) BigInt(4096)
-            else if (selector >= 2) BigInt(2) else BigInt(1)
+          val step = if (selector == Immediate.U) BigInt(4096)
+            else if (selector >= Immediate.B) BigInt(2) else BigInt(1)
           val boundaries = Seq(BigInt(0), step, -step, halfRange - step, -halfRange)
           val walkingBits = mapping.indices.filter(mapping(_) >= 0).map { bit =>
             if (bit == mapping.length - 1) -halfRange else BigInt(1) << bit
@@ -117,7 +118,7 @@ class ExtendSpec extends AnyFlatSpec with ChiselScalatestTester {
           BigInt("fffff000", 16) -> BigInt(-4096)
         )
         for ((instruction, expected) <- cases; lowBits <- Seq(BigInt(0), BigInt(0xfff))) {
-          expectImmediate(dut, instruction | lowBits, 4, expected, outputWidth)
+          expectImmediate(dut, instruction | lowBits, Immediate.U, expected, outputWidth)
         }
       }
     }

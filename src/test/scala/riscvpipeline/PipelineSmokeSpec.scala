@@ -1,5 +1,6 @@
 package riscvpipeline
 
+import riscvpipeline.TestEncoding.{Control}
 import chisel3._
 import chiseltest._
 import org.scalatest.flatspec.AnyFlatSpec
@@ -82,7 +83,7 @@ class PipelineSmokeSpec extends AnyFlatSpec with ChiselScalatestTester {
       dut.reset.poke(true.B)
       dut.io.MemWrite.expect(false.B)
       dut.io.ByteMask.expect(0.U)
-      dut.io.MemRW.expect(0.U)
+      dut.io.MemRW.expect(Control.MEM_NONE.U)
       dut.PCF.expect(oldPC.U) // Synchronous state does not change without an edge.
       dut.reset.poke(false.B)
       dut.PCF.expect(oldPC.U)

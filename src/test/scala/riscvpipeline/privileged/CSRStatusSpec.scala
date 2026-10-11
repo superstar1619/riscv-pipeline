@@ -1,5 +1,6 @@
 package riscvpipeline.privileged
 
+import riscvpipeline.TestEncoding.{CSR, CSRFunction, Privilege}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util.MuxLookup
@@ -42,16 +43,16 @@ private class StatusAccessHarness extends Module {
   status.reset := reset.asBool
   val address = access.io.CSRAdrM
   val old = MuxLookup(address, 0.U(32.W))(Seq(
-    "h300".U -> status.io.MSTATUS_REGW, "h310".U -> status.io.MSTATUSH_REGW,
-    "h100".U -> status.io.SSTATUS_REGW))
+    CSR.MSTATUS.U -> status.io.MSTATUS_REGW, CSR.MSTATUSH.U -> status.io.MSTATUSH_REGW,
+    CSR.SSTATUS.U -> status.io.SSTATUS_REGW))
   access.io.InstrM := io.Instr
   access.io.ValidM := io.Valid
   access.io.PrivilegeModeW := io.Mode
   access.io.SrcAM := io.Src
   access.io.CSRReadValM := old
   access.io.CSRModifyValM := old
-  access.io.CSRExistsM := address === "h300".U || address === "h310".U ||
-    address === "h100".U
+  access.io.CSRExistsM := address === CSR.MSTATUS.U || address === CSR.MSTATUSH.U ||
+    address === CSR.SSTATUS.U
   access.io.CSRAccessAllowedM := true.B
   decode.io.InstrM := io.Instr
   decode.io.ValidM := io.Valid
@@ -65,9 +66,9 @@ private class StatusAccessHarness extends Module {
   status.io.ValidM := io.Valid
   status.io.StallW := io.Stall
   status.io.FlushM := io.Flush
-  status.io.WriteMSTATUSM := access.io.CSRWriteM && address === "h300".U
-  status.io.WriteMSTATUSHM := access.io.CSRWriteM && address === "h310".U
-  status.io.WriteSSTATUSM := access.io.CSRWriteM && address === "h100".U
+  status.io.WriteMSTATUSM := access.io.CSRWriteM && address === CSR.MSTATUS.U
+  status.io.WriteMSTATUSHM := access.io.CSRWriteM && address === CSR.MSTATUSH.U
+  status.io.WriteSSTATUSM := access.io.CSRWriteM && address === CSR.SSTATUS.U
   status.io.CSRWriteValM := access.io.CSRWriteValM
   status.io.TrapM := false.B
   status.io.PrivilegeModeW := io.Mode
@@ -87,7 +88,8 @@ class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
   private def hex(s: String): BigInt = BigInt(s, 16)
   private case class Inputs(
     word: BigInt = 0, mwrite: Boolean = false, hwrite: Boolean = false,
-    swrite: Boolean = false, trap: Boolean = false, mode: Int = 3, next: Int = 3,
+    swrite: Boolean = false, trap: Boolean = false, mode: Int = Privilege.MACHINE,
+      next: Int = Privilege.MACHINE,
     mret: Boolean = false, sret: Boolean = false, valid: Boolean = true,
     stall: Boolean = false, flush: Boolean = false, ptw: Boolean = false
   )
@@ -137,7 +139,8 @@ class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
       "mpie" -> 7, "spp" -> 8, "mpp" -> 11, "mprv" -> 17, "sum" -> 18,
       "mxr" -> 19, "tvm" -> 20, "tw" -> 21, "tsr" -> 22)
     private val sFields = Set("sie", "spie", "spp", "ube", "sum", "mxr")
-    private val supported = Set(0, 3) ++ (if (s) Set(1) else Set.empty[Int])
+    private val supported = Set(Privilege.USER,
+      Privilege.MACHINE) ++ (if (s) Set(1) else Set.empty[Int])
     private val writable = Set("mie", "mpie", "mpp", "mprv", "tw") ++
       (if (s) Set("sie", "spie", "spp", "mxr", "tvm", "tsr") else Set.empty) ++
       (if (vm) Set("sum") else Set.empty) ++ (if (be) Set("ube") else Set.empty)
@@ -152,32 +155,35 @@ class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
     def supervisor: BigInt = if (s) pack(sFields) else BigInt(0)
     def high: BigInt = BigInt(values("mbe") * 32 + values("sbe") * 16)
     def endian(a: Inputs): Boolean = {
-      val mode = if (vm && a.ptw) 1
-        else if (a.mode == 3 && values("mprv") == 1) values("mpp") else a.mode
-      be && Map(0 -> "ube", 1 -> "sbe", 3 -> "mbe").get(mode)
+      val mode = if (vm && a.ptw) Privilege.SUPERVISOR
+        else if (a.mode == Privilege.MACHINE && values("mprv") == 1) values("mpp") else a.mode
+      be && Map(Privilege.USER -> "ube", Privilege.SUPERVISOR -> "sbe",
+        Privilege.MACHINE -> "mbe").get(mode)
         .exists(name => values(name) == 1)
     }
     def update(a: Inputs, resetting: Boolean = false): Unit = {
       if (resetting) values.keys.toSeq.foreach(values(_) = 0)
       else if (a.valid && !a.stall && !a.flush) {
         if (a.trap) {
-          if (supported(a.mode) && (a.next == 3 || (s && a.next == 1)) &&
+          if (supported(a.mode) && (a.next == Privilege.MACHINE || (s &&
+            a.next == Privilege.SUPERVISOR)) &&
               a.next >= a.mode) {
-            if (a.next == 3) {
+            if (a.next == Privilege.MACHINE) {
               values("mpie") = values("mie"); values("mie") = 0
               values("mpp") = a.mode
             } else {
               values("spie") = values("sie"); values("sie") = 0
-              values("spp") = if (a.mode == 1) 1 else 0
+              values("spp") = if (a.mode == Privilege.SUPERVISOR) 1 else 0
             }
           }
         } else if (a.mret) {
-          if (a.mode == 3) {
+          if (a.mode == Privilege.MACHINE) {
             if (values("mpp") != 3) values("mprv") = 0
             values("mie") = values("mpie"); values("mpie") = 1; values("mpp") = 0
           }
         } else if (a.sret) {
-          if (s && (a.mode == 3 || (a.mode == 1 && values("tsr") == 0))) {
+          if (s && (a.mode == Privilege.MACHINE || (a.mode == Privilege.SUPERVISOR &&
+            values("tsr") == 0))) {
             values("sie") = values("spie"); values("spie") = 1
             values("spp") = 0; values("mprv") = 0
           }
@@ -270,7 +276,7 @@ class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
       for ((mode, m) <- Seq(0 -> 0x20082, 1 -> 0x20882, 3 -> 0x21882)) {
         boot(d)
         cycle(d, Inputs(0x2180a, mwrite = true))
-        cycle(d, Inputs(trap = true, mode = mode, next = 3))
+        cycle(d, Inputs(trap = true, mode = mode, next = Privilege.MACHINE))
         expect(d, m, 2, 0)
       }
     }
@@ -281,7 +287,7 @@ class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
       for ((mode, m, s) <- Seq((0, 0x21828, 0x20), (1, 0x21928, 0x120))) {
         boot(d)
         cycle(d, Inputs(0x2180a, mwrite = true))
-        cycle(d, Inputs(trap = true, mode = mode, next = 1))
+        cycle(d, Inputs(trap = true, mode = mode, next = Privilege.SUPERVISOR))
         expect(d, m, s, 0)
       }
     }
@@ -289,12 +295,13 @@ class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "restore MIE from old MPIE and clear MPRV only when MRET leaves machine mode" in {
     test(new CSRStatusHarness) { d =>
-      for (target <- Seq(0, 1, 3); mpie <- Seq(0, 1)) {
+      for (target <- Seq(Privilege.USER, Privilege.SUPERVISOR,
+        Privilege.MACHINE); mpie <- Seq(0, 1)) {
         boot(d)
         val before = BigInt(0x2000a + (target << 11) + (mpie << 7))
         cycle(d, Inputs(before, mwrite = true))
         cycle(d, Inputs(mret = true))
-        val after = BigInt(0x82 + (mpie << 3) + (if (target == 3) 0x20000 else 0))
+        val after = BigInt(0x82 + (mpie << 3) + (if (target == Privilege.MACHINE) 0x20000 else 0))
         expect(d, after, 2, 0)
       }
     }
@@ -302,7 +309,7 @@ class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "restore SIE from old SPIE and clear SPP and MPRV on SRET" in {
     test(new CSRStatusHarness) { d =>
-      for (spie <- Seq(0, 1); mode <- Seq(1, 3)) {
+      for (spie <- Seq(0, 1); mode <- Seq(Privilege.SUPERVISOR, Privilege.MACHINE)) {
         boot(d)
         cycle(d, Inputs(0x2190a + (spie << 5), mwrite = true))
         cycle(d, Inputs(sret = true, mode = mode))
@@ -338,11 +345,12 @@ class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
       for (valid <- Seq(false, true); stall <- Seq(false, true); flush <- Seq(false, true)
            if !valid || stall || flush) {
         cycle(d, Inputs(hex("ffffffff"), mwrite = true, hwrite = true, swrite = true,
-          trap = true, mode = 0, next = 1, mret = true, sret = true,
+          trap = true, mode = Privilege.USER, next = Privilege.SUPERVISOR, mret = true,
+            sret = true,
           valid = valid, stall = stall, flush = flush))
         expect(d, 0x2180a, 2, 0x30)
       }
-      cycle(d, Inputs(trap = true, mode = 0, next = 1))
+      cycle(d, Inputs(trap = true, mode = Privilege.USER, next = Privilege.SUPERVISOR))
       expect(d, 0x21828, 0x20, 0x30)
     }
   }
@@ -352,21 +360,26 @@ class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
       test(new CSRStatusHarness(s)) { d =>
         boot(d)
         cycle(d, Inputs(0x88, mwrite = true))
-        val events = Seq(Inputs(trap = true, mode = 2), Inputs(trap = true, next = 0),
-          Inputs(trap = true, next = 2), Inputs(trap = true, mode = 3, next = 1),
-          Inputs(mret = true, mode = 0), Inputs(mret = true, mode = 1),
-          Inputs(sret = true, mode = 0), Inputs(sret = true, mode = 2)) ++
-          (if (!s) Seq(Inputs(trap = true, mode = 0, next = 1),
-            Inputs(sret = true), Inputs(trap = true, mode = 1)) else Seq.empty)
+        val events = Seq(Inputs(trap = true, mode = Privilege.RESERVED), Inputs(trap = true,
+          next = Privilege.USER),
+          Inputs(trap = true, next = Privilege.RESERVED), Inputs(trap = true,
+            mode = Privilege.MACHINE, next = Privilege.SUPERVISOR),
+          Inputs(mret = true, mode = Privilege.USER), Inputs(mret = true,
+            mode = Privilege.SUPERVISOR),
+          Inputs(sret = true, mode = Privilege.USER), Inputs(sret = true,
+            mode = Privilege.RESERVED)) ++
+          (if (!s) Seq(Inputs(trap = true, mode = Privilege.USER, next = Privilege.SUPERVISOR),
+            Inputs(sret = true), Inputs(trap = true,
+              mode = Privilege.SUPERVISOR)) else Seq.empty)
         for (event <- events) {
           cycle(d, event.copy(mwrite = true, word = hex("ffffffff")))
           expect(d, 0x88, 0, 0)
         }
         if (s) {
           cycle(d, Inputs(0x400088, mwrite = true))
-          cycle(d, Inputs(sret = true, mode = 1, mwrite = true))
+          cycle(d, Inputs(sret = true, mode = Privilege.SUPERVISOR, mwrite = true))
           expect(d, 0x400088, 0, 0)
-          cycle(d, Inputs(sret = true, mode = 3))
+          cycle(d, Inputs(sret = true, mode = Privilege.MACHINE))
           expect(d, 0x4000a8, 0x20, 0)
         }
       }
@@ -377,13 +390,15 @@ class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new CSRStatusHarness(true, true, true)) { d =>
       boot(d)
       for (ube <- 0 to 1; sbe <- 0 to 1; mbe <- 0 to 1;
-           mprv <- 0 to 1; mpp <- Seq(0, 1, 3)) {
+           mprv <- 0 to 1; mpp <- Seq(Privilege.USER, Privilege.SUPERVISOR,
+             Privilege.MACHINE)) {
         cycle(d, Inputs((ube << 6) + (mprv << 17) + (mpp << 11), mwrite = true))
         cycle(d, Inputs((mbe << 5) + (sbe << 4), hwrite = true))
         for (mode <- 0 until 4; ptw <- Seq(false, true)) {
           drive(d, Inputs(mode = mode, ptw = ptw, valid = false))
-          val effective = if (ptw) 1 else if (mode == 3 && mprv == 1) mpp else mode
-          val selected = Map(0 -> ube, 1 -> sbe, 2 -> 0, 3 -> mbe)(effective) == 1
+          val effective = if (ptw) Privilege.SUPERVISOR else if (mode == Privilege.MACHINE && mprv == 1) mpp else mode
+          val selected = Map(Privilege.USER -> ube, Privilege.SUPERVISOR -> sbe,
+            Privilege.RESERVED -> 0, Privilege.MACHINE -> mbe)(effective) == 1
           d.io.BigEndianM.expect(selected.B)
         }
       }
@@ -399,36 +414,37 @@ class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "exercise CSR read modify write and return authorization with prior modules" in {
     test(new StatusAccessHarness) { d =>
-      def instruction(word: BigInt, src: BigInt = 0, mode: Int = 3): Unit = {
+      def instruction(word: BigInt, src: BigInt = 0, mode: Int = Privilege.MACHINE): Unit = {
         d.io.Instr.poke(word.U); d.io.Src.poke(src.U); d.io.Mode.poke(mode.U)
         d.io.Valid.poke(true.B); d.io.Stall.poke(false.B); d.io.Flush.poke(false.B)
       }
-      def csr(adr: Int, f: Int, src: BigInt, field: Int = 1, mode: Int = 3): Unit =
+      def csr(adr: Int, f: Int, src: BigInt, field: Int = 1,
+        mode: Int = Privilege.MACHINE): Unit =
         instruction((BigInt(adr) << 20) | (BigInt(field) << 15) |
           (BigInt(f) << 12) | 0xf3, src, mode)
       instruction(0x13)
       d.reset.poke(true.B); d.clock.step(); d.reset.poke(false.B)
-      csr(0x300, 5, 0, field = 8)
+      csr(CSR.MSTATUS, CSRFunction.RWI, 0, field = 8)
       d.io.Result.expect(0.U); d.io.M.expect(0.U); d.clock.step(); d.io.M.expect(8.U)
-      csr(0x300, 2, 0x80)
+      csr(CSR.MSTATUS, CSRFunction.RS, 0x80)
       d.io.Result.expect(8.U); d.clock.step(); d.io.M.expect(0x88.U)
-      csr(0x100, 1, 2, mode = 1)
+      csr(CSR.SSTATUS, CSRFunction.RW, 2, mode = Privilege.SUPERVISOR)
       d.clock.step(); d.io.M.expect(0x8a.U); d.io.S.expect(2.U)
-      csr(0x300, 3, 8)
+      csr(CSR.MSTATUS, CSRFunction.RC, 8)
       d.io.Result.expect(0x8a.U); d.clock.step(); d.io.M.expect(0x82.U)
-      for ((adr, mode) <- Seq(0x300 -> 0, 0x100 -> 0, 0x301 -> 3)) {
-        csr(adr, 1, hex("ffffffff"), mode = mode)
+      for ((adr, mode) <- Seq(CSR.MSTATUS -> 0, CSR.SSTATUS -> 0, CSR.MISA -> 3)) {
+        csr(adr, CSRFunction.RW, hex("ffffffff"), mode = mode)
         d.io.Illegal.expect(true.B); d.clock.step(); d.io.M.expect(0x82.U)
       }
-      csr(0x300, 1, 0x400002)
+      csr(CSR.MSTATUS, CSRFunction.RW, 0x400002)
       d.clock.step(); d.io.M.expect(0x400002.U)
-      instruction(hex("10200073"), mode = 1)
+      instruction(hex("10200073"), mode = Privilege.SUPERVISOR)
       d.io.Illegal.expect(true.B); d.io.Ret.expect(false.B)
       d.clock.step(); d.io.M.expect(0x400002.U)
       instruction(hex("10200073"))
       d.io.Illegal.expect(false.B); d.io.Ret.expect(true.B)
       d.clock.step(); d.io.M.expect(0x400020.U)
-      csr(0x300, 1, 8)
+      csr(CSR.MSTATUS, CSRFunction.RW, 8)
       d.io.Flush.poke(true.B); d.clock.step(); d.io.M.expect(0x400020.U)
       d.io.Flush.poke(false.B); d.io.Stall.poke(true.B)
       d.clock.step(); d.io.M.expect(0x400020.U)

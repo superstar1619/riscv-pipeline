@@ -1,5 +1,6 @@
 package riscvpipeline.privileged
 
+import riscvpipeline.TestEncoding.{CSR, CSRFunction, Privilege}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -116,14 +117,14 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
   private val full = BigInt("ffffffff", 16)
   private val full64 = BigInt("ffffffffffffffff", 16)
   private val indices = Seq(0, 2) ++ (3 to 31)
-  private val machines = indices.flatMap(n => Seq(0xb00 + n, 0xb80 + n)).toSet
-  private val events = (0x323 to 0x33f).toSet
-  private val shadows = ((0xc00 to 0xc1f) ++ (0xc80 to 0xc9f)).toSet
+  private val machines = indices.flatMap(n => Seq(CSR.MCYCLE + n, CSR.MCYCLEH + n)).toSet
+  private val events = (CSR.MHPMEVENT3 to CSR.MHPMEVENT31).toSet
+  private val shadows = ((CSR.CYCLE to CSR.HPMCOUNTER31) ++ (CSR.CYCLEH to CSR.HPMCOUNTER31H)).toSet
   private val addresses = (machines ++ events ++ shadows).toSeq.sorted
-  private case class Inputs(adr: Int = 0xb00, word: BigInt = 0, write: Boolean = false,
+  private case class Inputs(adr: Int = CSR.MCYCLE, word: BigInt = 0, write: Boolean = false,
     valid: Boolean = true, stall: Boolean = false, flush: Boolean = false,
     trap: Boolean = false, retired: Boolean = false, pulses: BigInt = 0,
-    mode: Int = 3, inhibit: BigInt = 0, men: BigInt = full, sen: BigInt = full,
+    mode: Int = Privilege.MACHINE, inhibit: BigInt = 0, men: BigInt = full, sen: BigInt = full,
     time: BigInt = 0)
   private def drive(d: CSRCountersHarness, a: Inputs): Unit = {
     d.io.CSRAdrM.poke(a.adr.U)
@@ -166,12 +167,13 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
     d.io.CSRCModifyValM.expect(value.U)
   }
   private def write64(d: CSRCountersHarness, n: Int, v: BigInt): Unit = {
-    cycle(d, Inputs(adr = 0xb00 + n, word = v & full, write = true, inhibit = full))
-    cycle(d, Inputs(adr = 0xb80 + n, word = v >> 32, write = true, inhibit = full))
+    cycle(d, Inputs(adr = CSR.MCYCLE + n, word = v & full, write = true, inhibit = full))
+    cycle(d, Inputs(adr = CSR.MCYCLEH + n, word = v >> 32, write = true, inhibit = full))
   }
   private def allowed(s: Boolean, a: Inputs): Boolean = addresses.contains(a.adr) &&
-    (a.mode == 3 || (shadows(a.adr) && a.men.testBit(a.adr % 32) &&
-      ((s && a.mode == 1) || (a.mode == 0 && (!s || a.sen.testBit(a.adr % 32))))))
+    (a.mode == Privilege.MACHINE || (shadows(a.adr) && a.men.testBit(a.adr % 32) &&
+      ((s && a.mode == Privilege.SUPERVISOR) || (a.mode == Privilege.USER && (!s ||
+        a.sen.testBit(a.adr % 32))))))
 
   // 独立参考模型：64位算术与按地址字典的半字替换，不复用RTL译码/选择器。
   private class Model(s: Boolean, hpm: Int) {
@@ -186,7 +188,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
         d.io.HPMEVENT_REGW(n - 3).expect(selectors(n).U)
       }
       val value = if (!allowed(s, a)) BigInt(0) else if (events(a.adr)) {
-        BigInt(selectors(a.adr - 0x320))
+        BigInt(selectors(a.adr - CSR.MCOUNTINHIBIT))
       } else {
         val n = a.adr % 32
         val counter = if (n == 1) a.time else counts(n)
@@ -200,7 +202,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
         selectors = selectors.view.mapValues(_ => 0).toMap
       } else {
         val writable = a.write && a.valid && !a.stall && !a.flush && !a.trap &&
-          a.mode == 3 && machines(a.adr)
+          a.mode == Privilege.MACHINE && machines(a.adr)
         for (n <- Seq(0, 2) ++ (3 until hpm + 3)) {
           val event = if (n == 0) true else if (n == 2) {
             a.retired && a.valid && !a.stall && !a.flush && !a.trap
@@ -212,9 +214,10 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
           } else if (event && !a.inhibit.testBit(n)) (old + 1) & full64 else old
           counts += n -> next
         }
-        if (a.write && a.valid && !a.stall && !a.flush && !a.trap && a.mode == 3 &&
-            events(a.adr) && a.adr - 0x320 < hpm + 3) {
-          selectors += (a.adr - 0x320) -> (if (a.word <= 32) a.word.toInt else 0)
+        if (a.write && a.valid && !a.stall && !a.flush && !a.trap &&
+          a.mode == Privilege.MACHINE &&
+            events(a.adr) && a.adr - CSR.MCOUNTINHIBIT < hpm + 3) {
+          selectors += (a.adr - CSR.MCOUNTINHIBIT) -> (if (a.word <= 32) a.word.toInt else 0)
         }
       }
     }
@@ -228,8 +231,8 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
       write64(d, 0, full64)
       write64(d, 2, full64)
       write64(d, 3, full64)
-      cycle(d, Inputs(adr = 0x323, word = 32, write = true, inhibit = full))
-      drive(d, Inputs(adr = 0xc01, time = full64, write = true, retired = true,
+      cycle(d, Inputs(adr = CSR.MHPMEVENT3, word = 32, write = true, inhibit = full))
+      drive(d, Inputs(adr = CSR.TIME, time = full64, write = true, retired = true,
         pulses = full))
       d.reset.poke(true.B)
       d.io.MCYCLE_REGW.expect(full64.U)
@@ -251,7 +254,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
       test(new CSRCountersHarness(s, hpm)) { d =>
         boot(d)
         for (adr <- 0 until 4096) {
-          val a = Inputs(adr = adr, mode = 2, valid = false, write = true)
+          val a = Inputs(adr = adr, mode = Privilege.RESERVED, valid = false, write = true)
           read(d, a, 0, addresses.contains(adr), allowed = false)
         }
       }
@@ -267,9 +270,9 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
           val bit = BigInt(1) << (adr % 32)
           val a = Inputs(adr = adr, mode = mode, men = if (m) bit else 0,
             sen = if (u) bit else 0, time = full64, valid = false, write = true)
-          val permit = if (mode == 3) true else shadows(adr) && m &&
-            ((s && mode == 1) || (mode == 0 && (!s || u)))
-          val v = if (permit && Set(0xc01, 0xc81)(adr)) full else BigInt(0)
+          val permit = if (mode == Privilege.MACHINE) true else shadows(adr) && m &&
+            ((s && mode == Privilege.SUPERVISOR) || (mode == Privilege.USER && (!s || u)))
+          val v = if (permit && Set(CSR.TIME, CSR.TIMEH)(adr)) full else BigInt(0)
           read(d, a, v, allowed = permit)
         }
       }
@@ -282,7 +285,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
       for (i <- 1 to 16) {
         cycle(d, Inputs(adr = 0xb01, write = true, valid = (i & 1) != 0,
           stall = (i & 2) != 0, flush = (i & 4) != 0, trap = (i & 8) != 0,
-          mode = 2, men = 0, sen = 0))
+          mode = Privilege.RESERVED, men = 0, sen = 0))
         d.io.MCYCLE_REGW.expect(i.U)
         d.io.MINSTRET_REGW.expect(0.U)
       }
@@ -310,7 +313,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "carry from bit31 and wrap at bit63 for cycle instret and active HPM" in {
     test(new CSRCountersHarness(hpm = 1)) { d =>
       boot(d)
-      cycle(d, Inputs(adr = 0x323, word = 1, write = true, inhibit = full))
+      cycle(d, Inputs(adr = CSR.MHPMEVENT3, word = 1, write = true, inhibit = full))
       for (value <- Seq(full, full64)) {
         for (n <- Seq(0, 2, 3)) write64(d, n, value)
         cycle(d, Inputs(retired = true, pulses = 1))
@@ -326,7 +329,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new CSRCountersHarness(hpm = 29)) { d =>
       boot(d)
       for (n <- 3 to 31) {
-        cycle(d, Inputs(adr = 0x320 + n, word = 1, write = true, inhibit = full))
+        cycle(d, Inputs(adr = CSR.MCOUNTINHIBIT + n, word = 1, write = true, inhibit = full))
       }
       cycle(d, Inputs(retired = true, pulses = 1, inhibit = full, time = full64))
       d.io.MCYCLE_REGW.expect(0.U)
@@ -340,7 +343,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
       }
       cycle(d, Inputs(retired = false, pulses = 0, inhibit = 2))
       d.io.MCYCLE_REGW.expect(1.U)
-      read(d, Inputs(adr = 0xc81, time = full64, inhibit = full), full)
+      read(d, Inputs(adr = CSR.TIMEH, time = full64, inhibit = full), full)
       write64(d, 0, full64)
       d.io.MCYCLE_REGW.expect(full64.U)
     }
@@ -349,16 +352,16 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "give low and high writes priority over all 64 bits of concurrent increment" in {
     test(new CSRCountersHarness(hpm = 1)) { d =>
       boot(d)
-      cycle(d, Inputs(adr = 0x323, word = 1, write = true, inhibit = full))
+      cycle(d, Inputs(adr = CSR.MHPMEVENT3, word = 1, write = true, inhibit = full))
       for (n <- Seq(0, 2, 3)) {
         write64(d, n, BigInt("12345678ffffffff", 16))
-        cycle(d, Inputs(adr = 0xb00 + n, word = 0x89abcdefL, write = true,
+        cycle(d, Inputs(adr = CSR.MCYCLE + n, word = 0x89abcdefL, write = true,
           retired = true, pulses = 1))
         val port = if (n == 0) d.io.MCYCLE_REGW else if (n == 2) d.io.MINSTRET_REGW
           else d.io.HPMCOUNTER_REGW(0)
         port.expect(BigInt("1234567889abcdef", 16).U)
         write64(d, n, full64)
-        cycle(d, Inputs(adr = 0xb80 + n, word = 0x76543210L, write = true,
+        cycle(d, Inputs(adr = CSR.MCYCLEH + n, word = 0x76543210L, write = true,
           retired = true, pulses = 1))
         port.expect(BigInt("76543210ffffffff", 16).U)
       }
@@ -368,12 +371,12 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "continue updating other counters when one counter is written" in {
     test(new CSRCountersHarness(hpm = 1)) { d =>
       boot(d)
-      cycle(d, Inputs(adr = 0x323, word = 1, write = true, inhibit = full))
-      cycle(d, Inputs(adr = 0xb00, word = 7, write = true, retired = true, pulses = 1))
+      cycle(d, Inputs(adr = CSR.MHPMEVENT3, word = 1, write = true, inhibit = full))
+      cycle(d, Inputs(adr = CSR.MCYCLE, word = 7, write = true, retired = true, pulses = 1))
       d.io.MCYCLE_REGW.expect(7.U)
       d.io.MINSTRET_REGW.expect(1.U)
       d.io.HPMCOUNTER_REGW(0).expect(1.U)
-      cycle(d, Inputs(adr = 0xb02, word = 9, write = true, retired = true, pulses = 1))
+      cycle(d, Inputs(adr = CSR.MINSTRET, word = 9, write = true, retired = true, pulses = 1))
       d.io.MCYCLE_REGW.expect(8.U)
       d.io.MINSTRET_REGW.expect(9.U)
       d.io.HPMCOUNTER_REGW(0).expect(2.U)
@@ -383,8 +386,9 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "block software writes without stopping independent events" in {
     test(new CSRCountersHarness(hpm = 1)) { d =>
       boot(d)
-      cycle(d, Inputs(adr = 0x323, word = 1, write = true, inhibit = full))
-      for (adr <- Seq(0xb00, 0xb80, 0xb02, 0xb82, 0xb03, 0xb83, 0x323);
+      cycle(d, Inputs(adr = CSR.MHPMEVENT3, word = 1, write = true, inhibit = full))
+      for (adr <- Seq(CSR.MCYCLE, CSR.MCYCLEH, CSR.MINSTRET, CSR.MINSTRETH,
+        CSR.MHPMCOUNTER3, CSR.MHPMCOUNTER3H, CSR.MHPMEVENT3);
            blocked <- 0 until 4) {
         val oldCycle = d.io.MCYCLE_REGW.peek().litValue
         val oldRetired = d.io.MINSTRET_REGW.peek().litValue
@@ -406,11 +410,14 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
       write64(d, 0, 0x1234)
       write64(d, 2, 0x5678)
       write64(d, 3, 0xabcd)
-      cycle(d, Inputs(adr = 0x323, word = 32, write = true, inhibit = full))
-      for (mode <- 0 to 3; adr <- Seq(0xb00, 0xb80, 0xb02, 0xb82, 0xb03, 0xb83,
-           0x323, 0xc00, 0xc80, 0xc01, 0xc81, 0xc02, 0xc82, 0xc03, 0xc83,
-           0xb01, 0xb81, 0x723, 0x300)) {
-        if (mode != 3 || !Set(0xb00, 0xb80, 0xb02, 0xb82, 0xb03, 0xb83, 0x323)(adr)) {
+      cycle(d, Inputs(adr = CSR.MHPMEVENT3, word = 32, write = true, inhibit = full))
+      for (mode <- 0 to 3; adr <- Seq(CSR.MCYCLE, CSR.MCYCLEH, CSR.MINSTRET, CSR.MINSTRETH,
+        CSR.MHPMCOUNTER3, CSR.MHPMCOUNTER3H,
+           CSR.MHPMEVENT3, CSR.CYCLE, CSR.CYCLEH, CSR.TIME, CSR.TIMEH, CSR.INSTRET,
+             CSR.INSTRETH, CSR.HPMCOUNTER3, CSR.HPMCOUNTER3H,
+           0xb01, 0xb81, 0x723, CSR.MSTATUS)) {
+        if (mode != Privilege.MACHINE || !Set(CSR.MCYCLE, CSR.MCYCLEH, CSR.MINSTRET,
+          CSR.MINSTRETH, CSR.MHPMCOUNTER3, CSR.MHPMCOUNTER3H, CSR.MHPMEVENT3)(adr)) {
           cycle(d, Inputs(adr = adr, mode = mode, word = full, write = true, inhibit = full))
           d.io.MCYCLE_REGW.expect(0x1234.U)
           d.io.MINSTRET_REGW.expect(0x5678.U)
@@ -427,7 +434,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
       val values = Seq(0 -> BigInt("89abcdef01234567", 16),
         2 -> BigInt("fedcba9876543210", 16), 3 -> BigInt("8000000000000001", 16))
       for ((n, v) <- values) write64(d, n, v)
-      for ((n, v) <- values; bank <- Seq(0xb00, 0xc00); high <- Seq(false, true)) {
+      for ((n, v) <- values; bank <- Seq(CSR.MCYCLE, CSR.CYCLE); high <- Seq(false, true)) {
         val adr = bank + n + (if (high) 0x80 else 0)
         read(d, Inputs(adr = adr, valid = false, stall = true, flush = true,
           retired = true, write = true), if (high) v >> 32 else v & full)
@@ -440,9 +447,9 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
       boot(d)
       for (v <- Seq(BigInt(0), full, BigInt(1) << 32,
            BigInt("8000000000000001", 16), full64)) {
-        read(d, Inputs(adr = 0xc01, time = v, valid = false, stall = true,
+        read(d, Inputs(adr = CSR.TIME, time = v, valid = false, stall = true,
           flush = true, trap = true, inhibit = full), v & full)
-        read(d, Inputs(adr = 0xc81, time = v, inhibit = full), v >> 32)
+        read(d, Inputs(adr = CSR.TIMEH, time = v, inhibit = full), v >> 32)
       }
       read(d, Inputs(adr = 0xb01, time = full64), 0, exists = false, allowed = false)
       read(d, Inputs(adr = 0xb81, time = full64), 0, exists = false, allowed = false)
@@ -456,7 +463,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.HPMCOUNTER_REGW(0).expect(0.U)
       var count = 0
       for (id <- 1 to 32) {
-        cycle(d, Inputs(adr = 0x323, word = id, write = true, inhibit = full))
+        cycle(d, Inputs(adr = CSR.MHPMEVENT3, word = id, write = true, inhibit = full))
         d.io.HPMEVENT_REGW(0).expect(id.U)
         cycle(d, Inputs(pulses = BigInt(1) << (id - 1), inhibit = 1))
         count += 1
@@ -464,7 +471,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
         cycle(d, Inputs(pulses = full ^ (BigInt(1) << (id - 1)), inhibit = 1))
         d.io.HPMCOUNTER_REGW(0).expect(count.U)
       }
-      cycle(d, Inputs(adr = 0x323, word = 0, write = true, inhibit = full))
+      cycle(d, Inputs(adr = CSR.MHPMEVENT3, word = 0, write = true, inhibit = full))
       cycle(d, Inputs(pulses = full))
       d.io.HPMCOUNTER_REGW(0).expect(32.U)
     }
@@ -473,16 +480,16 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "legalize selectors to zero and use the old selector on writes" in {
     test(new CSRCountersHarness(hpm = 1)) { d =>
       boot(d)
-      cycle(d, Inputs(adr = 0x323, word = 1, write = true, inhibit = full))
-      cycle(d, Inputs(adr = 0x323, word = 2, write = true, pulses = 1))
+      cycle(d, Inputs(adr = CSR.MHPMEVENT3, word = 1, write = true, inhibit = full))
+      cycle(d, Inputs(adr = CSR.MHPMEVENT3, word = 2, write = true, pulses = 1))
       d.io.HPMCOUNTER_REGW(0).expect(1.U)
       cycle(d, Inputs(pulses = 1))
       d.io.HPMCOUNTER_REGW(0).expect(1.U)
       cycle(d, Inputs(pulses = 2))
       d.io.HPMCOUNTER_REGW(0).expect(2.U)
       for (word <- Seq(BigInt(33), full, BigInt(0x10001), BigInt(0x80000020L))) {
-        cycle(d, Inputs(adr = 0x323, word = word, write = true, inhibit = full))
-        read(d, Inputs(adr = 0x323), 0)
+        cycle(d, Inputs(adr = CSR.MHPMEVENT3, word = word, write = true, inhibit = full))
+        read(d, Inputs(adr = CSR.MHPMEVENT3), 0)
         cycle(d, Inputs(pulses = full))
         d.io.HPMCOUNTER_REGW(0).expect(2.U)
       }
@@ -493,7 +500,8 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
     for (hpm <- Seq(0, 1, 3, 29)) {
       test(new CSRCountersHarness(hpm = hpm)) { d =>
         boot(d)
-        for (n <- hpm + 3 to 31; adr <- Seq(0xb00 + n, 0xb80 + n, 0x320 + n)) {
+        for (n <- hpm + 3 to 31; adr <- Seq(CSR.MCYCLE + n, CSR.MCYCLEH + n,
+          CSR.MCOUNTINHIBIT + n)) {
           cycle(d, Inputs(adr = adr, word = full, write = true, pulses = full))
           read(d, Inputs(adr = adr), 0)
           d.io.HPMCOUNTER_REGW(n - 3).expect(0.U)
@@ -507,7 +515,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new CounterAccessHarness) { d =>
       def csr(adr: Int, funct: Int, rs: Int = 1): BigInt =
         (BigInt(adr) << 20) | (BigInt(rs) << 15) | (BigInt(funct) << 12) | 0xf3
-      def set(instr: BigInt, src: BigInt = 0, mode: Int = 3,
+      def set(instr: BigInt, src: BigInt = 0, mode: Int = Privilege.MACHINE,
               retired: Boolean = false, pulses: BigInt = 0, trap: Boolean = false): Unit = {
         d.io.Instr.poke(instr.U)
         d.io.Src.poke(src.U)
@@ -524,54 +532,55 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.reset.poke(true.B)
       d.clock.step()
       d.reset.poke(false.B)
-      set(csr(0xc00, 2, 0), mode = 1)
+      set(csr(CSR.CYCLE, CSRFunction.RS, 0), mode = Privilege.SUPERVISOR)
       d.io.Illegal.expect(true.B)
-      set(csr(0x306, 1), 15)
+      set(csr(CSR.MCOUNTEREN, CSRFunction.RW), 15)
       d.clock.step()
-      set(csr(0xc01, 2, 0), mode = 1)
+      set(csr(CSR.TIME, CSRFunction.RS, 0), mode = Privilege.SUPERVISOR)
       d.io.Illegal.expect(false.B)
       d.io.Result.expect(BigInt("89abcdef", 16).U)
-      set(csr(0xc01, 2, 0), mode = 0)
+      set(csr(CSR.TIME, CSRFunction.RS, 0), mode = Privilege.USER)
       d.io.Illegal.expect(true.B)
-      set(csr(0x106, 1), 15, mode = 1)
+      set(csr(CSR.SCOUNTEREN, CSRFunction.RW), 15, mode = Privilege.SUPERVISOR)
       d.clock.step()
-      set(csr(0xc81, 2, 0), mode = 0)
+      set(csr(CSR.TIMEH, CSRFunction.RS, 0), mode = Privilege.USER)
       d.io.Illegal.expect(false.B)
       d.io.Result.expect(0x12345678.U)
-      set(csr(0x320, 1), 15)
+      set(csr(CSR.MCOUNTINHIBIT, CSRFunction.RW), 15)
       d.clock.step()
       d.io.Inhibit.expect(13.U)
       val frozen = d.io.Cycle.peek().litValue
-      set(csr(0xb00, 1), 0x12)
+      set(csr(CSR.MCYCLE, CSRFunction.RW), 0x12)
       d.io.Result.expect(frozen.U)
       d.clock.step()
-      set(csr(0xb00, 2), 0x80)
+      set(csr(CSR.MCYCLE, CSRFunction.RS), 0x80)
       d.io.Result.expect(0x12.U)
       d.clock.step()
-      set(csr(0xb00, 3), 0x10)
+      set(csr(CSR.MCYCLE, CSRFunction.RC), 0x10)
       d.io.Result.expect(0x92.U)
       d.clock.step()
       d.io.Cycle.expect(0x82.U)
-      set(csr(0xc00, 1), 0, mode = 0)
+      set(csr(CSR.CYCLE, CSRFunction.RW), 0, mode = Privilege.USER)
       d.io.Illegal.expect(true.B)
       d.clock.step()
       d.io.Cycle.expect(0x82.U)
-      set(csr(0xb02, 1), 9, retired = true)
+      set(csr(CSR.MINSTRET, CSRFunction.RW), 9, retired = true)
       d.clock.step()
       d.io.Instret.expect(9.U)
-      set(csr(0xc02, 2, 0), retired = true)
+      set(csr(CSR.INSTRET, CSRFunction.RS, 0), retired = true)
       d.io.Result.expect(9.U)
       d.clock.step()
       d.io.Instret.expect(9.U) // IR目前被禁止增长。
-      set(csr(0x323, 1), 32)
+      set(csr(CSR.MHPMEVENT3, CSRFunction.RW), 32)
       d.clock.step()
-      set(csr(0x320, 1), 1)
+      set(csr(CSR.MCOUNTINHIBIT, CSRFunction.RW), 1)
       d.clock.step()
       set(0, retired = true, pulses = BigInt(1) << 31)
       d.clock.step()
       d.io.Instret.expect(10.U)
       d.io.HPM.expect(1.U)
-      set(csr(0xb00, 1), full, retired = true, pulses = BigInt(1) << 31, trap = true)
+      set(csr(CSR.MCYCLE, CSRFunction.RW), full, retired = true, pulses = BigInt(1) << 31,
+        trap = true)
       d.clock.step()
       d.io.Cycle.expect(0x82.U)
       d.io.Instret.expect(10.U)
@@ -586,7 +595,7 @@ class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
         boot(d)
         val model = new Model(s, hpm)
         val random = new Random(0x8f812026L)
-        val choices = addresses ++ Seq(0xb01, 0xb81, 0x723, 0x300, 0xfff)
+        val choices = addresses ++ Seq(0xb01, 0xb81, 0x723, CSR.MSTATUS, 0xfff)
         for (i <- 0 until 512) {
           val adr = choices(random.nextInt(choices.size))
           val word = if (events(adr) && random.nextBoolean()) BigInt(random.nextInt(35))

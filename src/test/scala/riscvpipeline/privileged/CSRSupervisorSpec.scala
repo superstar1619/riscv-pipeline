@@ -1,5 +1,6 @@
 package riscvpipeline.privileged
 
+import riscvpipeline.TestEncoding.{CSR, CSRFunction, Cause, Privilege}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -139,14 +140,17 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
   private def hex(s: String): BigInt = BigInt(s, 16)
   private val full = hex("ffffffff")
   private val full64 = hex("ffffffffffffffff")
-  private val base = Seq(0x100, 0x104, 0x105, 0x106, 0x10a, 0x140,
-    0x141, 0x142, 0x143, 0x144, 0x180)
-  private val owned = Seq(0x105, 0x106, 0x10a, 0x140, 0x141, 0x142, 0x143,
-    0x180, 0x14d, 0x15d)
-  private case class Inputs(adr: Int = 0x140, word: BigInt = 0, write: Boolean = false,
+  private val base = Seq(CSR.SSTATUS, CSR.SIE, CSR.STVEC, CSR.SCOUNTEREN, CSR.SENVCFG,
+    CSR.SSCRATCH,
+    CSR.SEPC, CSR.SCAUSE, CSR.STVAL, CSR.SIP, CSR.SATP)
+  private val owned = Seq(CSR.STVEC, CSR.SCOUNTEREN, CSR.SENVCFG, CSR.SSCRATCH, CSR.SEPC,
+    CSR.SCAUSE, CSR.STVAL,
+    CSR.SATP, CSR.STIMECMP, CSR.STIMECMPH)
+  private case class Inputs(adr: Int = CSR.SSCRATCH, word: BigInt = 0, write: Boolean = false,
     trap: Boolean = false, epc: BigInt = 0, cause: Int = 0, tval: BigInt = 0,
     valid: Boolean = true, stall: Boolean = false, flush: Boolean = false,
-    mode: Int = 1, tvm: Boolean = false, stce: Boolean = true, tm: Boolean = true,
+    mode: Int = Privilege.SUPERVISOR, tvm: Boolean = false, stce: Boolean = true,
+      tm: Boolean = true,
     time: BigInt = 0, status: BigInt = 0, sip: Int = 0, sie: Int = 0, sw: Int = 0)
   private def drive(d: CSRSupervisorHarness, a: Inputs): Unit = {
     d.io.CSRAdrM.poke(a.adr.U)
@@ -170,12 +174,14 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
     d.io.SIP_REGW_writeable.poke(a.sw.U)
   }
   private def checkState(d: CSRSupervisorHarness, v: Map[Int, BigInt] = Map.empty): Unit = {
-    for ((adr, port) <- Seq(0x105 -> d.io.STVEC_REGW, 0x106 -> d.io.SCOUNTEREN_REGW,
-         0x10a -> d.io.SENVCFG_REGW, 0x140 -> d.io.SSCRATCH_REGW,
-         0x141 -> d.io.SEPC_REGW, 0x142 -> d.io.SCAUSE_REGW, 0x143 -> d.io.STVAL_REGW,
-         0x180 -> d.io.SATP_REGW)) port.expect(v.getOrElse(adr, BigInt(0)).U)
-    d.io.STIMECMP_REGW.expect(((v.getOrElse(0x15d, BigInt(0)) << 32) +
-      v.getOrElse(0x14d, BigInt(0))).U)
+    for ((adr, port) <- Seq(CSR.STVEC -> d.io.STVEC_REGW,
+      CSR.SCOUNTEREN -> d.io.SCOUNTEREN_REGW,
+         CSR.SENVCFG -> d.io.SENVCFG_REGW, CSR.SSCRATCH -> d.io.SSCRATCH_REGW,
+         CSR.SEPC -> d.io.SEPC_REGW, CSR.SCAUSE -> d.io.SCAUSE_REGW,
+           CSR.STVAL -> d.io.STVAL_REGW,
+         CSR.SATP -> d.io.SATP_REGW)) port.expect(v.getOrElse(adr, BigInt(0)).U)
+    d.io.STIMECMP_REGW.expect(((v.getOrElse(CSR.STIMECMPH, BigInt(0)) << 32) +
+      v.getOrElse(CSR.STIMECMP, BigInt(0))).U)
   }
   private def strobes(d: CSRSupervisorHarness, status: Boolean = false,
                       sie: Boolean = false, sip: Boolean = false): Unit = {
@@ -210,43 +216,46 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
     private def select(word: BigInt, positions: Seq[Int]): BigInt =
       positions.filter(word.testBit).map(i => BigInt(1) << i).sum
     def exists(adr: Int): Boolean = p.s &&
-      (base.contains(adr) || (p.stc && Set(0x14d, 0x15d)(adr)))
+      (base.contains(adr) || (p.stc && Set(CSR.STIMECMP, CSR.STIMECMPH)(adr)))
     def allowed(a: Inputs): Boolean = exists(a.adr) && Set(1, 3)(a.mode) &&
-      (a.adr != 0x180 || a.mode == 3 || !a.tvm) &&
-      (!Set(0x14d, 0x15d)(a.adr) || a.mode == 3 || (a.stce && a.tm))
-    def compare: BigInt = (state(0x15d) << 32) + state(0x14d)
+      (a.adr != CSR.SATP || a.mode == Privilege.MACHINE || !a.tvm) &&
+      (!Set(CSR.STIMECMP, CSR.STIMECMPH)(a.adr) || a.mode == Privilege.MACHINE || (a.stce &&
+        a.tm))
+    def compare: BigInt = (state(CSR.STIMECMPH) << 32) + state(CSR.STIMECMP)
     def expect(d: CSRSupervisorHarness, a: Inputs): Unit = {
       checkState(d, state)
       val value = if (!allowed(a)) BigInt(0) else a.adr match {
-        case 0x100 => a.status
-        case 0x104 => BigInt(a.sie)
-        case 0x144 => BigInt(a.sip)
+        case CSR.SSTATUS => a.status
+        case CSR.SIE => BigInt(a.sie)
+        case CSR.SIP => BigInt(a.sip)
         case adr => state.getOrElse(adr, BigInt(0))
       }
-      val modify = if (allowed(a) && a.adr == 0x144) BigInt(a.sw) else value
+      val modify = if (allowed(a) && a.adr == CSR.SIP) BigInt(a.sw) else value
       read(d, a.adr, value, exists(a.adr), allowed(a), Some(modify))
       val active = a.write && a.valid && !a.stall && !a.flush &&
         !a.trap && allowed(a)
-      strobes(d, active && a.adr == 0x100, active && a.adr == 0x104,
-        active && a.adr == 0x144)
+      strobes(d, active && a.adr == CSR.SSTATUS, active && a.adr == CSR.SIE,
+        active && a.adr == CSR.SIP)
       d.io.STimerInt.expect((p.s && p.stc && a.time >= compare).B)
     }
     def update(a: Inputs, resetting: Boolean): Unit = {
       if (resetting) state = state.view.mapValues(_ => BigInt(0)).toMap
       else if (p.s && a.valid && !a.stall && !a.flush) {
         if (a.trap) {
-          if (Set(0, 1)(a.mode)) state ++= Map(0x141 -> (a.epc / 4 * 4),
-            0x142 -> (BigInt(a.cause % 32) +
-              (if (a.cause >= 32) BigInt(1) << 31 else BigInt(0))), 0x143 -> a.tval)
+          if (Set(Privilege.USER,
+            Privilege.SUPERVISOR)(a.mode)) state ++= Map(CSR.SEPC -> (a.epc / 4 * 4),
+            CSR.SCAUSE -> (BigInt(a.cause % Cause.INPUT_INTERRUPT_FLAG) +
+              (if (a.cause >= Cause.INPUT_INTERRUPT_FLAG) BigInt(1) << 31 else BigInt(0))),
+                CSR.STVAL -> a.tval)
         } else if (a.write && allowed(a) && owned.contains(a.adr)) {
           val next = a.adr match {
-            case 0x105 => if (p.vector && a.word.testBit(0)) a.word / 64 * 64 + 1
+            case CSR.STVEC => if (p.vector && a.word.testBit(0)) a.word / 64 * 64 + 1
               else a.word / 4 * 4
-            case 0x141 => a.word / 4 * 4
-            case 0x142 => select(a.word, Seq(31) ++ (0 to 4))
-            case 0x106 => select(a.word, (0 to 2) ++ (3 until p.hpm + 3))
-            case 0x10a => if (p.vm && a.word.testBit(0)) BigInt(1) else BigInt(0)
-            case 0x180 => if (p.vm && a.word.testBit(31))
+            case CSR.SEPC => a.word / 4 * 4
+            case CSR.SCAUSE => select(a.word, Seq(31) ++ (0 to 4))
+            case CSR.SCOUNTEREN => select(a.word, (0 to 2) ++ (3 until p.hpm + 3))
+            case CSR.SENVCFG => if (p.vm && a.word.testBit(0)) BigInt(1) else BigInt(0)
+            case CSR.SATP => if (p.vm && a.word.testBit(31))
               select(a.word, Seq(31) ++ (0 to 21) ++ (22 until 22 + p.asid)) else BigInt(0)
             case _ => a.word
           }
@@ -266,10 +275,10 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
       assert(oldScratch == full)
       d.reset.poke(true.B)
       d.io.SSCRATCH_REGW.expect(full.U)
-      for (address <- Seq(0x100, 0x104, 0x144)) {
+      for (address <- Seq(CSR.SSTATUS, CSR.SIE, CSR.SIP)) {
         drive(d, Inputs(adr = address, word = full, write = true))
-        strobes(d, status = address == 0x100, sie = address == 0x104,
-          sip = address == 0x144)
+        strobes(d, status = address == CSR.SSTATUS, sie = address == CSR.SIE,
+          sip = address == CSR.SIP)
       }
       drive(d, Inputs(word = full, write = true))
       strobes(d)
@@ -285,9 +294,10 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
          SupervisorParams(stc = true))) {
       test(new CSRSupervisorHarness(p)) { d =>
         boot(d)
-        drive(d, Inputs(mode = 0, tvm = true, stce = false, tm = false))
+        drive(d, Inputs(mode = Privilege.USER, tvm = true, stce = false, tm = false))
         for (adr <- 0 until 4096) {
-          val exists = p.s && (base.contains(adr) || (p.stc && Set(0x14d, 0x15d)(adr)))
+          val exists = p.s && (base.contains(adr) || (p.stc && Set(CSR.STIMECMP,
+            CSR.STIMECMPH)(adr)))
           read(d, adr, 0, exists, allowed = false)
         }
       }
@@ -298,17 +308,19 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new CSRSupervisorHarness(SupervisorParams(vm = true, stc = true))) { d =>
       boot(d)
       for (mode <- 0 to 3; tvm <- Seq(false, true); stce <- Seq(false, true);
-           tm <- Seq(false, true); adr <- base ++ Seq(0x14d, 0x15d, 0xfff)) {
+           tm <- Seq(false, true); adr <- base ++ Seq(CSR.STIMECMP, CSR.STIMECMPH, 0xfff)) {
         drive(d, Inputs(adr = adr, mode = mode, tvm = tvm, stce = stce, tm = tm,
           write = true, word = full))
         val exists = adr != 0xfff
-        val permittedMode = mode == 1 || mode == 3
-        val extra = if (adr == 0x180) mode == 3 || !tvm
-          else if (adr == 0x14d || adr == 0x15d) mode == 3 || (stce && tm) else true
+        val permittedMode = mode == Privilege.SUPERVISOR || mode == Privilege.MACHINE
+        val extra = if (adr == CSR.SATP) mode == Privilege.MACHINE || !tvm
+          else if (adr == CSR.STIMECMP || adr == CSR.STIMECMPH) mode == Privilege.MACHINE ||
+            (stce && tm) else true
         val allow = exists && permittedMode && extra
         d.io.CSRSExistsM.expect(exists.B)
         d.io.CSRSAccessAllowedM.expect(allow.B)
-        strobes(d, allow && adr == 0x100, allow && adr == 0x104, allow && adr == 0x144)
+        strobes(d, allow && adr == CSR.SSTATUS, allow && adr == CSR.SIE, allow &&
+          adr == CSR.SIP)
       }
     }
   }
@@ -318,27 +330,27 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
       boot(d)
       drive(d, Inputs(status = hex("89abcdef"), sip = 0x220, sie = 0x222, sw = 0x020,
         valid = false, stall = true, flush = true))
-      read(d, 0x100, hex("89abcdef"))
-      read(d, 0x104, 0x222)
-      read(d, 0x144, 0x220, modify = Some(BigInt(0x020)))
+      read(d, CSR.SSTATUS, hex("89abcdef"))
+      read(d, CSR.SIE, 0x222)
+      read(d, CSR.SIP, 0x220, modify = Some(BigInt(0x020)))
       strobes(d)
-      d.io.PrivilegeModeW.poke(0.U)
-      read(d, 0x144, 0, allowed = false)
+      d.io.PrivilegeModeW.poke(Privilege.USER.U)
+      read(d, CSR.SIP, 0, allowed = false)
     }
   }
 
   it should "preserve full scratch and tval data and format software EPC and cause" in {
     test(new CSRSupervisorHarness) { d =>
       boot(d)
-      for ((adr, word, want) <- Seq((0x140, hex("89abcdef"), hex("89abcdef")),
-           (0x143, full, full), (0x141, hex("80000003"), hex("80000000")),
-           (0x142, full, hex("8000001f")), (0x142, hex("7fffffe7"), BigInt(7)))) {
+      for ((adr, word, want) <- Seq((CSR.SSCRATCH, hex("89abcdef"), hex("89abcdef")),
+           (CSR.STVAL, full, full), (CSR.SEPC, hex("80000003"), hex("80000000")),
+           (CSR.SCAUSE, full, hex("8000001f")), (CSR.SCAUSE, hex("7fffffe7"), BigInt(7)))) {
         cycle(d, Inputs(adr = adr, word = word, write = true))
         read(d, adr, want)
       }
       for (low <- 0 to 3) {
-        cycle(d, Inputs(adr = 0x141, word = 0x12345678L + low, write = true))
-        read(d, 0x141, hex("12345678"))
+        cycle(d, Inputs(adr = CSR.SEPC, word = 0x12345678L + low, write = true))
+        read(d, CSR.SEPC, hex("12345678"))
       }
     }
   }
@@ -353,8 +365,8 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
              (hex("8000013e"), hex("8000013c"), hex("8000013c")),
              (hex("8000013f"), hex("80000101"), hex("8000013c")),
              (full, hex("ffffffc1"), hex("fffffffc")))) {
-          cycle(d, Inputs(adr = 0x105, word = word, write = true))
-          read(d, 0x105, if (vector) vectored else direct)
+          cycle(d, Inputs(adr = CSR.STVEC, word = word, write = true))
+          read(d, CSR.STVEC, if (vector) vectored else direct)
         }
       }
     }
@@ -364,11 +376,11 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new CSRSupervisorHarness) { d =>
       boot(d)
       cycle(d, Inputs(word = hex("12345678"), write = true))
-      for (mode <- Seq(0, 1); address <- owned ++ Seq(0x100, 0x104, 0x144, 0xfff)) {
+      for (mode <- Seq(0, 1); address <- owned ++ Seq(CSR.SSTATUS, CSR.SIE, CSR.SIP, 0xfff)) {
         cycle(d, Inputs(adr = address, word = full, write = true, trap = true,
           mode = mode, epc = hex("80001237"), cause = 37, tval = hex("a5a5f00d")))
-        checkState(d, Map(0x140 -> hex("12345678"), 0x141 -> hex("80001234"),
-          0x142 -> hex("80000005"), 0x143 -> hex("a5a5f00d")))
+        checkState(d, Map(CSR.SSCRATCH -> hex("12345678"), CSR.SEPC -> hex("80001234"),
+          CSR.SCAUSE -> hex("80000005"), CSR.STVAL -> hex("a5a5f00d")))
         strobes(d)
       }
     }
@@ -378,10 +390,10 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new CSRSupervisorHarness) { d =>
       boot(d)
       cycle(d, Inputs(word = 0x55, write = true))
-      for (mode <- Seq(2, 3); adr <- Seq(0x140, 0x100, 0x104, 0x144)) {
+      for (mode <- Seq(2, 3); adr <- Seq(CSR.SSCRATCH, CSR.SSTATUS, CSR.SIE, CSR.SIP)) {
         cycle(d, Inputs(adr = adr, mode = mode, trap = true, write = true,
           word = full, epc = full, cause = 63, tval = full))
-        checkState(d, Map(0x140 -> BigInt(0x55)))
+        checkState(d, Map(CSR.SSCRATCH -> BigInt(0x55)))
         strobes(d)
       }
     }
@@ -392,8 +404,8 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
       boot(d)
       for (cause <- 0 until 64) {
         cycle(d, Inputs(trap = true, cause = cause))
-        read(d, 0x142, BigInt(cause % 32) +
-          (if (cause >= 32) BigInt(1) << 31 else BigInt(0)))
+        read(d, CSR.SCAUSE, BigInt(cause % Cause.INPUT_INTERRUPT_FLAG) +
+          (if (cause >= Cause.INPUT_INTERRUPT_FLAG) BigInt(1) << 31 else BigInt(0)))
       }
     }
   }
@@ -401,13 +413,13 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "hold all software and trap state for invalid stall and flush combinations" in {
     test(new CSRSupervisorHarness(SupervisorParams(vm = true, stc = true))) { d =>
       boot(d)
-      cycle(d, Inputs(adr = 0x141, word = 0x104, write = true))
+      cycle(d, Inputs(adr = CSR.SEPC, word = 0x104, write = true))
       for (valid <- Seq(false, true); stall <- Seq(false, true);
            flush <- Seq(false, true) if !valid || stall || flush;
            address <- owned; trap <- Seq(false, true)) {
         cycle(d, Inputs(adr = address, word = full, write = true, trap = trap,
           epc = full, cause = 63, tval = full, valid = valid, stall = stall, flush = flush))
-        checkState(d, Map(0x141 -> BigInt(0x104)))
+        checkState(d, Map(CSR.SEPC -> BigInt(0x104)))
         strobes(d)
       }
     }
@@ -417,8 +429,8 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
     for ((hpm, mask) <- Seq((0, BigInt(7)), (1, BigInt(15)), (3, BigInt(63)), (29, full))) {
       test(new CSRSupervisorHarness(SupervisorParams(hpm = hpm))) { d =>
         boot(d)
-        cycle(d, Inputs(adr = 0x106, word = full, write = true))
-        read(d, 0x106, mask)
+        cycle(d, Inputs(adr = CSR.SCOUNTEREN, word = full, write = true))
+        read(d, CSR.SCOUNTEREN, mask)
       }
     }
   }
@@ -427,10 +439,10 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
     for (vm <- Seq(false, true)) {
       test(new CSRSupervisorHarness(SupervisorParams(vm = vm))) { d =>
         boot(d)
-        cycle(d, Inputs(adr = 0x10a, word = full, write = true))
-        read(d, 0x10a, if (vm) 1 else 0)
-        cycle(d, Inputs(adr = 0x10a, word = 0xfffffffeL, write = true))
-        read(d, 0x10a, 0)
+        cycle(d, Inputs(adr = CSR.SENVCFG, word = full, write = true))
+        read(d, CSR.SENVCFG, if (vm) 1 else 0)
+        cycle(d, Inputs(adr = CSR.SENVCFG, word = 0xfffffffeL, write = true))
+        read(d, CSR.SENVCFG, 0)
       }
     }
   }
@@ -439,13 +451,14 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new CSRSupervisorHarness) { d =>
       boot(d)
       for (word <- Seq(BigInt(0), BigInt(1), full, hex("80000000"), hex("7fffffff"))) {
-        cycle(d, Inputs(adr = 0x180, word = word, write = true))
-        read(d, 0x180, 0)
+        cycle(d, Inputs(adr = CSR.SATP, word = word, write = true))
+        read(d, CSR.SATP, 0)
       }
-      drive(d, Inputs(adr = 0x180, mode = 1, tvm = true, write = true, word = full))
-      read(d, 0x180, 0, allowed = false)
-      drive(d, Inputs(adr = 0x180, mode = 3, tvm = true))
-      read(d, 0x180, 0)
+      drive(d, Inputs(adr = CSR.SATP, mode = Privilege.SUPERVISOR, tvm = true, write = true,
+        word = full))
+      read(d, CSR.SATP, 0, allowed = false)
+      drive(d, Inputs(adr = CSR.SATP, mode = Privilege.MACHINE, tvm = true))
+      read(d, CSR.SATP, 0)
     }
   }
 
@@ -454,18 +467,18 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
          (4, hex("83ffffff")), (9, full))) {
       test(new CSRSupervisorHarness(SupervisorParams(vm = true, asid = asid))) { d =>
         boot(d)
-        cycle(d, Inputs(adr = 0x180, word = full, write = true))
-        read(d, 0x180, mask)
-        drive(d, Inputs(adr = 0x180, word = 0, write = true, tvm = true))
-        read(d, 0x180, 0, allowed = false)
+        cycle(d, Inputs(adr = CSR.SATP, word = full, write = true))
+        read(d, CSR.SATP, mask)
+        drive(d, Inputs(adr = CSR.SATP, word = 0, write = true, tvm = true))
+        read(d, CSR.SATP, 0, allowed = false)
         d.clock.step()
-        drive(d, Inputs(adr = 0x180))
-        read(d, 0x180, mask)
-        cycle(d, Inputs(adr = 0x180, word = hex("80000001"), write = true))
-        read(d, 0x180, hex("80000001"))
+        drive(d, Inputs(adr = CSR.SATP))
+        read(d, CSR.SATP, mask)
+        cycle(d, Inputs(adr = CSR.SATP, word = hex("80000001"), write = true))
+        read(d, CSR.SATP, hex("80000001"))
         for (word <- Seq(hex("7fffffff"), hex("60000001"), BigInt(0))) {
-          cycle(d, Inputs(adr = 0x180, word = word, write = true))
-          read(d, 0x180, 0)
+          cycle(d, Inputs(adr = CSR.SATP, word = word, write = true))
+          read(d, CSR.SATP, 0)
         }
       }
     }
@@ -474,21 +487,21 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "let M access compare halves without STCE or TM while protecting S access" in {
     test(new CSRSupervisorHarness(SupervisorParams(stc = true))) { d =>
       boot(d)
-      cycle(d, Inputs(adr = 0x14d, word = hex("89abcdef"), write = true,
-        mode = 3, stce = false, tm = false))
-      cycle(d, Inputs(adr = 0x15d, word = hex("01234567"), write = true,
-        mode = 3, stce = false, tm = false))
+      cycle(d, Inputs(adr = CSR.STIMECMP, word = hex("89abcdef"), write = true,
+        mode = Privilege.MACHINE, stce = false, tm = false))
+      cycle(d, Inputs(adr = CSR.STIMECMPH, word = hex("01234567"), write = true,
+        mode = Privilege.MACHINE, stce = false, tm = false))
       d.io.STIMECMP_REGW.expect(hex("0123456789abcdef").U)
       for ((stce, tm) <- Seq((false, false), (false, true), (true, false))) {
-        for (adr <- Seq(0x14d, 0x15d)) {
+        for (adr <- Seq(CSR.STIMECMP, CSR.STIMECMPH)) {
           cycle(d, Inputs(adr = adr, word = 0, write = true, stce = stce, tm = tm))
           read(d, adr, 0, allowed = false)
           d.io.STIMECMP_REGW.expect(hex("0123456789abcdef").U)
         }
       }
-      cycle(d, Inputs(adr = 0x14d, word = 0x76543210L, write = true))
+      cycle(d, Inputs(adr = CSR.STIMECMP, word = 0x76543210L, write = true))
       d.io.STIMECMP_REGW.expect(hex("0123456776543210").U)
-      read(d, 0x15d, hex("01234567"))
+      read(d, CSR.STIMECMPH, hex("01234567"))
     }
   }
 
@@ -501,10 +514,12 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
         (hex("7fffffffffffffff"), hex("8000000000000000"), true),
         (full64, full64 - 1, false), (full64, full64, true))
       for ((compare, time, pending) <- rows) {
-        cycle(d, Inputs(adr = 0x14d, word = compare & full, write = true, mode = 3))
-        cycle(d, Inputs(adr = 0x15d, word = compare >> 32, write = true, mode = 3))
+        cycle(d, Inputs(adr = CSR.STIMECMP, word = compare & full, write = true,
+          mode = Privilege.MACHINE))
+        cycle(d, Inputs(adr = CSR.STIMECMPH, word = compare >> 32, write = true,
+          mode = Privilege.MACHINE))
         drive(d, Inputs(time = time, valid = false, stall = true, flush = true,
-          mode = 0, stce = false, tm = false))
+          mode = Privilege.USER, stce = false, tm = false))
         d.io.STimerInt.expect(pending.B)
         d.io.STIMECMP_REGW.expect(compare.U)
       }
@@ -514,7 +529,7 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "ignore every event and input when supervisor support is absent" in {
     test(new CSRSupervisorHarness(SupervisorParams(s = false))) { d =>
       boot(d)
-      for (adr <- base ++ Seq(0x14d, 0x15d)) {
+      for (adr <- base ++ Seq(CSR.STIMECMP, CSR.STIMECMPH)) {
         cycle(d, Inputs(adr = adr, word = full, write = true, trap = true,
           epc = full, cause = 63, tval = full, time = full64,
           status = full, sip = 0xfff, sie = 0xfff, sw = 0xfff))
@@ -529,7 +544,8 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
   private def csr(adr: Int, funct: Int, rs: Int = 1): BigInt =
     (BigInt(adr) << 20) | (BigInt(rs) << 15) | (BigInt(funct) << 12) | 0xf3
   private def accessDrive(d: SupervisorAccessHarness, instr: BigInt, src: BigInt = 0,
-                          mode: Int = 3, mt: Boolean = false, st: Boolean = false,
+                          mode: Int = Privilege.MACHINE, mt: Boolean = false,
+                            st: Boolean = false,
                           ext: Boolean = false): Unit = {
     d.io.Instr.poke(instr.U)
     d.io.Src.poke(src.U)
@@ -549,50 +565,54 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.reset.poke(true.B)
       d.clock.step()
       d.reset.poke(false.B)
-      for ((adr, word) <- Seq((0x304, 0xaaa), (0x303, 0x222), (0x100, 2), (0x140, 0xabcd))) {
-        accessDrive(d, csr(adr, 1), word)
+      for ((adr, word) <- Seq((CSR.MIE, 0xaaa), (CSR.MIDELEG, 0x222), (CSR.SSTATUS, 2),
+        (CSR.SSCRATCH, 0xabcd))) {
+        accessDrive(d, csr(adr, CSRFunction.RW), word)
         d.io.Illegal.expect(false.B)
         d.clock.step()
       }
       d.io.SIE.expect(0x222.U)
       d.io.Status.expect(2.U)
-      accessDrive(d, csr(0x144, 6, rs = 2), mode = 1, ext = true)
+      accessDrive(d, csr(CSR.SIP, CSRFunction.RSI, rs = 2), mode = Privilege.SUPERVISOR,
+        ext = true)
       d.io.Result.expect(0x200.U)
       d.clock.step()
       d.io.MIPSoftware.expect(2.U)
-      accessDrive(d, csr(0x144, 7, rs = 2), mode = 1, ext = true)
+      accessDrive(d, csr(CSR.SIP, CSRFunction.RCI, rs = 2), mode = Privilege.SUPERVISOR,
+        ext = true)
       d.io.Result.expect(0x202.U)
       d.clock.step()
       d.io.MIPSoftware.expect(0.U)
-      accessDrive(d, csr(0x144, 2, rs = 0), mode = 1)
+      accessDrive(d, csr(CSR.SIP, CSRFunction.RS, rs = 0), mode = Privilege.SUPERVISOR)
       d.io.Result.expect(0.U)
       // S被STCE/TM拦截时，M仍可配置比较器。
-      accessDrive(d, csr(0x14d, 1), src = 9, mode = 1)
+      accessDrive(d, csr(CSR.STIMECMP, CSRFunction.RW), src = 9, mode = Privilege.SUPERVISOR)
       d.io.Illegal.expect(true.B)
       d.clock.step()
-      accessDrive(d, csr(0x14d, 1), src = 9)
+      accessDrive(d, csr(CSR.STIMECMP, CSRFunction.RW), src = 9)
       d.io.Illegal.expect(false.B)
       d.clock.step()
-      for ((adr, word) <- Seq((0x306, BigInt(2)), (0x31a, hex("80000000")))) {
-        accessDrive(d, csr(adr, 1), word)
+      for ((adr, word) <- Seq((CSR.MCOUNTEREN, BigInt(2)), (CSR.MENVCFGH, hex("80000000")))) {
+        accessDrive(d, csr(adr, CSRFunction.RW), word)
         d.clock.step()
       }
-      accessDrive(d, csr(0x14d, 1), src = 4, mode = 1)
+      accessDrive(d, csr(CSR.STIMECMP, CSRFunction.RW), src = 4, mode = Privilege.SUPERVISOR)
       d.io.Illegal.expect(false.B)
       d.clock.step()
       d.io.Compare.expect(4.U)
       d.io.SIP.expect(0x020.U)
-      accessDrive(d, csr(0x300, 1), src = 0x100002)
+      accessDrive(d, csr(CSR.MSTATUS, CSRFunction.RW), src = 0x100002)
       d.clock.step()
-      accessDrive(d, csr(0x180, 2, rs = 0), mode = 1)
+      accessDrive(d, csr(CSR.SATP, CSRFunction.RS, rs = 0), mode = Privilege.SUPERVISOR)
       d.io.Illegal.expect(true.B)
-      accessDrive(d, csr(0x180, 1), src = full)
+      accessDrive(d, csr(CSR.SATP, CSRFunction.RW), src = full)
       d.io.Illegal.expect(false.B)
       d.clock.step()
       d.io.Satp.expect(full.U)
-      accessDrive(d, csr(0x180, 2, rs = 0), mode = 0)
+      accessDrive(d, csr(CSR.SATP, CSRFunction.RS, rs = 0), mode = Privilege.USER)
       d.io.Illegal.expect(true.B)
-      accessDrive(d, csr(0x300, 1), src = full, mode = 0, st = true)
+      accessDrive(d, csr(CSR.MSTATUS, CSRFunction.RW), src = full, mode = Privilege.USER,
+        st = true)
       d.clock.step()
       d.io.MEPC.expect(0.U)
       d.io.SEPC.expect(0x804.U)
@@ -600,7 +620,8 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.STval.expect(0xcafe.U)
       d.io.Status.expect(0x100020.U)
       d.io.SScratch.expect(0xabcd.U)
-      accessDrive(d, csr(0x140, 1), src = full, mode = 1, mt = true)
+      accessDrive(d, csr(CSR.SSCRATCH, CSRFunction.RW), src = full,
+        mode = Privilege.SUPERVISOR, mt = true)
       d.clock.step()
       d.io.MEPC.expect(0x804.U)
       d.io.SScratch.expect(0xabcd.U)
@@ -617,7 +638,7 @@ class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
         boot(d)
         val model = new Model(p)
         val random = new Random(0x8e712026L)
-        val all = base ++ Seq(0x14d, 0x15d, 0x300, 0xb00, 0xfff)
+        val all = base ++ Seq(CSR.STIMECMP, CSR.STIMECMPH, CSR.MSTATUS, CSR.MCYCLE, 0xfff)
         for (i <- 0 until 512) {
           val a = Inputs(adr = all(random.nextInt(all.size)), word = BigInt(32, random),
             write = random.nextBoolean(), trap = i % 17 == 0, epc = BigInt(32, random),

@@ -2,23 +2,27 @@ package riscvpipeline.ieu
 
 import chisel3._
 import riscvpipeline.config.CpuConfig
+import riscvpipeline.control.ControlEncoding._
 import riscvpipeline.hazard.Hazard
+import riscvpipeline.isa.Architecture._
+import riscvpipeline.isa.InstructionDecode
+import riscvpipeline.isa.InstructionEncoding._
 
 /** D 级指令/PC 与 M 级存储结果输入；E 级重定向和 M 级访存输出。 */
 final class IEUIO(config: CpuConfig) extends Bundle {
-  val InstrD = Input(UInt(32.W))
+  val InstrD = Input(UInt(INSTRUCTION_WIDTH.W))
   val InstrAccessFaultD = Input(Bool())
   val StallM = Input(Bool())
   val FlushM = Input(Bool())
   val TrapM = Input(Bool())
-  val CSRResultM = Input(UInt(32.W))
+  val CSRResultM = Input(UInt(XLEN.W))
   val PCD = Input(UInt(config.xlen.W))
   val PCPlus4D = Input(UInt(config.xlen.W))
   val ValidD = Input(Bool())
   val ReadDataM = Input(UInt(config.xlen.W))
-  val InstrM = Output(UInt(32.W))
-  val PCM = Output(UInt(32.W))
-  val SrcAM = Output(UInt(32.W))
+  val InstrM = Output(UInt(INSTRUCTION_WIDTH.W))
+  val PCM = Output(UInt(XLEN.W))
+  val SrcAM = Output(UInt(XLEN.W))
   val InstrAccessFaultM = Output(Bool())
   val InstrMisalignedFaultM = Output(Bool())
   val IllegalIEUInstrM = Output(Bool())
@@ -26,12 +30,12 @@ final class IEUIO(config: CpuConfig) extends Bundle {
   val wfiW = Output(Bool())
   val PCSrcE = Output(Bool())
   val IEUAdrE = Output(UInt(config.xlen.W))
-  val MemRWE = Output(UInt(2.W))
-  val Funct3E = Output(UInt(3.W))
+  val MemRWE = Output(UInt(MEM_WIDTH.W))
+  val Funct3E = Output(UInt(FUNCT3_WIDTH.W))
   val IEUAdrM = Output(UInt(config.xlen.W))
   val WriteDataM = Output(UInt(config.xlen.W))
-  val MemRWM = Output(UInt(2.W))
-  val Funct3M = Output(UInt(3.W))
+  val MemRWM = Output(UInt(MEM_WIDTH.W))
+  val Funct3M = Output(UInt(FUNCT3_WIDTH.W))
   val LoadStallD = Output(Bool())
   val StoreStallD = Output(Bool())
   val StallF = Output(Bool())
@@ -62,11 +66,9 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
 
   dp.clk := clk
   dp.reset := reset
-  val SystemD = OpD === "h73".U(7.W)
-  val CSRInstrD = SystemD && Seq(1, 2, 3, 5, 6, 7)
-    .map(n => io.InstrD(14, 12) === n.U(3.W)).reduce(_ || _)
-  val FenceD = OpD === "h0f".U(7.W) &&
-    (io.InstrD(14, 12) === 0.U(3.W) || io.InstrD(14, 12) === 1.U(3.W))
+  val SystemD = OpD === OP_SYSTEM.U(OPCODE_WIDTH.W)
+  val CSRInstrD = InstructionDecode.isCSR(io.InstrD)
+  val FenceD = InstructionDecode.isFence(io.InstrD)
   val IntegerLegalD = c.io.RegWrite || c.io.Branch || c.io.Jump || c.io.MemRW.orR
   dp.io.InstrD := io.InstrD
   dp.io.InstrAccessFaultD := io.InstrAccessFaultD
@@ -93,10 +95,12 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
   dp.io.ForwardBE := hazard.io.ForwardBE
 
   val UsesRs1D = (c.io.RegWrite &&
-    (OpD === 0x33.U || OpD === 0x13.U || OpD === 0x03.U || OpD === 0x67.U)) ||
-    c.io.MemRW(0) || c.io.Branch ||
+    (OpD === OP_REG.U(OPCODE_WIDTH.W) || OpD === OP_IMM.U(OPCODE_WIDTH.W) ||
+      OpD === OP_LOAD.U(OPCODE_WIDTH.W) || OpD === OP_JALR.U(OPCODE_WIDTH.W))) ||
+    c.io.MemRW(MEM_WRITE_BIT) || c.io.Branch ||
     (config.privilegedSupported.B && CSRInstrD && !io.InstrD(14))
-  val UsesRs2D = (c.io.RegWrite && OpD === 0x33.U) || c.io.MemRW(0) || c.io.Branch
+  val UsesRs2D = (c.io.RegWrite && OpD === OP_REG.U(OPCODE_WIDTH.W)) ||
+    c.io.MemRW(MEM_WRITE_BIT) || c.io.Branch
   hazard.io.Rs1D := io.InstrD(19, 15)
   hazard.io.Rs2D := io.InstrD(24, 20)
   hazard.io.UsesRs1D := UsesRs1D

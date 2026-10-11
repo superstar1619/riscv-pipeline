@@ -16,12 +16,17 @@ final class WFIIO(timeoutCycles: Int) extends Bundle {
   val WaitCycles = Output(UInt(log2Ceil(timeoutCycles + 1).W))
 }
 
+object WFI {
+  val DEFAULT_TIMEOUT_CYCLES: Int = 65536
+  val MAX_TIMEOUT_CYCLES: Int = 1 << 24
+}
+
 /** 教材 §8.2.2.4、§8.4.2：有界 WFI 等待，显式 clk、高有效同步 reset。
   * 等待计数不受自身 stall 冻结，阈值只报告到期，TW/模式资格留给 PrivDecode。
   * Trap 不组合撤销 Timeout，允许到期异常经 Trap 仲裁后同步取消当前等待。
   */
-final class WFI(timeoutCycles: Int = 65536) extends RawModule {
-  require(timeoutCycles >= 1 && timeoutCycles <= (1 << 24),
+final class WFI(timeoutCycles: Int = WFI.DEFAULT_TIMEOUT_CYCLES) extends RawModule {
+  require(timeoutCycles >= 1 && timeoutCycles <= WFI.MAX_TIMEOUT_CYCLES,
     "WFI timeoutCycles must be in 1..2^24")
 
   private val countWidth = log2Ceil(timeoutCycles + 1)

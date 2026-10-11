@@ -1,6 +1,11 @@
 package riscvpipeline.privileged
 
 import chisel3._
+import riscvpipeline.isa.Architecture._
+import riscvpipeline.isa.InstructionDecode
+import PrivilegedConstants.ExceptionCause._
+import PrivilegedConstants.Privilege._
+import PrivilegedConstants._
 
 /** M级事件与外部同域中断；FlushM取消当前事件，不接自身产生的流水线冲刷。 */
 final class PrivilegedIO extends Bundle {
@@ -26,12 +31,12 @@ final class PrivilegedIO extends Bundle {
   val StoreAmoAccessFaultM = Input(Bool())
   val LoadPageFaultM = Input(Bool())
   val StoreAmoPageFaultM = Input(Bool())
-  val InstrM = Input(UInt(32.W))
-  val PCM = Input(UInt(32.W))
-  val IEUAdrM = Input(UInt(32.W))
-  val SrcAM = Input(UInt(32.W))
-  val TIME_REGW = Input(UInt(64.W))
-  val HPMEventsM = Input(UInt(32.W))
+  val InstrM = Input(UInt(INSTRUCTION_WIDTH.W))
+  val PCM = Input(UInt(XLEN.W))
+  val IEUAdrM = Input(UInt(XLEN.W))
+  val SrcAM = Input(UInt(XLEN.W))
+  val TIME_REGW = Input(UInt(Counter.WIDTH.W))
+  val HPMEventsM = Input(UInt(Counter.EVENT_COUNT.W))
 
   val TrapM = Output(Bool())
   val InterruptM = Output(Bool())
@@ -46,14 +51,14 @@ final class PrivilegedIO extends Bundle {
   val IllegalInstrFaultM = Output(Bool())
   val RedirectM = Output(Bool())
   val BigEndianM = Output(Bool())
-  val CSRResultM = Output(UInt(32.W))
-  val PrivilegeModeW = Output(UInt(2.W))
-  val NextPrivilegeModeM = Output(UInt(2.W))
-  val RedirectPCM = Output(UInt(32.W))
-  val CauseM = Output(UInt(5.W))
-  val MSTATUS_REGW = Output(UInt(32.W))
-  val MCYCLE_REGW = Output(UInt(64.W))
-  val MINSTRET_REGW = Output(UInt(64.W))
+  val CSRResultM = Output(UInt(XLEN.W))
+  val PrivilegeModeW = Output(UInt(MODE_WIDTH.W))
+  val NextPrivilegeModeM = Output(UInt(MODE_WIDTH.W))
+  val RedirectPCM = Output(UInt(XLEN.W))
+  val CauseM = Output(UInt(CAUSE_WIDTH.W))
+  val MSTATUS_REGW = Output(UInt(XLEN.W))
+  val MCYCLE_REGW = Output(UInt(Counter.WIDTH.W))
+  val MINSTRET_REGW = Output(UInt(Counter.WIDTH.W))
 }
 
 /** 教材§8.4特权单元，RV32/Bare；显式clk、高有效同步reset。
@@ -164,14 +169,13 @@ final class Privileged(config: PrivilegedConfig = PrivilegedConfig()) extends Ra
   wfi.io.TrapM := trap.io.TrapM
   wfi.io.IntPendingM := trap.io.IntPendingM
 
-  val FenceM = io.InstrM(6, 0) === "h0f".U(7.W) &&
-    (io.InstrM(14, 12) === 0.U(3.W) || io.InstrM(14, 12) === 1.U(3.W))
+  val FenceM = InstructionDecode.isFence(io.InstrM)
   val CommitM = ActiveM && !io.StallW
   val RedirectM = trap.io.TrapM || decode.io.RetM ||
     csr.io.CSRWriteM || (FenceM && !decode.io.IllegalInstrFaultM)
   io.RedirectM := CommitM && RedirectM
   io.RedirectPCM := Mux(trap.io.TrapM, csr.io.TrapVectorM,
-    Mux(decode.io.RetM, csr.io.EPCM, io.PCM + 4.U(32.W)))
+    Mux(decode.io.RetM, csr.io.EPCM, io.PCM + INSTRUCTION_BYTES.U(XLEN.W)))
   io.WFIStallM := ActiveM && wfi.io.WFIStallM
   io.WFITimeoutM := WFITimeoutM
   io.TrapM := trap.io.TrapM

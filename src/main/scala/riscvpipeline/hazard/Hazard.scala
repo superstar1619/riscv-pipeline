@@ -1,31 +1,33 @@
 package riscvpipeline.hazard
 
 import chisel3._
+import riscvpipeline.control.ControlEncoding._
+import riscvpipeline.isa.Architecture._
 
 /** 源寄存器使用、各级有效写入及访存控制；前递编码 00=寄存器、01=W、10=M。 */
 final class HazardIO extends Bundle {
-  val Rs1D = Input(UInt(5.W))
-  val Rs2D = Input(UInt(5.W))
+  val Rs1D = Input(UInt(REGISTER_INDEX_WIDTH.W))
+  val Rs2D = Input(UInt(REGISTER_INDEX_WIDTH.W))
   val UsesRs1D = Input(Bool())
   val UsesRs2D = Input(Bool())
   val ValidD = Input(Bool())
-  val MemRWD = Input(UInt(2.W))
-  val Rs1E = Input(UInt(5.W))
-  val Rs2E = Input(UInt(5.W))
-  val RdE = Input(UInt(5.W))
+  val MemRWD = Input(UInt(MEM_WIDTH.W))
+  val Rs1E = Input(UInt(REGISTER_INDEX_WIDTH.W))
+  val Rs2E = Input(UInt(REGISTER_INDEX_WIDTH.W))
+  val RdE = Input(UInt(REGISTER_INDEX_WIDTH.W))
   val ValidE = Input(Bool())
-  val MemRWE = Input(UInt(2.W))
+  val MemRWE = Input(UInt(MEM_WIDTH.W))
   val LateResultE = Input(Bool())
-  val RdM = Input(UInt(5.W))
+  val RdM = Input(UInt(REGISTER_INDEX_WIDTH.W))
   val RegWriteM = Input(Bool())
   val ValidM = Input(Bool())
   val ResultSrcM = Input(Bool())
-  val RdW = Input(UInt(5.W))
+  val RdW = Input(UInt(REGISTER_INDEX_WIDTH.W))
   val RegWriteW = Input(Bool())
   val ValidW = Input(Bool())
   val PCSrcE = Input(Bool())
-  val ForwardAE = Output(UInt(2.W))
-  val ForwardBE = Output(UInt(2.W))
+  val ForwardAE = Output(UInt(FORWARD_WIDTH.W))
+  val ForwardBE = Output(UInt(FORWARD_WIDTH.W))
   val LoadStallD = Output(Bool())
   val StoreStallD = Output(Bool())
   val StallF = Output(Bool())
@@ -43,19 +45,23 @@ final class Hazard extends RawModule {
 
   private def forward(source: UInt): UInt = {
     val MatchM = io.ValidM && io.RegWriteM && !io.ResultSrcM &&
-      io.RdM =/= 0.U && source === io.RdM
-    val MatchW = io.ValidW && io.RegWriteW && io.RdW =/= 0.U && source === io.RdW
-    Mux(!io.ValidE || source === 0.U, 0.U(2.W),
-      Mux(MatchM, 2.U(2.W), Mux(MatchW, 1.U(2.W), 0.U(2.W))))
+      io.RdM =/= 0.U(REGISTER_INDEX_WIDTH.W) && source === io.RdM
+    val MatchW = io.ValidW && io.RegWriteW &&
+      io.RdW =/= 0.U(REGISTER_INDEX_WIDTH.W) && source === io.RdW
+    Mux(!io.ValidE || source === 0.U(REGISTER_INDEX_WIDTH.W), FORWARD_NONE.U(FORWARD_WIDTH.W),
+      Mux(MatchM, FORWARD_M.U(FORWARD_WIDTH.W),
+        Mux(MatchW, FORWARD_W.U(FORWARD_WIDTH.W), FORWARD_NONE.U(FORWARD_WIDTH.W))))
   }
   io.ForwardAE := forward(io.Rs1E)
   io.ForwardBE := forward(io.Rs2E)
 
-  val MatchDE = io.RdE =/= 0.U &&
+  val MatchDE = io.RdE =/= 0.U(REGISTER_INDEX_WIDTH.W) &&
     ((io.UsesRs1D && io.Rs1D === io.RdE) ||
       (io.UsesRs2D && io.Rs2D === io.RdE))
-  io.LoadStallD := io.ValidD && io.ValidE && (io.MemRWE(1) || io.LateResultE) && MatchDE
-  io.StoreStallD := io.ValidD && io.ValidE && io.MemRWE(0) && io.MemRWD(1)
+  io.LoadStallD := io.ValidD && io.ValidE &&
+    (io.MemRWE(MEM_READ_BIT) || io.LateResultE) && MatchDE
+  io.StoreStallD := io.ValidD && io.ValidE &&
+    io.MemRWE(MEM_WRITE_BIT) && io.MemRWD(MEM_READ_BIT)
   val StructuralStallD = io.LoadStallD || io.StoreStallD
   io.StallD := StructuralStallD && !io.PCSrcE
   io.StallF := io.StallD

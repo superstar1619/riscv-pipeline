@@ -7,10 +7,12 @@ import riscvpipeline.privileged.{CSR, PrivilegedConfig}
 object GenerateCSR extends App {
   require(args.length <= 5, "Usage: GenerateCSR [targetDir] [S] [BigEndian] [Sstc] [HPM]")
   val targetDir = args.headOption.getOrElse("generated/csr")
+  val defaults = PrivilegedConfig()
   val config = PrivilegedConfig(
-    supervisorSupported = args.lift(1).map(_.toBoolean).getOrElse(true),
-    bigEndianSupported = args.lift(2).map(_.toBoolean).getOrElse(true),
-    sstcSupported = args.lift(3).map(_.toBoolean).getOrElse(false),
-    hpmCounters = args.lift(4).map(_.toInt).getOrElse(0))
+    supervisorSupported =
+      args.lift(1).map(_.toBoolean).getOrElse(defaults.supervisorSupported),
+    bigEndianSupported = args.lift(2).map(_.toBoolean).getOrElse(defaults.bigEndianSupported),
+    sstcSupported = args.lift(3).map(_.toBoolean).getOrElse(defaults.sstcSupported),
+    hpmCounters = args.lift(4).map(_.toInt).getOrElse(defaults.hpmCounters))
   (new ChiselStage).emitVerilog(new CSR(config), Array("--target-dir", targetDir))
 }

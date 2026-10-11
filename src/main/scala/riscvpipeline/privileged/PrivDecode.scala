@@ -1,12 +1,16 @@
 package riscvpipeline.privileged
 
 import chisel3._
+import riscvpipeline.isa.Architecture._
+import riscvpipeline.isa.InstructionDecode
+import riscvpipeline.isa.InstructionEncoding._
+import PrivilegedConstants.Privilege._
 
 /** RV32 特权指令及非法指令汇总接口；WFI 计数由后续等待模块提供。 */
 final class PrivDecodeIO extends Bundle {
-  val InstrM = Input(UInt(32.W))
+  val InstrM = Input(UInt(INSTRUCTION_WIDTH.W))
   val ValidM = Input(Bool())
-  val PrivilegeModeW = Input(UInt(2.W))
+  val PrivilegeModeW = Input(UInt(MODE_WIDTH.W))
   val STATUS_TSR = Input(Bool())
   val STATUS_TVM = Input(Bool())
   val STATUS_TW = Input(Bool())
@@ -36,28 +40,27 @@ final class PrivDecode(
     "virtual memory decoding requires supervisor support")
   val io = IO(new PrivDecodeIO)
 
-  val SystemM = io.InstrM(6, 0) === "h73".U(7.W)
+  val SystemM = io.InstrM(6, 0) === OP_SYSTEM.U(OPCODE_WIDTH.W)
   val Funct3M = io.InstrM(14, 12)
-  val CSRInstrM = SystemM && (Funct3M === 1.U(3.W) || Funct3M === 2.U(3.W) ||
-    Funct3M === 3.U(3.W) || Funct3M === 5.U(3.W) ||
-    Funct3M === 6.U(3.W) || Funct3M === 7.U(3.W))
-  val MachineModeM = io.PrivilegeModeW === 3.U(2.W)
-  val SupervisorModeM = io.PrivilegeModeW === 1.U(2.W)
-  val UserModeM = io.PrivilegeModeW === 0.U(2.W)
+  val CSRInstrM = InstructionDecode.isCSR(io.InstrM)
+  val MachineModeM = io.PrivilegeModeW === MODE_M.U(MODE_WIDTH.W)
+  val SupervisorModeM = io.PrivilegeModeW === MODE_S.U(MODE_WIDTH.W)
+  val UserModeM = io.PrivilegeModeW === MODE_U.U(MODE_WIDTH.W)
   val SupportedModeM = MachineModeM || UserModeM ||
     (supervisorSupported.B && SupervisorModeM)
 
   // 全字比较同时检查 opcode、funct3、rd、rs1，避免接受保留字段。
-  val EcallM = io.InstrM === "h00000073".U(32.W)
-  val EbreakM = io.InstrM === "h00100073".U(32.W)
-  val MretM = io.InstrM === "h30200073".U(32.W) && MachineModeM
-  val SretM = io.InstrM === "h10200073".U(32.W) && supervisorSupported.B &&
+  val EcallM = io.InstrM === INSTR_ECALL.U(INSTRUCTION_WIDTH.W)
+  val EbreakM = io.InstrM === INSTR_EBREAK.U(INSTRUCTION_WIDTH.W)
+  val MretM = io.InstrM === INSTR_MRET.U(INSTRUCTION_WIDTH.W) && MachineModeM
+  val SretM = io.InstrM === INSTR_SRET.U(INSTRUCTION_WIDTH.W) && supervisorSupported.B &&
     (MachineModeM || (SupervisorModeM && !io.STATUS_TSR))
-  val WFIM = io.InstrM === "h10500073".U(32.W)
+  val WFIM = io.InstrM === INSTR_WFI.U(INSTRUCTION_WIDTH.W)
 
   // SFENCE.VMA 只允许 rs1/rs2 变化；默认配置禁用其执行请求。
-  val SFenceEncodingM = SystemM && Funct3M === 0.U(3.W) &&
-    io.InstrM(11, 7) === 0.U(5.W) && io.InstrM(31, 25) === 9.U(7.W)
+  val SFenceEncodingM = SystemM && Funct3M === 0.U(FUNCT3_WIDTH.W) &&
+    io.InstrM(11, 7) === 0.U(REGISTER_INDEX_WIDTH.W) &&
+    io.InstrM(31, 25) === FUNCT7_SFENCE_VMA.U(FUNCT7_WIDTH.W)
   val SFenceM = SFenceEncodingM && virtualMemorySupported.B &&
     (MachineModeM || (SupervisorModeM && !io.STATUS_TVM))
   val KnownPrivilegedM = EcallM || EbreakM || MretM || SretM || WFIM || SFenceM

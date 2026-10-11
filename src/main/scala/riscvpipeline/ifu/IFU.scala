@@ -2,6 +2,7 @@ package riscvpipeline.ifu
 
 import chisel3._
 import riscvpipeline.config.CpuConfig
+import riscvpipeline.isa.Architecture._
 
 /** F 级 PC 控制与 D 级同步取指结果；PC/目标均为字节地址。 */
 final class IFUIO(config: CpuConfig) extends Bundle {
@@ -13,7 +14,7 @@ final class IFUIO(config: CpuConfig) extends Bundle {
   val StallD = Input(Bool())
   val FlushD = Input(Bool())
   val PCF = Output(UInt(config.xlen.W))
-  val InstrD = Output(UInt(32.W))
+  val InstrD = Output(UInt(INSTRUCTION_WIDTH.W))
   val PCD = Output(UInt(config.xlen.W))
   val PCPlus4D = Output(UInt(config.xlen.W))
   val ValidD = Output(Bool())
@@ -34,11 +35,11 @@ final class IFU(val config: CpuConfig = CpuConfig()) extends RawModule {
   val PCD = withClockAndReset(clk, reset) { RegInit(0.U(config.xlen.W)) }
   val ValidD = withClockAndReset(clk, reset) { RegInit(false.B) }
   val FetchFaultD = withClockAndReset(clk, reset) { RegInit(false.B) }
-  private val ROM_CAPACITY = BigInt(config.imemDepth) * 4
+  private val ROM_CAPACITY = BigInt(config.imemDepth) * INSTRUCTION_BYTES
   private val ROM_BASE = config.resetVector / ROM_CAPACITY * ROM_CAPACITY
   val FetchAccessFaultF = config.privilegedSupported.B &&
-    (PCF.pad(33) < ROM_BASE.U(33.W) ||
-      PCF.pad(33) >= (ROM_BASE + ROM_CAPACITY).U(33.W))
+    (PCF.pad(XLEN + 1) < ROM_BASE.U((XLEN + 1).W) ||
+      PCF.pad(XLEN + 1) >= (ROM_BASE + ROM_CAPACITY).U((XLEN + 1).W))
   val irom = Module(new IROM(config))
   val RedirectE = io.RedirectM || io.PCSrcE || io.FlushD
 
@@ -47,7 +48,7 @@ final class IFU(val config: CpuConfig = CpuConfig()) extends RawModule {
   }.elsewhen(io.PCSrcE) {
     PCF := io.IEUAdrE
   }.elsewhen(!io.StallF) {
-    PCF := PCF + 4.U(config.xlen.W)
+    PCF := PCF + INSTRUCTION_BYTES.U(config.xlen.W)
   }
   when(RedirectE) {
     ValidD := false.B
@@ -62,7 +63,7 @@ final class IFU(val config: CpuConfig = CpuConfig()) extends RawModule {
   irom.io.en := !reset && !io.StallD && !RedirectE
   io.PCF := PCF
   io.PCD := PCD
-  io.PCPlus4D := PCD + 4.U(config.xlen.W)
+  io.PCPlus4D := PCD + INSTRUCTION_BYTES.U(config.xlen.W)
   io.InstrD := irom.io.rd
   io.ValidD := ValidD
   io.InstrAccessFaultD := FetchFaultD

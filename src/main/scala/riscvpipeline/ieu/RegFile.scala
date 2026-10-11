@@ -2,6 +2,7 @@ package riscvpipeline.ieu
 
 import chisel3._
 import chisel3.util.log2Ceil
+import riscvpipeline.isa.Architecture._
 
 /** 两个组合读口、一个同步写口；A1/A2/A3 是架构寄存器索引，不是字节地址。 */
 final class RegFileIO(dataWidth: Int, registerCount: Int) extends Bundle {
@@ -19,7 +20,10 @@ final class RegFileIO(dataWidth: Int, registerCount: Int) extends Bundle {
   * 高有效同步 reset 仅清零 x0，并优先于写入；x1..xN-1 无复位值，复位期间保值。
   * 正常写入排除 x0，上升沿后两个组合读口可见新值，无边沿前写穿透。
   */
-final class RegFile(val dataWidth: Int = 32, val registerCount: Int = 32) extends RawModule {
+final class RegFile(
+  val dataWidth: Int = XLEN,
+  val registerCount: Int = REGISTER_COUNT
+) extends RawModule {
   require(dataWidth > 0, "RegFile dataWidth must be > 0")
   require(registerCount >= 2 && (registerCount & (registerCount - 1)) == 0,
     "RegFile registerCount must be a power of two >= 2")
@@ -33,7 +37,7 @@ final class RegFile(val dataWidth: Int = 32, val registerCount: Int = 32) extend
     Reg(Vec(registerCount, UInt(dataWidth.W))).suggestName("rf")
   }
   val WriteEnable = Wire(Bool())
-  WriteEnable := io.WE3 && (io.A3 =/= 0.U)
+  WriteEnable := io.WE3 && (io.A3 =/= 0.U(log2Ceil(registerCount).W))
 
   withClock(clk) {
     when(reset) {

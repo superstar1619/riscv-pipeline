@@ -1,5 +1,6 @@
 package riscvpipeline.privileged
 
+import riscvpipeline.TestEncoding.{CSR, CSRFunction, Cause, Mask, Opcode, Privilege}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -124,12 +125,15 @@ private class MachineAccessHarness extends Module {
 class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
   private def hex(s: String): BigInt = BigInt(s, 16)
   private val full = hex("ffffffff")
-  private val owned = Seq(0x305, 0x302, 0x303, 0x340, 0x341, 0x342, 0x343,
-    0x306, 0x320, 0x30a, 0x31a)
-  private val addresses = Seq(0x300, 0x301, 0x302, 0x303, 0x304, 0x305, 0x306,
-    0x30a, 0x310, 0x31a, 0x320, 0x340, 0x341, 0x342, 0x343, 0x344) ++
-    (0xf11 to 0xf15)
-  private case class Inputs(adr: Int = 0x340, word: BigInt = 0,
+  private val owned = Seq(CSR.MTVEC, CSR.MEDELEG, CSR.MIDELEG, CSR.MSCRATCH, CSR.MEPC,
+    CSR.MCAUSE, CSR.MTVAL,
+    CSR.MCOUNTEREN, CSR.MCOUNTINHIBIT, CSR.MENVCFG, CSR.MENVCFGH)
+  private val addresses = Seq(CSR.MSTATUS, CSR.MISA, CSR.MEDELEG, CSR.MIDELEG, CSR.MIE,
+    CSR.MTVEC, CSR.MCOUNTEREN,
+    CSR.MENVCFG, CSR.MSTATUSH, CSR.MENVCFGH, CSR.MCOUNTINHIBIT, CSR.MSCRATCH, CSR.MEPC,
+      CSR.MCAUSE, CSR.MTVAL, CSR.MIP) ++
+    (CSR.MVENDORID to CSR.MCONFIGPTR)
+  private case class Inputs(adr: Int = CSR.MSCRATCH, word: BigInt = 0,
     write: Boolean = false, trap: Boolean = false, epc: BigInt = 0,
     cause: Int = 0, tval: BigInt = 0, valid: Boolean = true,
     stall: Boolean = false, flush: Boolean = false,
@@ -152,13 +156,16 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
     d.io.MIP_REGW_writeable.poke(a.sw.U)
   }
   private def checkState(d: CSRMachineHarness, v: Map[Int, BigInt] = Map.empty): Unit = {
-    for ((address, port) <- Seq(0x305 -> d.io.MTVEC_REGW, 0x302 -> d.io.MEDELEG_REGW,
-         0x303 -> d.io.MIDELEG_REGW, 0x340 -> d.io.MSCRATCH_REGW,
-         0x341 -> d.io.MEPC_REGW, 0x342 -> d.io.MCAUSE_REGW, 0x343 -> d.io.MTVAL_REGW,
-         0x306 -> d.io.MCOUNTEREN_REGW, 0x320 -> d.io.MCOUNTINHIBIT_REGW)) {
+    for ((address, port) <- Seq(CSR.MTVEC -> d.io.MTVEC_REGW, CSR.MEDELEG -> d.io.MEDELEG_REGW,
+         CSR.MIDELEG -> d.io.MIDELEG_REGW, CSR.MSCRATCH -> d.io.MSCRATCH_REGW,
+         CSR.MEPC -> d.io.MEPC_REGW, CSR.MCAUSE -> d.io.MCAUSE_REGW,
+           CSR.MTVAL -> d.io.MTVAL_REGW,
+         CSR.MCOUNTEREN -> d.io.MCOUNTEREN_REGW,
+           CSR.MCOUNTINHIBIT -> d.io.MCOUNTINHIBIT_REGW)) {
       port.expect(v.getOrElse(address, BigInt(0)).U)
     }
-    val env = (v.getOrElse(0x31a, BigInt(0)) << 32) + v.getOrElse(0x30a, BigInt(0))
+    val env = (v.getOrElse(CSR.MENVCFGH, BigInt(0)) << 32) + v.getOrElse(CSR.MENVCFG,
+      BigInt(0))
     d.io.MENVCFG_REGW.expect(env.U)
   }
   private def strobes(d: CSRMachineHarness, status: Boolean = false,
@@ -194,46 +201,47 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
     private def select(word: BigInt, allowed: Seq[Int]): BigInt =
       allowed.filter(word.testBit).map(i => BigInt(1) << i).sum
     def exists(adr: Int): Boolean = addresses.contains(adr) &&
-      (p.s || (adr != 0x302 && adr != 0x303))
+      (p.s || (adr != CSR.MEDELEG && adr != CSR.MIDELEG))
     def value(a: Inputs): BigInt = a.adr match {
-      case 0x300 => a.status
-      case 0x310 => a.high
-      case 0x304 => BigInt(a.mie)
-      case 0x344 => BigInt(a.mip)
-      case 0x301 => BigInt(1) << 30 | BigInt(1) << 20 | BigInt(1) << 8 |
+      case CSR.MSTATUS => a.status
+      case CSR.MSTATUSH => a.high
+      case CSR.MIE => BigInt(a.mie)
+      case CSR.MIP => BigInt(a.mip)
+      case CSR.MISA => BigInt(1) << 30 | BigInt(1) << 20 | BigInt(1) << 8 |
         (if (p.s) BigInt(1) << 18 else BigInt(0))
-      case 0xf14 => p.hart
+      case CSR.MHARTID => p.hart
       case adr if exists(adr) => state.getOrElse(adr, BigInt(0))
       case _ => BigInt(0)
     }
     def expect(d: CSRMachineHarness, a: Inputs): Unit = {
       checkState(d, state)
       read(d, a.adr, value(a), exists(a.adr),
-        if (a.adr == 0x344) Some(BigInt(a.sw)) else None)
+        if (a.adr == CSR.MIP) Some(BigInt(a.sw)) else None)
       val active = a.valid && !a.stall && !a.flush && !a.trap && a.write
-      strobes(d, active && a.adr == 0x300, active && a.adr == 0x310,
-        active && a.adr == 0x304, active && a.adr == 0x344)
+      strobes(d, active && a.adr == CSR.MSTATUS, active && a.adr == CSR.MSTATUSH,
+        active && a.adr == CSR.MIE, active && a.adr == CSR.MIP)
     }
     def update(a: Inputs, resetting: Boolean): Unit = {
       if (resetting) state = state.view.mapValues(_ => BigInt(0)).toMap
       else if (a.valid && !a.stall && !a.flush) {
-        if (a.trap) state ++= Map(0x341 -> (a.epc / 4 * 4),
-          0x342 -> (BigInt(a.cause % 32) +
-            (if (a.cause >= 32) BigInt(1) << 31 else BigInt(0))),
-          0x343 -> a.tval)
+        if (a.trap) state ++= Map(CSR.MEPC -> (a.epc / 4 * 4),
+          CSR.MCAUSE -> (BigInt(a.cause % Cause.INPUT_INTERRUPT_FLAG) +
+            (if (a.cause >= Cause.INPUT_INTERRUPT_FLAG) BigInt(1) << 31 else BigInt(0))),
+          CSR.MTVAL -> a.tval)
         else if (a.write && exists(a.adr) && owned.contains(a.adr)) {
           val next = a.adr match {
-            case 0x305 => if (p.vector && a.word.testBit(0)) a.word / 64 * 64 + 1
+            case CSR.MTVEC => if (p.vector && a.word.testBit(0)) a.word / 64 * 64 + 1
               else a.word / 4 * 4
-            case 0x341 => a.word / 4 * 4
-            case 0x342 => select(a.word, Seq(31) ++ (0 to 4))
-            case 0x302 => select(a.word, (0 to 9) ++
+            case CSR.MEPC => a.word / 4 * 4
+            case CSR.MCAUSE => select(a.word, Seq(31) ++ (0 to 4))
+            case CSR.MEDELEG => select(a.word, (0 to 9) ++
               (if (p.vm) Seq(12, 13, 15) else Seq.empty))
-            case 0x303 => select(a.word, Seq(1, 5, 9))
-            case 0x306 => select(a.word, (0 to 2) ++ (3 until p.hpm + 3))
-            case 0x320 => select(a.word, Seq(0, 2) ++ (3 until p.hpm + 3))
-            case 0x30a => if (p.vm && a.word.testBit(0)) BigInt(1) else BigInt(0)
-            case 0x31a => if (p.stc && a.word.testBit(31)) BigInt(1) << 31 else BigInt(0)
+            case CSR.MIDELEG => select(a.word, Seq(1, 5, 9))
+            case CSR.MCOUNTEREN => select(a.word, (0 to 2) ++ (3 until p.hpm + 3))
+            case CSR.MCOUNTINHIBIT => select(a.word, Seq(0, 2) ++ (3 until p.hpm + 3))
+            case CSR.MENVCFG => if (p.vm && a.word.testBit(0)) BigInt(1) else BigInt(0)
+            case CSR.MENVCFGH => if (p.stc &&
+              a.word.testBit(31)) BigInt(1) << 31 else BigInt(0)
             case _ => a.word
           }
           state += a.adr -> next
@@ -249,11 +257,11 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
       boot(d)
       cycle(d, Inputs(word = full, write = true))
       d.reset.poke(true.B)
-      checkState(d, Map(0x340 -> full))
-      for (address <- Seq(0x300, 0x310, 0x304, 0x344)) {
+      checkState(d, Map(CSR.MSCRATCH -> full))
+      for (address <- Seq(CSR.MSTATUS, CSR.MSTATUSH, CSR.MIE, CSR.MIP)) {
         drive(d, Inputs(adr = address, word = full, write = true))
-        strobes(d, status = address == 0x300, high = address == 0x310,
-          mie = address == 0x304, mip = address == 0x344)
+        strobes(d, status = address == CSR.MSTATUS, high = address == CSR.MSTATUSH,
+          mie = address == CSR.MIE, mip = address == CSR.MIP)
       }
       drive(d, Inputs(word = full, write = true))
       strobes(d)
@@ -270,7 +278,7 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
         for (address <- 0 until 4096) {
           d.io.CSRAdrM.poke(address.U)
           val exists = addresses.contains(address) &&
-            (s || (address != 0x302 && address != 0x303))
+            (s || (address != CSR.MEDELEG && address != CSR.MIDELEG))
           d.io.CSRMExistsM.expect(exists.B)
           if (!exists) {
             d.io.CSRMReadValM.expect(0.U)
@@ -285,16 +293,17 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
     for ((s, want) <- Seq((false, hex("40100100")), (true, hex("40140100")))) {
       test(new CSRMachineHarness(MachineParams(s = s, hart = full))) { d =>
         boot(d)
-        read(d, 0x301, want)
-        cycle(d, Inputs(adr = 0x301, write = true, word = 0))
-        read(d, 0x301, want)
-        for (address <- Seq(0xf11, 0xf12, 0xf13, 0xf15)) read(d, address, 0)
-        read(d, 0xf14, full)
-        for (address <- 0xf11 to 0xf15) {
+        read(d, CSR.MISA, want)
+        cycle(d, Inputs(adr = CSR.MISA, write = true, word = 0))
+        read(d, CSR.MISA, want)
+        for (address <- Seq(CSR.MVENDORID, CSR.MARCHID, CSR.MIMPID, CSR.MCONFIGPTR)) read(d,
+          address, 0)
+        read(d, CSR.MHARTID, full)
+        for (address <- CSR.MVENDORID to CSR.MCONFIGPTR) {
           cycle(d, Inputs(adr = address, write = true, word = 0))
           strobes(d)
         }
-        read(d, 0xf14, full)
+        read(d, CSR.MHARTID, full)
         checkState(d)
       }
     }
@@ -305,10 +314,10 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
       boot(d)
       drive(d, Inputs(status = hex("89abcdef"), high = hex("12345678"),
         mip = 0xa88, mie = 0xaaa, sw = 0x020, valid = false, stall = true, flush = true))
-      read(d, 0x300, hex("89abcdef"))
-      read(d, 0x310, hex("12345678"))
-      read(d, 0x304, 0xaaa)
-      read(d, 0x344, 0xa88, modify = Some(BigInt(0x020)))
+      read(d, CSR.MSTATUS, hex("89abcdef"))
+      read(d, CSR.MSTATUSH, hex("12345678"))
+      read(d, CSR.MIE, 0xaaa)
+      read(d, CSR.MIP, 0xa88, modify = Some(BigInt(0x020)))
       strobes(d)
     }
   }
@@ -316,12 +325,12 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "emit only the selected allowed leaf write strobe" in {
     test(new CSRMachineHarness) { d =>
       boot(d)
-      for (address <- addresses ++ Seq(0x100, 0x3a0, 0xb00)) {
+      for (address <- addresses ++ Seq(CSR.SSTATUS, CSR.PMPCFG0, CSR.MCYCLE)) {
         drive(d, Inputs(adr = address, write = true))
-        strobes(d, address == 0x300, address == 0x310,
-          address == 0x304, address == 0x344)
+        strobes(d, address == CSR.MSTATUS, address == CSR.MSTATUSH,
+          address == CSR.MIE, address == CSR.MIP)
       }
-      for (address <- Seq(0x300, 0x310, 0x304, 0x344)) {
+      for (address <- Seq(CSR.MSTATUS, CSR.MSTATUSH, CSR.MIE, CSR.MIP)) {
         for (a <- Seq(Inputs(adr = address), Inputs(adr = address, write = true,
              valid = false), Inputs(adr = address, write = true, stall = true),
              Inputs(adr = address, write = true, flush = true),
@@ -331,8 +340,8 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
         }
         drive(d, Inputs(adr = address, write = true))
         d.reset.poke(true.B)
-        strobes(d, address == 0x300, address == 0x310,
-          address == 0x304, address == 0x344)
+        strobes(d, address == CSR.MSTATUS, address == CSR.MSTATUSH,
+          address == CSR.MIE, address == CSR.MIP)
         d.reset.poke(false.B)
       }
     }
@@ -341,16 +350,16 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "preserve full scratch and tval data but align EPC and restrict cause format" in {
     test(new CSRMachineHarness) { d =>
       boot(d)
-      val rows = Seq((0x340, hex("89abcdef"), hex("89abcdef")),
-        (0x343, full, full), (0x341, hex("80000003"), hex("80000000")),
-        (0x342, full, hex("8000001f")), (0x342, hex("7fffffe7"), BigInt(7)))
+      val rows = Seq((CSR.MSCRATCH, hex("89abcdef"), hex("89abcdef")),
+        (CSR.MTVAL, full, full), (CSR.MEPC, hex("80000003"), hex("80000000")),
+        (CSR.MCAUSE, full, hex("8000001f")), (CSR.MCAUSE, hex("7fffffe7"), BigInt(7)))
       for ((adr, word, want) <- rows) {
         cycle(d, Inputs(adr = adr, write = true, word = word))
         read(d, adr, want)
       }
       for (low <- 0 to 3) {
-        cycle(d, Inputs(adr = 0x341, write = true, word = 0x12345678L + low))
-        read(d, 0x341, hex("12345678"))
+        cycle(d, Inputs(adr = CSR.MEPC, write = true, word = 0x12345678L + low))
+        read(d, CSR.MEPC, hex("12345678"))
       }
     }
   }
@@ -365,8 +374,8 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
              (hex("8000013e"), hex("8000013c"), hex("8000013c")),
              (hex("8000013f"), hex("80000101"), hex("8000013c")),
              (full, hex("ffffffc1"), hex("fffffffc")))) {
-          cycle(d, Inputs(adr = 0x305, write = true, word = word))
-          read(d, 0x305, if (vector) vectored else direct)
+          cycle(d, Inputs(adr = CSR.MTVEC, write = true, word = word))
+          read(d, CSR.MTVEC, if (vector) vectored else direct)
         }
       }
     }
@@ -376,16 +385,16 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new CSRMachineHarness) { d =>
       boot(d)
       cycle(d, Inputs(word = hex("12345678"), write = true))
-      for (address <- owned ++ Seq(0x300, 0x310, 0x304, 0x344, 0xfff)) {
+      for (address <- owned ++ Seq(CSR.MSTATUS, CSR.MSTATUSH, CSR.MIE, CSR.MIP, 0xfff)) {
         cycle(d, Inputs(adr = address, word = full, write = true, trap = true,
           epc = hex("80001237"), cause = 39, tval = hex("a5a5f00d")))
-        checkState(d, Map(0x340 -> hex("12345678"), 0x341 -> hex("80001234"),
-          0x342 -> hex("80000007"), 0x343 -> hex("a5a5f00d")))
+        checkState(d, Map(CSR.MSCRATCH -> hex("12345678"), CSR.MEPC -> hex("80001234"),
+          CSR.MCAUSE -> hex("80000007"), CSR.MTVAL -> hex("a5a5f00d")))
         strobes(d)
       }
       cycle(d, Inputs(trap = true, epc = 0x004, cause = 2, tval = 0))
-      checkState(d, Map(0x340 -> hex("12345678"), 0x341 -> BigInt(4),
-        0x342 -> BigInt(2)))
+      checkState(d, Map(CSR.MSCRATCH -> hex("12345678"), CSR.MEPC -> BigInt(4),
+        CSR.MCAUSE -> BigInt(2)))
     }
   }
 
@@ -394,8 +403,8 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
       boot(d)
       for (cause <- 0 until 64) {
         cycle(d, Inputs(trap = true, cause = cause))
-        val want = BigInt(cause % 32) + (if (cause >= 32) BigInt(1) << 31 else BigInt(0))
-        read(d, 0x342, want)
+        val want = BigInt(cause % Cause.INPUT_INTERRUPT_FLAG) + (if (cause >= Cause.INPUT_INTERRUPT_FLAG) BigInt(1) << 31 else BigInt(0))
+        read(d, CSR.MCAUSE, want)
       }
     }
   }
@@ -403,31 +412,32 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "hold all software and trap state under invalid stall and flush gates" in {
     test(new CSRMachineHarness) { d =>
       boot(d)
-      cycle(d, Inputs(adr = 0x341, write = true, word = 0x104))
+      cycle(d, Inputs(adr = CSR.MEPC, write = true, word = 0x104))
       for (valid <- Seq(false, true); stall <- Seq(false, true);
            flush <- Seq(false, true) if !valid || stall || flush;
            address <- owned; trap <- Seq(false, true)) {
         cycle(d, Inputs(adr = address, word = full, write = true, trap = trap,
           epc = full, cause = 63, tval = full, valid = valid, stall = stall, flush = flush))
-        checkState(d, Map(0x341 -> BigInt(0x104)))
+        checkState(d, Map(CSR.MEPC -> BigInt(0x104)))
         strobes(d)
       }
     }
   }
 
   it should "mask delegation by supported supervisor and virtual memory exceptions" in {
-    for ((p, mask) <- Seq((MachineParams(s = false), 0), (MachineParams(), 0x03ff),
-         (MachineParams(vm = true), 0xb3ff))) {
+    for ((p, mask) <- Seq((MachineParams(s = false), 0), (MachineParams(),
+      Mask.BASE_EXCEPTION_DELEGATION),
+         (MachineParams(vm = true), Mask.VM_EXCEPTION_DELEGATION))) {
       test(new CSRMachineHarness(p)) { d =>
         boot(d)
-        cycle(d, Inputs(adr = 0x302, write = true, word = full))
-        read(d, 0x302, mask, exists = p.s)
-        cycle(d, Inputs(adr = 0x303, write = true, word = full))
-        read(d, 0x303, if (p.s) 0x222 else 0, exists = p.s)
-        cycle(d, Inputs(adr = 0x302, write = true, word = 0x800))
-        read(d, 0x302, 0, exists = p.s)
-        cycle(d, Inputs(adr = 0x303, write = true, word = 0x888))
-        read(d, 0x303, 0, exists = p.s)
+        cycle(d, Inputs(adr = CSR.MEDELEG, write = true, word = full))
+        read(d, CSR.MEDELEG, mask, exists = p.s)
+        cycle(d, Inputs(adr = CSR.MIDELEG, write = true, word = full))
+        read(d, CSR.MIDELEG, if (p.s) 0x222 else 0, exists = p.s)
+        cycle(d, Inputs(adr = CSR.MEDELEG, write = true, word = 0x800))
+        read(d, CSR.MEDELEG, 0, exists = p.s)
+        cycle(d, Inputs(adr = CSR.MIDELEG, write = true, word = 0x888))
+        read(d, CSR.MIDELEG, 0, exists = p.s)
       }
     }
   }
@@ -438,13 +448,13 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
          (29, full, hex("fffffffd")))) {
       test(new CSRMachineHarness(MachineParams(hpm = hpm))) { d =>
         boot(d)
-        cycle(d, Inputs(adr = 0x306, write = true, word = full))
-        read(d, 0x306, access)
-        cycle(d, Inputs(adr = 0x320, write = true, word = full))
-        read(d, 0x320, inhibit)
-        cycle(d, Inputs(adr = 0x320, write = true, word = 2))
-        read(d, 0x320, 0)
-        read(d, 0x306, access)
+        cycle(d, Inputs(adr = CSR.MCOUNTEREN, write = true, word = full))
+        read(d, CSR.MCOUNTEREN, access)
+        cycle(d, Inputs(adr = CSR.MCOUNTINHIBIT, write = true, word = full))
+        read(d, CSR.MCOUNTINHIBIT, inhibit)
+        cycle(d, Inputs(adr = CSR.MCOUNTINHIBIT, write = true, word = 2))
+        read(d, CSR.MCOUNTINHIBIT, 0)
+        read(d, CSR.MCOUNTEREN, access)
       }
     }
   }
@@ -453,14 +463,14 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
     for (vm <- Seq(false, true); stc <- Seq(false, true)) {
       test(new CSRMachineHarness(MachineParams(vm = vm, stc = stc))) { d =>
         boot(d)
-        cycle(d, Inputs(adr = 0x30a, write = true, word = full))
-        read(d, 0x30a, if (vm) 1 else 0)
-        cycle(d, Inputs(adr = 0x31a, write = true, word = full))
-        read(d, 0x31a, if (stc) hex("80000000") else 0)
-        read(d, 0x30a, if (vm) 1 else 0)
-        cycle(d, Inputs(adr = 0x30a, write = true, word = 0))
-        read(d, 0x31a, if (stc) hex("80000000") else 0)
-        cycle(d, Inputs(adr = 0x31a, write = true, word = 0))
+        cycle(d, Inputs(adr = CSR.MENVCFG, write = true, word = full))
+        read(d, CSR.MENVCFG, if (vm) 1 else 0)
+        cycle(d, Inputs(adr = CSR.MENVCFGH, write = true, word = full))
+        read(d, CSR.MENVCFGH, if (stc) hex("80000000") else 0)
+        read(d, CSR.MENVCFG, if (vm) 1 else 0)
+        cycle(d, Inputs(adr = CSR.MENVCFG, write = true, word = 0))
+        read(d, CSR.MENVCFGH, if (stc) hex("80000000") else 0)
+        cycle(d, Inputs(adr = CSR.MENVCFGH, write = true, word = 0))
         d.io.MENVCFG_REGW.expect(0.U)
       }
     }
@@ -468,9 +478,10 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   private def csr(adr: Int, funct: Int, rs: Int = 1, rd: Int = 1): BigInt =
     (BigInt(adr) << 20) | (BigInt(rs) << 15) | (BigInt(funct) << 12) |
-      (BigInt(rd) << 7) | 0x73
+      (BigInt(rd) << 7) | Opcode.SYSTEM
   private def accessDrive(d: MachineAccessHarness, instr: BigInt, src: BigInt = 0,
-                          mode: Int = 3, valid: Boolean = true, stall: Boolean = false,
+                          mode: Int = Privilege.MACHINE, valid: Boolean = true,
+                            stall: Boolean = false,
                           flush: Boolean = false, trap: Boolean = false,
                           ext: Boolean = false): Unit = {
     d.io.Instr.poke(instr.U)
@@ -492,41 +503,42 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.reset.poke(true.B)
       d.clock.step()
       d.reset.poke(false.B)
-      for ((adr, word) <- Seq((0x300, 8), (0x304, 0xaaa), (0x303, 0x222))) {
-        accessDrive(d, csr(adr, 1), word)
+      for ((adr, word) <- Seq((CSR.MSTATUS, 8), (CSR.MIE, 0xaaa), (CSR.MIDELEG, 0x222))) {
+        accessDrive(d, csr(adr, CSRFunction.RW), word)
         d.io.Result.expect(0.U)
         d.io.Illegal.expect(false.B)
         d.clock.step()
       }
       d.io.Status.expect(8.U)
       d.io.SIE.expect(0x222.U)
-      accessDrive(d, csr(0x344, 2), src = 2, ext = true)
+      accessDrive(d, csr(CSR.MIP, CSRFunction.RS), src = 2, ext = true)
       d.io.Result.expect(0x200.U)
       d.clock.step()
       d.io.MIPSoftware.expect(2.U)
       d.io.SIP.expect(0x202.U)
-      accessDrive(d, csr(0x344, 2, rs = 0))
+      accessDrive(d, csr(CSR.MIP, CSRFunction.RS, rs = 0))
       d.io.Result.expect(2.U)
-      for ((adr, mode) <- Seq((0x340, 1), (0x305, 0), (0x341, 2), (0x3a0, 3),
-           (0xb00, 3), (0xf14, 3))) {
-        accessDrive(d, csr(adr, 1, rd = 0), src = full, mode = mode)
+      for ((adr, mode) <- Seq((CSR.MSCRATCH, 1), (CSR.MTVEC, 0), (CSR.MEPC, 2),
+        (CSR.PMPCFG0, 3),
+           (CSR.MCYCLE, 3), (CSR.MHARTID, 3))) {
+        accessDrive(d, csr(adr, CSRFunction.RW, rd = 0), src = full, mode = mode)
         d.io.Illegal.expect(true.B)
         d.clock.step()
         d.io.Scratch.expect(0.U)
       }
       // 固定misa的写地址合法，字段不变；标识地址的写则异常。
-      accessDrive(d, csr(0x301, 1), src = full)
+      accessDrive(d, csr(CSR.MISA, CSRFunction.RW), src = full)
       d.io.Illegal.expect(false.B)
       d.io.Result.expect(hex("40140100").U)
       d.clock.step()
       for ((valid, stall, flush) <- Seq((false, false, false),
            (true, true, false), (true, false, true))) {
-        accessDrive(d, csr(0x340, 1), src = full, valid = valid,
+        accessDrive(d, csr(CSR.MSCRATCH, CSRFunction.RW), src = full, valid = valid,
           stall = stall, flush = flush)
         d.clock.step()
         d.io.Scratch.expect(0.U)
       }
-      accessDrive(d, csr(0x304, 1), src = 0, trap = true)
+      accessDrive(d, csr(CSR.MIE, CSRFunction.RW), src = 0, trap = true)
       d.clock.step()
       d.io.MIE.expect(0xaaa.U)
       d.io.Status.expect(0x1880.U)
@@ -544,7 +556,7 @@ class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
         boot(d)
         val model = new Model(p)
         val random = new Random(0x8d612026L)
-        val inputs = addresses ++ Seq(0x100, 0x3a0, 0xb00, 0xfff)
+        val inputs = addresses ++ Seq(CSR.SSTATUS, CSR.PMPCFG0, CSR.MCYCLE, 0xfff)
         for (i <- 0 until 512) {
           val a = Inputs(adr = inputs(random.nextInt(inputs.size)), word = BigInt(32, random),
             write = random.nextBoolean(), trap = i % 17 == 0, epc = BigInt(32, random),

@@ -2,18 +2,22 @@ package riscvpipeline.privileged
 
 import chisel3._
 import chisel3.util.Cat
+import riscvpipeline.isa.Architecture._
+import PrivilegedConstants.ExceptionCause._
+import PrivilegedConstants.Privilege._
+import PrivilegedConstants._
 
 /** M级CSR事务与精确陷阱上下文；模式由外部PrivMode保存。 */
 final class CSRIO extends Bundle {
-  val InstrM = Input(UInt(32.W))
-  val PCM = Input(UInt(32.W))
-  val IEUAdrM = Input(UInt(32.W))
-  val SrcAM = Input(UInt(32.W))
-  val PrivilegeModeW = Input(UInt(2.W))
-  val NextPrivilegeModeM = Input(UInt(2.W))
-  val CauseM = Input(UInt(5.W))
-  val HPMEventsM = Input(UInt(32.W))
-  val TIME_REGW = Input(UInt(64.W))
+  val InstrM = Input(UInt(INSTRUCTION_WIDTH.W))
+  val PCM = Input(UInt(XLEN.W))
+  val IEUAdrM = Input(UInt(XLEN.W))
+  val SrcAM = Input(UInt(XLEN.W))
+  val PrivilegeModeW = Input(UInt(MODE_WIDTH.W))
+  val NextPrivilegeModeM = Input(UInt(MODE_WIDTH.W))
+  val CauseM = Input(UInt(CAUSE_WIDTH.W))
+  val HPMEventsM = Input(UInt(Counter.EVENT_COUNT.W))
+  val TIME_REGW = Input(UInt(Counter.WIDTH.W))
   val ValidM = Input(Bool())
   val StallW = Input(Bool())
   val FlushM = Input(Bool())
@@ -38,17 +42,17 @@ final class CSRIO extends Bundle {
   val STATUS_MIE = Output(Bool())
   val STATUS_SIE = Output(Bool())
   val BigEndianM = Output(Bool())
-  val CSRResultM = Output(UInt(32.W))
-  val TrapVectorM = Output(UInt(32.W))
-  val EPCM = Output(UInt(32.W))
-  val STATUS_MPP = Output(UInt(2.W))
-  val MIP_REGW = Output(UInt(12.W))
-  val MIE_REGW = Output(UInt(12.W))
-  val MIDELEG_REGW = Output(UInt(12.W))
-  val MEDELEG_REGW = Output(UInt(16.W))
-  val MSTATUS_REGW = Output(UInt(32.W))
-  val MCYCLE_REGW = Output(UInt(64.W))
-  val MINSTRET_REGW = Output(UInt(64.W))
+  val CSRResultM = Output(UInt(XLEN.W))
+  val TrapVectorM = Output(UInt(XLEN.W))
+  val EPCM = Output(UInt(XLEN.W))
+  val STATUS_MPP = Output(UInt(MODE_WIDTH.W))
+  val MIP_REGW = Output(UInt(Interrupt.WIDTH.W))
+  val MIE_REGW = Output(UInt(Interrupt.WIDTH.W))
+  val MIDELEG_REGW = Output(UInt(Interrupt.WIDTH.W))
+  val MEDELEG_REGW = Output(UInt(DELEGATION_WIDTH.W))
+  val MSTATUS_REGW = Output(UInt(XLEN.W))
+  val MCYCLE_REGW = Output(UInt(Counter.WIDTH.W))
+  val MINSTRET_REGW = Output(UInt(Counter.WIDTH.W))
 }
 
 /** 六个CSR叶模块的RV32汇总；显式clk、高有效同步reset，无额外状态副本。 */
@@ -117,15 +121,17 @@ final class CSR(config: PrivilegedConfig = PrivilegedConfig()) extends RawModule
   for (port <- Seq(machine.io.CSRWriteM, supervisor.io.CSRWriteM, counters.io.CSRWriteM)) {
     port := SoftwareWriteM
   }
-  machine.io.MTrapM := io.TrapM && io.NextPrivilegeModeM === 3.U(2.W)
-  supervisor.io.STrapM := io.TrapM && io.NextPrivilegeModeM === 1.U(2.W)
+  machine.io.MTrapM := io.TrapM && io.NextPrivilegeModeM === MODE_M.U(MODE_WIDTH.W)
+  supervisor.io.STrapM := io.TrapM && io.NextPrivilegeModeM === MODE_S.U(MODE_WIDTH.W)
   val NextCauseM = Cat(io.InterruptM, io.CauseM)
-  val ZeroTvalM = io.InterruptM || io.CauseM === 8.U(5.W) ||
-    io.CauseM === 9.U(5.W) || io.CauseM === 11.U(5.W)
-  val PCTvalM = io.CauseM === 1.U(5.W) || io.CauseM === 3.U(5.W) ||
-    io.CauseM === 12.U(5.W)
-  val NextXtvalM = Mux(ZeroTvalM, 0.U(32.W),
-    Mux(io.CauseM === 2.U(5.W), io.InstrM, Mux(PCTvalM, io.PCM, io.IEUAdrM)))
+  val ZeroTvalM = io.InterruptM || io.CauseM === ECALL_U.U(CAUSE_WIDTH.W) ||
+    io.CauseM === ECALL_S.U(CAUSE_WIDTH.W) || io.CauseM === ECALL_M.U(CAUSE_WIDTH.W)
+  val PCTvalM = io.CauseM === INSTRUCTION_ACCESS.U(CAUSE_WIDTH.W) ||
+    io.CauseM === BREAKPOINT.U(CAUSE_WIDTH.W) ||
+    io.CauseM === INSTRUCTION_PAGE.U(CAUSE_WIDTH.W)
+  val NextXtvalM = Mux(ZeroTvalM, 0.U(XLEN.W),
+    Mux(io.CauseM === ILLEGAL_INSTRUCTION.U(CAUSE_WIDTH.W),
+      io.InstrM, Mux(PCTvalM, io.PCM, io.IEUAdrM)))
   for (port <- Seq(machine.io.NextEPCM, supervisor.io.NextEPCM)) {
     port := io.PCM
   }
@@ -143,8 +149,8 @@ final class CSR(config: PrivilegedConfig = PrivilegedConfig()) extends RawModule
   machine.io.MIP_REGW_writeable := interrupt.io.MIP_REGW_writeable
   supervisor.io.PrivilegeModeW := io.PrivilegeModeW
   supervisor.io.STATUS_TVM := status.io.STATUS_TVM
-  supervisor.io.ENVCFG_STCE := machine.io.MENVCFG_REGW(63)
-  supervisor.io.MCOUNTEREN_TM := machine.io.MCOUNTEREN_REGW(1)
+  supervisor.io.ENVCFG_STCE := machine.io.MENVCFG_REGW(EnvironmentConfig.STCE_BIT)
+  supervisor.io.MCOUNTEREN_TM := machine.io.MCOUNTEREN_REGW(Counter.TIME)
   supervisor.io.TIME_REGW := io.TIME_REGW
   supervisor.io.SSTATUS_REGW := status.io.SSTATUS_REGW
   supervisor.io.SIP_REGW := interrupt.io.SIP_REGW
@@ -170,7 +176,7 @@ final class CSR(config: PrivilegedConfig = PrivilegedConfig()) extends RawModule
   interrupt.io.MTimerInt := io.MTimerInt
   interrupt.io.STimerInt := supervisor.io.STimerInt
   interrupt.io.MSwInt := io.MSwInt
-  interrupt.io.ENVCFG_STCE := machine.io.MENVCFG_REGW(63)
+  interrupt.io.ENVCFG_STCE := machine.io.MENVCFG_REGW(EnvironmentConfig.STCE_BIT)
 
   counters.io.TrapM := io.TrapM
   counters.io.PrivilegeModeW := io.PrivilegeModeW
@@ -181,12 +187,14 @@ final class CSR(config: PrivilegedConfig = PrivilegedConfig()) extends RawModule
   counters.io.SCOUNTEREN_REGW := supervisor.io.SCOUNTEREN_REGW
   counters.io.TIME_REGW := io.TIME_REGW
 
-  val TVecM = Mux(io.NextPrivilegeModeM === 3.U(2.W),
+  val TVecM = Mux(io.NextPrivilegeModeM === MODE_M.U(MODE_WIDTH.W),
     machine.io.MTVEC_REGW, supervisor.io.STVEC_REGW)
-  val VectorBaseM = Cat(TVecM(31, 2), 0.U(2.W))
-  val VectorOffsetM = Cat(io.CauseM, 0.U(2.W)).pad(32)
+  val VectorBaseM = Cat(TVecM(XLEN - 1, TrapVector.ALIGNMENT_BITS),
+    0.U(TrapVector.ALIGNMENT_BITS.W))
+  val VectorOffsetM = Cat(io.CauseM, 0.U(TrapVector.ALIGNMENT_BITS.W)).pad(XLEN)
   val UseVectorM = config.vectoredInterruptsSupported.B && io.InterruptM &&
-    TVecM(1, 0) === 1.U(2.W)
+    TVecM(TrapVector.MODE_WIDTH - 1, 0) ===
+      TrapVector.MODE_VECTORED.U(TrapVector.MODE_WIDTH.W)
   // 固定RV32按字宽回绕；异常始终base，只有mode01中断加入4*cause。
   io.TrapVectorM := Mux(UseVectorM, VectorBaseM + VectorOffsetM, VectorBaseM)
   io.EPCM := Mux(io.mretM, machine.io.MEPC_REGW, supervisor.io.SEPC_REGW)

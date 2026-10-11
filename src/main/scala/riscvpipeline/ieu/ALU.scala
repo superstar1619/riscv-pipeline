@@ -2,13 +2,16 @@ package riscvpipeline.ieu
 
 import chisel3._
 import chisel3.util.{Cat, Fill, MuxLookup, log2Ceil}
+import riscvpipeline.control.ControlEncoding._
+import riscvpipeline.isa.Architecture._
+import riscvpipeline.isa.InstructionEncoding._
 
 /** 教材兼容的操作数与控制接口；IEUAdr 独立保留加减结果，供字节地址生成使用。 */
 final class ALUIO(dataWidth: Int) extends Bundle {
   val SrcA = Input(UInt(dataWidth.W))
   val SrcB = Input(UInt(dataWidth.W))
-  val ALUControl = Input(UInt(2.W))
-  val Funct3 = Input(UInt(3.W))
+  val ALUControl = Input(UInt(ALU_CONTROL_WIDTH.W))
+  val Funct3 = Input(UInt(FUNCT3_WIDTH.W))
   val ALUResult = Output(UInt(dataWidth.W))
   val IEUAdr = Output(UInt(dataWidth.W))
 }
@@ -17,7 +20,7 @@ final class ALUIO(dataWidth: Int) extends Bundle {
   * 纯组合，无时钟、复位或状态；结果按 dataWidth 回绕，进位用于无符号比较。
   * ALUControl = {SubArith, ALUOp}；减法、大小比较及算术右移由控制器使能 SubArith。
   */
-final class ALU(val dataWidth: Int = 32) extends RawModule {
+final class ALU(val dataWidth: Int = XLEN) extends RawModule {
   require(dataWidth > 0, "ALU dataWidth must be > 0")
 
   val io = IO(new ALUIO(dataWidth))
@@ -35,10 +38,10 @@ final class ALU(val dataWidth: Int = 32) extends RawModule {
   val SLT = Wire(UInt(dataWidth.W))
   val SLTU = Wire(UInt(dataWidth.W))
   val ShiftResult = Wire(UInt(dataWidth.W))
-  val ALUSelect = Wire(UInt(3.W))
+  val ALUSelect = Wire(UInt(FUNCT3_WIDTH.W))
 
-  ALUOp := io.ALUControl(0)
-  SubArith := io.ALUControl(1)
+  ALUOp := io.ALUControl(ALU_OP_BIT)
+  SubArith := io.ALUControl(ALU_SUB_ARITH_BIT)
   CondInvB := Mux(SubArith, ~io.SrcB, io.SrcB)
   SumExt := (io.SrcA +& CondInvB) + SubArith.asUInt
   Carry := SumExt(dataWidth)
@@ -66,15 +69,15 @@ final class ALU(val dataWidth: Int = 32) extends RawModule {
   ShiftResult := shifter.io.Y(dataWidth - 1, 0)
 
   // 访存、分支和 jal 由控制器将 ALUOp/SubArith 置零，强制加法，不依赖 Funct3。
-  ALUSelect := io.Funct3 & Fill(3, ALUOp)
+  ALUSelect := io.Funct3 & Fill(FUNCT3_WIDTH, ALUOp)
   io.ALUResult := MuxLookup(ALUSelect, 0.U(dataWidth.W))(Seq(
-    0.U -> Sum,
-    1.U -> ShiftResult,
-    2.U -> SLT,
-    3.U -> SLTU,
-    4.U -> (io.SrcA ^ io.SrcB),
-    5.U -> ShiftResult,
-    6.U -> (io.SrcA | io.SrcB),
-    7.U -> (io.SrcA & io.SrcB)
+    ALU_ADD_SUB.U(FUNCT3_WIDTH.W) -> Sum,
+    ALU_SLL.U(FUNCT3_WIDTH.W) -> ShiftResult,
+    ALU_SLT.U(FUNCT3_WIDTH.W) -> SLT,
+    ALU_SLTU.U(FUNCT3_WIDTH.W) -> SLTU,
+    ALU_XOR.U(FUNCT3_WIDTH.W) -> (io.SrcA ^ io.SrcB),
+    ALU_SRL_SRA.U(FUNCT3_WIDTH.W) -> ShiftResult,
+    ALU_OR.U(FUNCT3_WIDTH.W) -> (io.SrcA | io.SrcB),
+    ALU_AND.U(FUNCT3_WIDTH.W) -> (io.SrcA & io.SrcB)
   ))
 }

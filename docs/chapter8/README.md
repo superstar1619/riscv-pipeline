@@ -8,6 +8,8 @@
 第八章全部 15 阶段已实现。`PrivilegedPipeline` 支持 CSR、精确异常、中断、
 U/S/M 模式转换、WFI 和数据端序；原 `RiscvPipeline` 默认保持第七章行为。
 使用入口见 [流水线集成](14-pipeline.md)，实际测试结果见 [整机验收](15-acceptance.md)。
+2026-10-11 的命名常量重构、CSR 地址及状态位与指令集的逐字段对应关系，见
+[常量重构与字段对照报告](../constants-refactor/README.md)。
 
 ## 路线与状态
 

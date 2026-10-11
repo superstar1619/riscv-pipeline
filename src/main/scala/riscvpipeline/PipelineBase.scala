@@ -1,12 +1,14 @@
 package riscvpipeline
 
 import chisel3._
-import chisel3.util.Cat
 import riscvpipeline.config.CpuConfig
+import riscvpipeline.control.ControlEncoding._
+import riscvpipeline.isa.Architecture.XLEN
 import riscvpipeline.ifu.IFU
 import riscvpipeline.ieu.IEU
 import riscvpipeline.lsu.LSU
 import riscvpipeline.privileged.{InterruptInputs, Privileged}
+import riscvpipeline.privileged.PrivilegedConstants.Counter
 
 /** 共用五级流水线连接；第七章顶层与第八章外部中断顶层共享同一实现。 */
 abstract class PipelineBase(config: CpuConfig) extends RawModule {
@@ -24,10 +26,10 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
     Some(Module(new Privileged(config.privileged)))
   } else None
   val RedirectM = WireDefault(false.B)
-  val RedirectPCM = WireDefault(0.U(32.W))
+  val RedirectPCM = WireDefault(0.U(XLEN.W))
   val TrapM = WireDefault(false.B)
   val StallM = WireDefault(false.B)
-  val CSRResultM = WireDefault(0.U(32.W))
+  val CSRResultM = WireDefault(0.U(XLEN.W))
   val BigEndianM = WireDefault(false.B)
 
   ifu.io.RedirectM := RedirectM
@@ -54,7 +56,7 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
   lsu.reset := reset
   lsu.io.SuppressM := TrapM || StallM
   lsu.io.BigEndianM := BigEndianM
-  lsu.io.MemReadE := ieu.io.MemRWE(1)
+  lsu.io.MemReadE := ieu.io.MemRWE(MEM_READ_BIT)
   lsu.io.Funct3E := ieu.io.Funct3E
   lsu.io.IEUAdrE := ieu.io.IEUAdrE
   lsu.io.MemRWM := ieu.io.MemRWM
@@ -94,9 +96,14 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
     p.io.MTimerInt := Interrupts.MTimerInt
     p.io.MSwInt := Interrupts.MSwInt
     p.io.TIME_REGW := Interrupts.TIME_REGW
-    p.io.HPMEventsM := Cat(0.U(27.W), ieu.io.StoreStallD,
-      ieu.io.LoadStallD, ieu.io.MemRWM(0), ieu.io.MemRWM(1),
-      InstrRetiredM)
+    // 事件位编号与计数器选择器约定对应，未实现的事件固定为零。
+    val HPMEventsM = WireDefault(VecInit(Seq.fill(Counter.EVENT_COUNT)(false.B)))
+    HPMEventsM(Counter.EVENT_RETIRED) := InstrRetiredM
+    HPMEventsM(Counter.EVENT_LOAD) := ieu.io.MemRWM(MEM_READ_BIT)
+    HPMEventsM(Counter.EVENT_STORE) := ieu.io.MemRWM(MEM_WRITE_BIT)
+    HPMEventsM(Counter.EVENT_LOAD_STALL) := ieu.io.LoadStallD
+    HPMEventsM(Counter.EVENT_STORE_STALL) := ieu.io.StoreStallD
+    p.io.HPMEventsM := HPMEventsM.asUInt
     RedirectM := p.io.RedirectM
     RedirectPCM := p.io.RedirectPCM
     TrapM := p.io.TrapM
@@ -107,7 +114,7 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
 
   io.WriteData := ieu.io.WriteDataM
   io.IEUAdr := ieu.io.IEUAdrM
-  io.MemRW := Mux(TrapM || StallM, 0.U(2.W), ieu.io.MemRWM)
+  io.MemRW := Mux(TrapM || StallM, MEM_NONE.U(MEM_WIDTH.W), ieu.io.MemRWM)
   io.Funct3 := ieu.io.Funct3M
   io.ByteMask := lsu.io.ByteMaskM
   io.MemWrite := lsu.io.ByteMaskM.orR

@@ -1,5 +1,6 @@
 package riscvpipeline
 
+import riscvpipeline.TestEncoding.{Mask, MemoryFunction, Opcode}
 import chisel3._
 import chiseltest._
 import chiseltest.experimental.expose
@@ -29,26 +30,27 @@ private[riscvpipeline] class PipelineHarness(config: CpuConfig) extends Module {
 private[riscvpipeline] object PipelineTestSupport {
   val NOP: BigInt = 0x13
   def addi(rd: Int, rs1: Int, imm: Int): BigInt =
-    (BigInt(imm & 0xfff) << 20) | (BigInt(rs1) << 15) | (BigInt(rd) << 7) | 0x13
-  def load(rd: Int, rs1: Int, imm: Int, funct3: Int = 2): BigInt =
-    (BigInt(imm & 0xfff) << 20) | (BigInt(rs1) << 15) |
-      (BigInt(funct3) << 12) | (BigInt(rd) << 7) | 3
-  def store(rs2: Int, address: Int, funct3: Int = 2, rs1: Int = 0): BigInt = {
-    val imm = address & 0xfff
+    (BigInt(imm & Mask.IMM12) << 20) | (BigInt(rs1) << 15) | (BigInt(rd) << 7) | Opcode.OP_IMM
+  def load(rd: Int, rs1: Int, imm: Int, funct3: Int = MemoryFunction.WORD): BigInt =
+    (BigInt(imm & Mask.IMM12) << 20) | (BigInt(rs1) << 15) |
+      (BigInt(funct3) << 12) | (BigInt(rd) << 7) | Opcode.LOAD
+  def store(rs2: Int, address: Int, funct3: Int = MemoryFunction.WORD,
+    rs1: Int = 0): BigInt = {
+    val imm = address & Mask.IMM12
     (BigInt(imm >> 5) << 25) | (BigInt(rs2) << 20) | (BigInt(rs1) << 15) |
-      (BigInt(funct3) << 12) | (BigInt(imm & 31) << 7) | 0x23
+      (BigInt(funct3) << 12) | (BigInt(imm & Mask.REGISTER_FIELD) << 7) | Opcode.STORE
   }
   def jal(rd: Int, offset: Int): BigInt = {
-    val imm = offset & 0x1fffff
+    val imm = offset & Mask.JUMP_IMMEDIATE
     (BigInt((imm >> 20) & 1) << 31) | (BigInt((imm >> 1) & 1023) << 21) |
       (BigInt((imm >> 11) & 1) << 20) | (BigInt((imm >> 12) & 255) << 12) |
-      (BigInt(rd) << 7) | 0x6f
+      (BigInt(rd) << 7) | Opcode.JAL
   }
   def branch(rs1: Int, rs2: Int, offset: Int, funct3: Int = 0): BigInt = {
-    val imm = offset & 0x1fff
+    val imm = offset & Mask.BRANCH_IMMEDIATE
     (BigInt((imm >> 12) & 1) << 31) | (BigInt((imm >> 5) & 63) << 25) |
       (BigInt(rs2) << 20) | (BigInt(rs1) << 15) | (BigInt(funct3) << 12) |
-      (BigInt((imm >> 1) & 15) << 8) | (BigInt((imm >> 11) & 1) << 7) | 0x63
+      (BigInt((imm >> 1) & 15) << 8) | (BigInt((imm >> 11) & 1) << 7) | Opcode.BRANCH
   }
   def image(words: Seq[BigInt], resetVector: Int = 0): CpuConfig = {
     val depth = if (resetVector == 0) 64 else 128

@@ -1,5 +1,6 @@
 package riscvpipeline.privileged
 
+import riscvpipeline.TestEncoding.{Cause, Mask, Privilege}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -14,13 +15,18 @@ private class TrapHarness(supportedS: Boolean) extends Module {
 }
 
 class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
-  private val interrupts = Seq(11, 3, 7, 9, 1, 5)
+  private val interrupts = Seq(Cause.MACHINE_EXTERNAL_IRQ, Cause.MACHINE_SOFTWARE_IRQ,
+    Cause.MACHINE_TIMER_IRQ, Cause.SUPERVISOR_EXTERNAL_IRQ,
+    Cause.SUPERVISOR_SOFTWARE_IRQ, Cause.SUPERVISOR_TIMER_IRQ)
   // 表顺序来自教材表8.4，ECALL由当前模式产生8/9/11。
-  private val faults = Seq(12, 1, 2, 0, 3, 8, 6, 4, 15, 13, 7, 5)
+  private val faults = Seq(Cause.INSTR_PAGE, Cause.INSTR_ACCESS, Cause.ILLEGAL_INSTR,
+    Cause.INSTR_MISALIGNED, Cause.BREAKPOINT, Cause.ECALL_USER,
+    Cause.STORE_MISALIGNED, Cause.LOAD_MISALIGNED, Cause.STORE_PAGE, Cause.LOAD_PAGE,
+    Cause.STORE_ACCESS, Cause.LOAD_ACCESS)
   private def bits(values: Seq[Int]): Int = values.foldLeft(0)((m, n) => m | (1 << n))
   private case class Input(
-    mode: Int = 3, valid: Boolean = true, reset: Boolean = false,
-    mip: Int = 0, mie: Int = 0xfff, mideleg: Int = 0, medeleg: Int = 0,
+    mode: Int = Privilege.MACHINE, valid: Boolean = true, reset: Boolean = false,
+    mip: Int = 0, mie: Int = Mask.INTERRUPT_FIELDS, mideleg: Int = 0, medeleg: Int = 0,
     mGlobal: Boolean = true, sGlobal: Boolean = true, committedM: Boolean = false,
     committedF: Boolean = false, wfiM: Boolean = false, wfiW: Boolean = false,
     exceptions: Set[Int] = Set.empty
@@ -64,8 +70,11 @@ class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   // 软件以事件候选的目标模式、表中序号排序，独立于硬件连接与优先Mux。
   private def reference(a: Input, supportedS: Boolean): Expected = {
-    val supported = Set(0, 3).contains(a.mode) || (supportedS && a.mode == 1)
-    val allowed = if (supportedS) interrupts else Seq(11, 3, 7)
+    val supported = Set(Privilege.USER, Privilege.MACHINE).contains(a.mode) ||
+      (supportedS && a.mode == Privilege.SUPERVISOR)
+    val allowed = if (supportedS) interrupts else Seq(Cause.MACHINE_EXTERNAL_IRQ,
+      Cause.MACHINE_SOFTWARE_IRQ,
+      Cause.MACHINE_TIMER_IRQ)
     val local = allowed.filter(n => (a.mip & a.mie & (1 << n)) != 0)
     val pending = local.nonEmpty
     if (!a.valid || !supported || a.committedF) {
@@ -73,20 +82,20 @@ class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
     }
     val candidates = local.filter { n =>
       val delegated = supportedS && (a.mideleg & (1 << n)) != 0
-      if (delegated) a.mode == 0 || (a.mode == 1 && a.sGlobal)
-      else a.mode != 3 || a.mGlobal
+      if (delegated) a.mode == Privilege.USER || (a.mode == Privilege.SUPERVISOR && a.sGlobal)
+      else a.mode != Privilege.MACHINE || a.mGlobal
     }.sortBy { n =>
       val toS = supportedS && (a.mideleg & (1 << n)) != 0
       (if (toS) 1 else 0, interrupts.indexOf(n))
     }
     val irq = if (a.committedM || (a.wfiM && !a.wfiW)) None else candidates.headOption
     val fault = faults.find(a.exceptions.contains).map { n =>
-      if (n == 8) 8 + a.mode else n
+      if (n == Cause.ECALL_USER) Cause.ECALL_USER + a.mode else n
     }
     val chosen = irq.orElse(fault)
     val delegated = chosen.exists { n =>
       val delegation = if (irq.nonEmpty) a.mideleg else a.medeleg
-      supportedS && a.mode != 3 && (delegation & (1 << n)) != 0
+      supportedS && a.mode != Privilege.MACHINE && (delegation & (1 << n)) != 0
     }
     Expected(chosen.nonEmpty, irq.nonEmpty, fault.nonEmpty, pending,
       delegated, chosen.getOrElse(0))
@@ -98,8 +107,9 @@ class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
     for (s <- Seq(false, true)) {
       test(new TrapHarness(s)) { dut =>
         check(dut, Input(), Expected())
-        for (mode <- (if (s) Seq(0, 1, 3) else Seq(0, 3)); fault <- faults) {
-          val cause = if (fault == 8) 8 + mode else fault
+        for (mode <- (if (s) Seq(Privilege.USER, Privilege.SUPERVISOR,
+          Privilege.MACHINE) else Seq(Privilege.USER, Privilege.MACHINE)); fault <- faults) {
+          val cause = if (fault == Cause.ECALL_USER) Cause.ECALL_USER + mode else fault
           check(dut, Input(mode = mode, exceptions = Set(fault)),
             Expected(trap = true, exception = true, cause = cause))
         }
@@ -109,13 +119,14 @@ class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "select all exception pairs in the architectural priority order" in {
     test(new TrapHarness(true)) { dut =>
-      for (mode <- Seq(0, 1, 3); i <- faults.indices; j <- i until faults.size) {
-        val cause = if (faults(i) == 8) 8 + mode else faults(i)
+      for (mode <- Seq(Privilege.USER, Privilege.SUPERVISOR,
+        Privilege.MACHINE); i <- faults.indices; j <- i until faults.size) {
+        val cause = if (faults(i) == Cause.ECALL_USER) Cause.ECALL_USER + mode else faults(i)
         check(dut, Input(mode = mode, exceptions = Set(faults(i), faults(j))),
           Expected(trap = true, exception = true, cause = cause))
       }
       check(dut, Input(exceptions = faults.toSet),
-        Expected(trap = true, exception = true, cause = 12))
+        Expected(trap = true, exception = true, cause = Cause.INSTR_PAGE))
     }
   }
 
@@ -123,21 +134,24 @@ class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
     for (s <- Seq(false, true)) {
       test(new TrapHarness(s)) { dut =>
         for (bit <- 0 until 12; enabled <- Seq(false, true)) {
-          val present = enabled && (if (s) interrupts else Seq(11, 3, 7)).contains(bit)
+          val present = enabled && (if (s) interrupts else Seq(Cause.MACHINE_EXTERNAL_IRQ,
+            Cause.MACHINE_SOFTWARE_IRQ,
+      Cause.MACHINE_TIMER_IRQ)).contains(bit)
           val a = Input(mip = 1 << bit, mie = if (enabled) 1 << bit else 0)
           check(dut, a, Expected(trap = present, interrupt = present,
             pending = present, cause = if (present) bit else 0))
         }
         for (mode <- 0 until 4; valid <- Seq(false, true);
              committedM <- Seq(false, true); committedF <- Seq(false, true)) {
-          val a = Input(mode = mode, valid = valid, mip = 1 << 7, mGlobal = false,
+          val a = Input(mode = mode, valid = valid, mip = 1 << Cause.MACHINE_TIMER_IRQ,
+            mGlobal = false,
             sGlobal = false, committedM = committedM, committedF = committedF,
             wfiM = true)
           check(dut, a, Expected(pending = true))
         }
-        check(dut, Input(reset = true, mip = 0xfff, exceptions = faults.toSet),
+        check(dut, Input(reset = true, mip = Mask.INTERRUPT_FIELDS, exceptions = faults.toSet),
           Expected(trap = true, interrupt = true, exception = true,
-            pending = true, cause = 11))
+            pending = true, cause = Cause.MACHINE_EXTERNAL_IRQ))
       }
     }
   }
@@ -157,11 +171,12 @@ class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "prioritize M target interrupts then S target interrupts before exceptions" in {
     test(new TrapHarness(true)) { dut =>
-      for (mask <- 1 until 64; delegation <- Seq(0, 0x222, 0xaaa, 0x888, 0x800)) {
+      for (mask <- 1 until 64; delegation <- Seq(0, Mask.SUPERVISOR_INTERRUPTS,
+        Mask.ALL_INTERRUPTS, Mask.MACHINE_INTERRUPTS, Mask.MEIP)) {
         val sources = interrupts.zipWithIndex.collect {
           case (cause, index) if (mask & (1 << index)) != 0 => cause
         }
-        val a = Input(mode = 0, mip = bits(sources), mideleg = delegation,
+        val a = Input(mode = Privilege.USER, mip = bits(sources), mideleg = delegation,
           medeleg = 0xffff, exceptions = faults.toSet)
         val mTargets = sources.filter(n => (delegation & (1 << n)) == 0)
         val chosen = mTargets.headOption.getOrElse(sources.head)
@@ -177,10 +192,13 @@ class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
            ww <- Seq(false, true); fault <- Seq(false, true)) {
         val irq = !cm && !cf && (!wm || ww)
         val exc = fault && !cf
-        val a = Input(mip = 1 << 3, committedM = cm, committedF = cf,
-          wfiM = wm, wfiW = ww, exceptions = if (fault) Set(2) else Set.empty)
+        val a = Input(mip = 1 << Cause.MACHINE_SOFTWARE_IRQ, committedM = cm, committedF = cf,
+          wfiM = wm, wfiW = ww,
+            exceptions = if (fault) Set(Cause.ILLEGAL_INSTR) else Set.empty)
         check(dut, a, Expected(trap = irq || exc, interrupt = irq, exception = exc,
-          pending = true, cause = if (irq) 3 else if (exc) 2 else 0))
+          pending = true,
+            cause = if (irq) Cause.MACHINE_SOFTWARE_IRQ
+            else if (exc) Cause.ILLEGAL_INSTR else 0))
       }
     }
   }
@@ -196,7 +214,8 @@ class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
         for (mode <- 0 until 4; reset <- Seq(false, true);
              valid <- Seq(false, true); committed <- Seq(false, true)) {
           check(dut, Input(mode = mode, reset = reset, valid = valid,
-            committedF = committed, medeleg = 0xffff, mideleg = 0xfff), Expected())
+            committedF = committed, medeleg = 0xffff,
+              mideleg = Mask.INTERRUPT_FIELDS), Expected())
         }
       }
     }

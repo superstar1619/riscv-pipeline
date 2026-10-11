@@ -2,6 +2,7 @@ package riscvpipeline.privileged
 
 import chisel3._
 import chisel3.util.Cat
+import PrivilegedConstants.Privilege._
 
 /** 已仲裁陷阱和返回请求；状态栈与非法指令异常由其他模块处理。 */
 final class PrivModeIO extends Bundle {
@@ -12,12 +13,12 @@ final class PrivModeIO extends Bundle {
   val mretM = Input(Bool())
   val sretM = Input(Bool())
   val DelegateM = Input(Bool())
-  val STATUS_MPP = Input(UInt(2.W))
+  val STATUS_MPP = Input(UInt(MODE_WIDTH.W))
   val STATUS_SPP = Input(Bool())
   val STATUS_TSR = Input(Bool())
 
-  val NextPrivilegeModeM = Output(UInt(2.W))
-  val PrivilegeModeW = Output(UInt(2.W))
+  val NextPrivilegeModeM = Output(UInt(MODE_WIDTH.W))
+  val PrivilegeModeW = Output(UInt(MODE_WIDTH.W))
 }
 
 /** 教材 §8.4.5：特权级状态，U/M 始终支持，S 可选。
@@ -29,11 +30,12 @@ final class PrivMode(supervisorSupported: Boolean = true) extends RawModule {
   val reset = IO(Input(Bool()))
   val io = IO(new PrivModeIO)
 
-  val PrivilegeMode = withClockAndReset(clk, reset) { RegInit(3.U(2.W)) }
-  val MachineModeM = PrivilegeMode === 3.U(2.W)
-  val SupervisorModeM = PrivilegeMode === 1.U(2.W)
-  val MPPAllowedM = io.STATUS_MPP === 0.U(2.W) || io.STATUS_MPP === 3.U(2.W) ||
-    (supervisorSupported.B && io.STATUS_MPP === 1.U(2.W))
+  val PrivilegeMode = withClockAndReset(clk, reset) { RegInit(MODE_M.U(MODE_WIDTH.W)) }
+  val MachineModeM = PrivilegeMode === MODE_M.U(MODE_WIDTH.W)
+  val SupervisorModeM = PrivilegeMode === MODE_S.U(MODE_WIDTH.W)
+  val MPPAllowedM = io.STATUS_MPP === MODE_U.U(MODE_WIDTH.W) ||
+    io.STATUS_MPP === MODE_M.U(MODE_WIDTH.W) ||
+    (supervisorSupported.B && io.STATUS_MPP === MODE_S.U(MODE_WIDTH.W))
   val SretAllowedM = supervisorSupported.B &&
     (MachineModeM || (SupervisorModeM && !io.STATUS_TSR))
   val NextPrivilegeModeM = WireDefault(PrivilegeMode)
@@ -42,7 +44,7 @@ final class PrivMode(supervisorSupported: Boolean = true) extends RawModule {
   when(io.TrapM) {
     // 陷阱不能降低特权级，即使上游误置 M 模式的 DelegateM。
     NextPrivilegeModeM := Mux(supervisorSupported.B && io.DelegateM && !MachineModeM,
-      1.U(2.W), 3.U(2.W))
+      MODE_S.U(MODE_WIDTH.W), MODE_M.U(MODE_WIDTH.W))
   }.elsewhen(io.mretM) {
     when(MachineModeM && MPPAllowedM) { NextPrivilegeModeM := io.STATUS_MPP }
   }.elsewhen(io.sretM) {

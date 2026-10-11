@@ -7,6 +7,6 @@ import riscvpipeline.privileged.WFI
 object GenerateWFI extends App {
   require(args.length <= 2, "Usage: GenerateWFI [targetDir] [timeoutCycles]")
   val targetDir = args.headOption.getOrElse("generated/wfi")
-  val timeoutCycles = args.lift(1).map(_.toInt).getOrElse(65536)
+  val timeoutCycles = args.lift(1).map(_.toInt).getOrElse(WFI.DEFAULT_TIMEOUT_CYCLES)
   (new ChiselStage).emitVerilog(new WFI(timeoutCycles), Array("--target-dir", targetDir))
 }

@@ -1,5 +1,8 @@
 package riscvpipeline
 
+import riscvpipeline.TestEncoding.{CSR, CSRFunction, Cause, Mask => EncodingMask,
+  MemoryFunction, Privilege,
+  Opcode}
 import chisel3._
 import chiseltest._
 import chiseltest.experimental.expose
@@ -65,33 +68,33 @@ private[riscvpipeline] object Chapter8Programs {
   val TrapLog = 1024
   val Mask: BigInt = BigInt("ffffffff", 16)
   def addi(rd: Int, rs1: Int, imm: Int): BigInt =
-    (BigInt(imm & 4095) << 20) | (BigInt(rs1) << 15) | (BigInt(rd) << 7) | 0x13
-  def lui(rd: Int, upper: BigInt): BigInt = (upper << 12) | (BigInt(rd) << 7) | 0x37
-  def csr(rd: Int, address: Int, source: Int, op: Int = 2): BigInt =
+    (BigInt(imm & EncodingMask.IMM12) << 20) | (BigInt(rs1) << 15) | (BigInt(rd) << 7) | Opcode.OP_IMM
+  def lui(rd: Int, upper: BigInt): BigInt = (upper << 12) | (BigInt(rd) << 7) | Opcode.LUI
+  def csr(rd: Int, address: Int, source: Int, op: Int = CSRFunction.RS): BigInt =
     (BigInt(address) << 20) | (BigInt(source) << 15) | (BigInt(op) << 12) |
-      (BigInt(rd) << 7) | 0x73
-  def load(rd: Int, rs1: Int, offset: Int = 0, op: Int = 2): BigInt =
-    (BigInt(offset & 4095) << 20) | (BigInt(rs1) << 15) | (BigInt(op) << 12) |
-      (BigInt(rd) << 7) | 3
-  def store(rs: Int, address: Int, op: Int = 2, base: Int = 0): BigInt = {
-    val imm = address & 4095
+      (BigInt(rd) << 7) | Opcode.SYSTEM
+  def load(rd: Int, rs1: Int, offset: Int = 0, op: Int = MemoryFunction.WORD): BigInt =
+    (BigInt(offset & EncodingMask.IMM12) << 20) | (BigInt(rs1) << 15) | (BigInt(op) << 12) |
+      (BigInt(rd) << 7) | Opcode.LOAD
+  def store(rs: Int, address: Int, op: Int = MemoryFunction.WORD, base: Int = 0): BigInt = {
+    val imm = address & EncodingMask.IMM12
     (BigInt(imm >> 5) << 25) | (BigInt(rs) << 20) | (BigInt(base) << 15) |
-      (BigInt(op) << 12) | (BigInt(imm & 31) << 7) | 0x23
+      (BigInt(op) << 12) | (BigInt(imm & EncodingMask.REGISTER_FIELD) << 7) | Opcode.STORE
   }
   def jal(rd: Int, offset: Int): BigInt = {
-    val n = offset & 0x1fffff
+    val n = offset & EncodingMask.JUMP_IMMEDIATE
     (BigInt((n >> 20) & 1) << 31) | (BigInt((n >> 1) & 1023) << 21) |
       (BigInt((n >> 11) & 1) << 20) | (BigInt((n >> 12) & 255) << 12) |
-      (BigInt(rd) << 7) | 0x6f
+      (BigInt(rd) << 7) | Opcode.JAL
   }
   def branch(rs1: Int, rs2: Int, offset: Int, op: Int = 0): BigInt = {
-    val n = offset & 8191
+    val n = offset & EncodingMask.BRANCH_IMMEDIATE
     (BigInt((n >> 12) & 1) << 31) | (BigInt((n >> 5) & 63) << 25) |
       (BigInt(rs2) << 20) | (BigInt(rs1) << 15) | (BigInt(op) << 12) |
-      (BigInt((n >> 1) & 15) << 8) | (BigInt((n >> 11) & 1) << 7) | 0x63
+      (BigInt((n >> 1) & 15) << 8) | (BigInt((n >> 11) & 1) << 7) | Opcode.BRANCH
   }
   def jalr(rd: Int, rs: Int, offset: Int = 0): BigInt =
-    (BigInt(offset & 4095) << 20) | (BigInt(rs) << 15) | (BigInt(rd) << 7) | 0x67
+    (BigInt(offset & EncodingMask.IMM12) << 20) | (BigInt(rs) << 15) | (BigInt(rd) << 7) | Opcode.JALR
 
   final class Program(val base: Int = 0) {
     private val code = ArrayBuffer.empty[BigInt]
@@ -127,16 +130,16 @@ private[riscvpipeline] object Chapter8Programs {
       patches += (() => code(index) = jal(rd, address(name) - from))
     }
     def write(address: Int, value: BigInt, rs: Int = 1): Unit = {
-      li(rs, value); emit(csr(0, address, rs, 1))
+      li(rs, value); emit(csr(0, address, rs, CSRFunction.RW))
     }
-    def vector(name: String, address: Int = 0x305, vectored: Boolean = false): Unit = {
+    def vector(name: String, address: Int = CSR.MTVEC, vectored: Boolean = false): Unit = {
       la(1, name)
       if (vectored) emit(addi(1, 1, 1))
-      emit(csr(0, address, 1, 1))
+      emit(csr(0, address, 1, CSRFunction.RW))
     }
     def enter(name: String, mode: Int, status: BigInt = 0): Unit = {
-      la(1, name); emit(csr(0, 0x341, 1, 1))
-      write(0x300, status | (BigInt(mode) << 11)); emit(Mret)
+      la(1, name); emit(csr(0, CSR.MEPC, 1, CSRFunction.RW))
+      write(CSR.MSTATUS, status | (BigInt(mode) << 11)); emit(Mret)
     }
     def done(): Unit = {
       emit(addi(30, 0, DoneValue), store(30, DoneAddress)); label("halt")
@@ -144,14 +147,14 @@ private[riscvpipeline] object Chapter8Programs {
     }
     def machineLogger(skip: Int = 8, resume: Option[String] = None): Unit = {
       label("handler")
-      emit(csr(20, 0x341, 0), csr(21, 0x342, 0), csr(22, 0x343, 0),
+      emit(csr(20, CSR.MEPC, 0), csr(21, CSR.MCAUSE, 0), csr(22, CSR.MTVAL, 0),
         store(20, 0, base = 28), store(21, 4, base = 28),
         store(22, 8, base = 28), addi(28, 28, 12))
       resume match {
         case Some(name) => la(20, name)
         case None => emit(addi(20, 20, skip))
       }
-      emit(csr(0, 0x341, 20, 1), Mret)
+      emit(csr(0, CSR.MEPC, 20, CSRFunction.RW), Mret)
     }
     def config(timeout: Int = 24, depth: Int = 2048): CpuConfig = {
       patches.foreach(_())
@@ -171,7 +174,7 @@ private[riscvpipeline] object Chapter8Programs {
     }
   }
   final case class TrapEvent(pc: BigInt, cause: BigInt, value: BigInt,
-    from: Int = 3, to: Int = 3, interrupt: Boolean = false)
+    from: Int = Privilege.MACHINE, to: Int = Privilege.MACHINE, interrupt: Boolean = false)
   final case class Write(address: BigInt, data: BigInt, mask: BigInt = 15)
   def log(pc: Int, cause: BigInt, value: BigInt, index: Int = 0): Seq[Write] =
     Seq(Write(TrapLog + 12 * index, pc), Write(TrapLog + 12 * index + 4, cause),
@@ -209,9 +212,9 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
       } else None
       d.clock.step(); cycles += 1
       event.foreach { case (pc, cause, from, to, interrupt) =>
-        val recordedPC = if (to == 3) d.MEPC.peek().litValue else d.SEPC.peek().litValue
-        val recordedCause = if (to == 3) d.MCause.peek().litValue else d.SCause.peek().litValue
-        val value = if (to == 3) d.MTval.peek().litValue else d.STval.peek().litValue
+        val recordedPC = if (to == Privilege.MACHINE) d.MEPC.peek().litValue else d.SEPC.peek().litValue
+        val recordedCause = if (to == Privilege.MACHINE) d.MCause.peek().litValue else d.SCause.peek().litValue
+        val value = if (to == Privilege.MACHINE) d.MTval.peek().litValue else d.STval.peek().litValue
         assert(recordedPC == pc, s"trap EPC mismatch at cycle $cycles")
         assert(recordedCause == (cause | (if (interrupt) BigInt(1) << 31 else BigInt(0))))
         assert(d.Mode.peek().litValue == to, s"trap mode mismatch at cycle $cycles")
@@ -239,12 +242,16 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "execute all six CSR RMW forms with late rd and forwarded rs dependencies" in {
     val p = new Program
-    p.emit(addi(1, 0, 0x12), csr(2, 0x340, 1, 1), addi(3, 2, 1),
-      csr(4, 0x340, 1, 2), addi(1, 0, 3), csr(5, 0x340, 1, 3),
-      csr(6, 0x340, 7, 5), csr(7, 0x340, 8, 6), csr(8, 0x340, 2, 7),
-      csr(9, 0x340, 0), csr(0, 0x340, 1, 1), csr(10, 0x340, 0),
-      csr(11, 0x340, 0, 6), csr(0, 0x340, 0, 7), addi(1, 0, 0x55),
-      csr(12, 0x340, 1, 1), csr(13, 0x340, 0))
+    p.emit(addi(1, 0, 0x12), csr(2, CSR.MSCRATCH, 1, CSRFunction.RW), addi(3, 2, 1),
+      csr(4, CSR.MSCRATCH, 1, CSRFunction.RS), addi(1, 0, 3), csr(5, CSR.MSCRATCH, 1,
+        CSRFunction.RC),
+      csr(6, CSR.MSCRATCH, 7, CSRFunction.RWI), csr(7, CSR.MSCRATCH, 8, CSRFunction.RSI),
+        csr(8, CSR.MSCRATCH, 2, CSRFunction.RCI),
+      csr(9, CSR.MSCRATCH, 0), csr(0, CSR.MSCRATCH, 1, CSRFunction.RW), csr(10,
+        CSR.MSCRATCH, 0),
+      csr(11, CSR.MSCRATCH, 0, CSRFunction.RSI), csr(0, CSR.MSCRATCH, 0, CSRFunction.RCI),
+        addi(1, 0, 0x55),
+      csr(12, CSR.MSCRATCH, 1, CSRFunction.RW), csr(13, CSR.MSCRATCH, 0))
     val values = Seq(0, 1, 0x12, 0x12, 0x10, 7, 15, 13, 3, 3, 3, 0x55)
     for (reg <- 2 to 13) p.emit(store(reg, 128 + 4 * (reg - 2)))
     p.done()
@@ -267,9 +274,9 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
     p.org(768); p.machineLogger(resume = Some("resume"))
     test(new Chapter8Harness(p.config())) { d =>
       resetCpu(d); val r = new Run(d); r.finish()
-      r.expect(log(p.address("fault"), 2, illegal) ++
+      r.expect(log(p.address("fault"), Cause.ILLEGAL_INSTR, illegal) ++
         Seq(Write(128, 0x44), Write(132, 9), doneWrite),
-        Seq(TrapEvent(p.address("fault"), 2, illegal)))
+        Seq(TrapEvent(p.address("fault"), Cause.ILLEGAL_INSTR, illegal)))
       d.Registers(5).expect(0x44.U); d.Registers(6).expect(9.U)
     }
   }
@@ -277,16 +284,17 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "record illegal CSR, breakpoint, integer and fence encodings" in {
     val p = new Program
     faultSetup(p)
-    val instructions = Seq(csr(3, 0x777, 0), csr(3, 0xf11, 2, 1),
+    val instructions = Seq(csr(3, 0x777, 0), csr(3, CSR.MVENDORID, 2, CSRFunction.RW),
       Ebreak, BigInt("ffffffff", 16), BigInt("0000200f", 16))
     val faultPCs = instructions.zipWithIndex.map { case (word, i) =>
       val pc = p.pc
       p.emit(word, store(2, 160 + 4 * i)); pc
     }
-    p.emit(csr(3, 0x340, 0), store(3, 128)); p.done()
+    p.emit(csr(3, CSR.MSCRATCH, 0), store(3, 128)); p.done()
     p.org(768); p.machineLogger()
     val events = instructions.zip(faultPCs).map { case (word, pc) =>
-      TrapEvent(pc, if (word == Ebreak) 3 else 2, if (word == Ebreak) pc else word)
+      TrapEvent(pc, if (word == Ebreak) Cause.BREAKPOINT else Cause.ILLEGAL_INSTR,
+        if (word == Ebreak) pc else word)
     }
     test(new Chapter8Harness(p.config())) { d =>
       resetCpu(d); val r = new Run(d); r.finish(1500)
@@ -298,17 +306,17 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
   }
 
   it should "trap U/S CSR privilege reads/writes and return through real MRET" in {
-    for (mode <- Seq(0, 1)) {
+    for (mode <- Seq(Privilege.USER, Privilege.SUPERVISOR)) {
       val p = new Program
       faultSetup(p); p.enter("user", mode)
       p.label("user")
-      val words = Seq(csr(3, 0x300, 0), csr(3, 0x300, 2, 1), Ecall)
+      val words = Seq(csr(3, CSR.MSTATUS, 0), csr(3, CSR.MSTATUS, 2, CSRFunction.RW), Ecall)
       val pcs = words.map { word => val pc = p.pc; p.emit(word, store(2, 160)); pc }
       p.emit(addi(4, 0, 0x21), store(4, 128)); p.done()
       p.org(768); p.machineLogger()
       val events = words.zip(pcs).map { case (word, pc) =>
-        TrapEvent(pc, if (word == Ecall) 8 + mode else 2,
-          if (word == Ecall) 0 else word, mode, 3)
+        TrapEvent(pc, if (word == Ecall) Cause.ECALL_USER + mode else Cause.ILLEGAL_INSTR,
+          if (word == Ecall) 0 else word, mode, Privilege.MACHINE)
       }
       test(new Chapter8Harness(p.config())) { d =>
         resetCpu(d); val r = new Run(d); r.finish(1500)
@@ -322,27 +330,30 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "execute M/U/S ECALL with delegation and nested MRET/SRET PC restoration" in {
     val p = new Program
-    faultSetup(p); p.vector("supervisor", 0x105)
-    p.write(0x302, (1 << 8) | (1 << 11))
+    faultSetup(p); p.vector("supervisor", CSR.STVEC)
+    p.write(CSR.MEDELEG, (1 << Cause.ECALL_USER) | (1 << Cause.ECALL_MACHINE))
     p.label("mcall"); p.emit(Ecall, Nop)
-    p.enter("user", 0)
+    p.enter("user", Privilege.USER)
     p.label("user"); p.label("ucall"); p.emit(Ecall)
     p.emit(addi(4, 0, 0x27), store(4, 128)); p.done()
     p.org(768); p.machineLogger()
     p.org(896); p.label("supervisor")
-    p.emit(csr(10, 0x141, 0), csr(11, 0x142, 0), csr(12, 0x143, 0),
+    p.emit(csr(10, CSR.SEPC, 0), csr(11, CSR.SCAUSE, 0), csr(12, CSR.STVAL, 0),
       store(10, 140), store(11, 144), store(12, 148))
     p.label("scall"); p.emit(Ecall, Nop)
-    p.emit(addi(10, 10, 4), csr(0, 0x141, 10, 1), Sret)
+    p.emit(addi(10, 10, 4), csr(0, CSR.SEPC, 10, CSRFunction.RW), Sret)
     test(new Chapter8Harness(p.config())) { d =>
       resetCpu(d); val r = new Run(d); r.finish(1800)
-      r.expect(log(p.address("mcall"), 11, 0) ++
+      r.expect(log(p.address("mcall"), Cause.ECALL_MACHINE, 0) ++
         Seq(Write(140, p.address("ucall")), Write(144, 8), Write(148, 0)) ++
-        log(p.address("scall"), 9, 0, 1) ++ Seq(Write(128, 0x27), doneWrite),
-        Seq(TrapEvent(p.address("mcall"), 11, 0),
-          TrapEvent(p.address("ucall"), 8, 0, 0, 1),
-          TrapEvent(p.address("scall"), 9, 0, 1, 3)))
-      d.Mode.expect(0.U); d.SEPC.expect((p.address("ucall") + 4).U)
+        log(p.address("scall"), Cause.ECALL_SUPERVISOR, 0, 1) ++ Seq(Write(128, 0x27),
+          doneWrite),
+        Seq(TrapEvent(p.address("mcall"), Cause.ECALL_MACHINE, 0),
+          TrapEvent(p.address("ucall"), Cause.ECALL_USER, 0, Privilege.USER,
+            Privilege.SUPERVISOR),
+          TrapEvent(p.address("scall"), Cause.ECALL_SUPERVISOR, 0, Privilege.SUPERVISOR,
+            Privilege.MACHINE)))
+      d.Mode.expect(Privilege.USER.U); d.SEPC.expect((p.address("ucall") + 4).U)
     }
   }
 
@@ -353,8 +364,9 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
     val jalPC = p.pc; p.emit(jal(7, 2), store(2, 164))
     p.li(1, 258); val jalrPC = p.pc; p.emit(jalr(7, 1), store(2, 168))
     p.emit(store(7, 128)); p.done(); p.org(768); p.machineLogger()
-    val events = Seq(TrapEvent(branchPC, 0, branchPC + 2),
-      TrapEvent(jalPC, 0, jalPC + 2), TrapEvent(jalrPC, 0, 258))
+    val events = Seq(TrapEvent(branchPC, Cause.INSTR_MISALIGNED, branchPC + 2),
+      TrapEvent(jalPC, Cause.INSTR_MISALIGNED, jalPC + 2), TrapEvent(jalrPC,
+        Cause.INSTR_MISALIGNED, 258))
     test(new Chapter8Harness(p.config())) { d =>
       resetCpu(d); val r = new Run(d); r.finish(1500)
       r.expect(events.zipWithIndex.flatMap { case (e, i) =>
@@ -403,16 +415,17 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
     p.org(0x4300); p.machineLogger(resume = Some("resume"))
     test(new Chapter8Harness(p.config(depth = 256))) { d =>
       resetCpu(d); val r = new Run(d); r.finish()
-      r.expect(log(0x3ffc, 1, 0x3ffc) ++ Seq(Write(128, 0x39), doneWrite),
-        Seq(TrapEvent(0x3ffc, 1, 0x3ffc)))
+      r.expect(log(0x3ffc, Cause.INSTR_ACCESS, 0x3ffc) ++ Seq(Write(128, 0x39), doneWrite),
+        Seq(TrapEvent(0x3ffc, Cause.INSTR_ACCESS, 0x3ffc)))
     }
   }
 
   it should "deliver direct and vectored M interrupts, acknowledge pending and MRET once" in {
     for (vectored <- Seq(false, true)) {
       val p = new Program
-      p.vector("vector", vectored = vectored); p.write(0x304, 1 << 11)
-      p.write(0x300, (3 << 11) | 8)
+      p.vector("vector", vectored = vectored); p.write(CSR.MIE,
+        1 << Cause.MACHINE_EXTERNAL_IRQ)
+      p.write(CSR.MSTATUS, (3 << 11) | 8)
       p.label("boundary"); p.emit(addi(5, 0, 0x48), store(5, 128)); p.done()
       p.org(768); p.label("vector")
       if (vectored) {
@@ -420,7 +433,7 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
         p.emit(store(0, 160), jal(0, 0)); p.org(768 + 4 * 11)
       }
       p.label("irqhandler")
-      p.emit(csr(20, 0x341, 0), csr(21, 0x342, 0), csr(22, 0x343, 0),
+      p.emit(csr(20, CSR.MEPC, 0), csr(21, CSR.MCAUSE, 0), csr(22, CSR.MTVAL, 0),
         store(20, 140), store(21, 144), store(22, 148), Mret)
       test(new Chapter8Harness(p.config())) { d =>
         resetCpu(d); val r = new Run(d)
@@ -440,20 +453,22 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
         assert(raised && cleared)
         r.expect(Seq(Write(140, p.address("boundary")), Write(144, BigInt("8000000b", 16)),
           Write(148, 0), Write(128, 0x48), doneWrite),
-          Seq(TrapEvent(p.address("boundary"), 11, 0, interrupt = true)))
-        d.Pending.expect(0.U); d.Mode.expect(3.U)
+          Seq(TrapEvent(p.address("boundary"), Cause.MACHINE_EXTERNAL_IRQ, 0,
+            interrupt = true)))
+        d.Pending.expect(0.U); d.Mode.expect(Privilege.MACHINE.U)
       }
     }
   }
 
   it should "delegate external S interrupts and restore S PC and SIE with SRET" in {
     val p = new Program
-    p.vector("handler", 0x105); p.write(0x303, 1 << 9)
-    p.write(0x304, 1 << 9); p.enter("supervisor", 1, status = 2)
+    p.vector("handler", CSR.STVEC); p.write(CSR.MIDELEG, 1 << Cause.SUPERVISOR_EXTERNAL_IRQ)
+    p.write(CSR.MIE, 1 << Cause.SUPERVISOR_EXTERNAL_IRQ); p.enter("supervisor",
+      Privilege.SUPERVISOR, status = 2)
     p.label("supervisor"); p.label("boundary")
     p.emit(addi(5, 0, 0x49), store(5, 128)); p.done()
     p.org(768); p.label("handler")
-    p.emit(csr(20, 0x141, 0), csr(21, 0x142, 0), csr(22, 0x143, 0),
+    p.emit(csr(20, CSR.SEPC, 0), csr(21, CSR.SCAUSE, 0), csr(22, CSR.STVAL, 0),
       store(20, 140), store(21, 144), store(22, 148), Sret)
     test(new Chapter8Harness(p.config())) { d =>
       resetCpu(d); val r = new Run(d)
@@ -471,8 +486,9 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
       r.finish(1200, stimulus); assert(raised && cleared)
       r.expect(Seq(Write(140, p.address("boundary")), Write(144, BigInt("80000009", 16)),
         Write(148, 0), Write(128, 0x49), doneWrite),
-        Seq(TrapEvent(p.address("boundary"), 9, 0, 1, 1, interrupt = true)))
-      d.Pending.expect(0.U); d.Mode.expect(1.U)
+        Seq(TrapEvent(p.address("boundary"), Cause.SUPERVISOR_EXTERNAL_IRQ, 0,
+          Privilege.SUPERVISOR, Privilege.SUPERVISOR, interrupt = true)))
+      d.Pending.expect(0.U); d.Mode.expect(Privilege.SUPERVISOR.U)
       assert(d.Status.peek().litValue.testBit(1))
     }
   }
@@ -480,20 +496,20 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "set software SSIP, reenter after MRET/SRET and clear pending in the handler" in {
     for (delegated <- Seq(false, true)) {
       val p = new Program
-      val mode = if (delegated) 1 else 3
-      val epc = if (delegated) 0x141 else 0x341
-      val cause = if (delegated) 0x142 else 0x342
-      val tval = if (delegated) 0x143 else 0x343
-      val pending = if (delegated) 0x144 else 0x344
+      val mode = if (delegated) Privilege.SUPERVISOR else Privilege.MACHINE
+      val epc = if (delegated) CSR.SEPC else CSR.MEPC
+      val cause = if (delegated) CSR.SCAUSE else CSR.MCAUSE
+      val tval = if (delegated) CSR.STVAL else CSR.MTVAL
+      val pending = if (delegated) CSR.SIP else CSR.MIP
       val ret = if (delegated) Sret else Mret
-      p.vector("handler", if (delegated) 0x105 else 0x305)
-      if (delegated) p.write(0x303, 2)
-      p.write(0x304, 2)
+      p.vector("handler", if (delegated) CSR.STVEC else CSR.MTVEC)
+      if (delegated) p.write(CSR.MIDELEG, 2)
+      p.write(CSR.MIE, 2)
       p.emit(addi(6, 0, 0), addi(7, 0, 2)); p.li(28, TrapLog)
       // Both pending assertion and acknowledgement are executed CSR instructions.
-      p.write(0x344, 2)
-      if (delegated) p.enter("first", 1, status = 2)
-      else p.write(0x300, (3 << 11) | 8)
+      p.write(CSR.MIP, 2)
+      if (delegated) p.enter("first", Privilege.SUPERVISOR, status = 2)
+      else p.write(CSR.MSTATUS, (3 << 11) | 8)
       p.label("first"); p.emit(store(0, 160))
       p.label("second"); p.emit(addi(5, 0, 0x61), store(5, 128)); p.done()
       p.org(768); p.label("handler")
@@ -502,9 +518,9 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
         store(21, 4, base = 28), store(22, 8, base = 28),
         store(23, 12, base = 28), addi(28, 28, 16), branch(6, 7, 20))
       // First return deliberately preserves SSIP and advances past the poison store.
-      p.la(20, "second"); p.emit(csr(0, epc, 20, 1), ret)
+      p.la(20, "second"); p.emit(csr(0, epc, 20, CSRFunction.RW), ret)
       // The branch target is five instructions after the branch: clear on entry 2.
-      p.emit(csr(0, pending, 0, 1), ret)
+      p.emit(csr(0, pending, 0, CSRFunction.RW), ret)
       test(new Chapter8Harness(p.config())) { d =>
         resetCpu(d); val r = new Run(d)
         val returnPending = ArrayBuffer.empty[BigInt]
@@ -522,8 +538,10 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
             Write(TrapLog + 16 * i + 8, 0), Write(TrapLog + 16 * i + 12, 2))
         }
         r.expect(records ++ Seq(Write(128, 0x61), doneWrite),
-          Seq(TrapEvent(p.address("first"), 1, 0, mode, mode, interrupt = true),
-            TrapEvent(p.address("second"), 1, 0, mode, mode, interrupt = true)))
+          Seq(TrapEvent(p.address("first"), Cause.SUPERVISOR_SOFTWARE_IRQ, 0, mode, mode,
+            interrupt = true),
+            TrapEvent(p.address("second"), Cause.SUPERVISOR_SOFTWARE_IRQ, 0, mode, mode,
+              interrupt = true)))
         assert(returnPending.toSeq == Seq(BigInt(2), BigInt(0)),
           s"SSIP did not persist across the first return or clear before the second")
         d.Registers(6).expect(2.U); d.Pending.expect(0.U); d.Mode.expect(mode.U)
@@ -575,7 +593,7 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "hold WFI in M, consume old W once, retain young forwarding and wake locally" in {
     val p = new Program
-    p.write(0x304, 1 << 7)
+    p.write(CSR.MIE, 1 << Cause.MACHINE_TIMER_IRQ)
     p.emit(addi(5, 0, 41)); p.label("wait")
     p.emit(Wfi, addi(6, 5, 1), store(6, 128)); p.label("timeoutwait")
     p.emit(Wfi, addi(7, 6, 1), store(7, 132)); p.done()
@@ -611,11 +629,12 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "retire a pending-woken WFI before interrupting its successor and returning" in {
     val p = new Program
-    p.vector("handler"); p.write(0x304, 1 << 7); p.write(0x300, (3 << 11) | 8)
+    p.vector("handler"); p.write(CSR.MIE,
+      1 << Cause.MACHINE_TIMER_IRQ); p.write(CSR.MSTATUS, (3 << 11) | 8)
     p.label("wait"); p.emit(Wfi); p.label("successor")
     p.emit(addi(5, 0, 0x51), store(5, 128)); p.done()
     p.org(768); p.label("handler")
-    p.emit(csr(20, 0x341, 0), csr(21, 0x342, 0), store(20, 140),
+    p.emit(csr(20, CSR.MEPC, 0), csr(21, CSR.MCAUSE, 0), store(20, 140),
       store(21, 144), Mret)
     test(new Chapter8Harness(p.config(timeout = 32))) { d =>
       resetCpu(d); val r = new Run(d)
@@ -634,13 +653,13 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
       r.finish(1200, stimulus); assert(cleared)
       r.expect(Seq(Write(140, p.address("successor")),
         Write(144, BigInt("80000007", 16)), Write(128, 0x51), doneWrite),
-        Seq(TrapEvent(p.address("successor"), 7, 0, interrupt = true)))
+        Seq(TrapEvent(p.address("successor"), Cause.MACHINE_TIMER_IRQ, 0, interrupt = true)))
     }
   }
 
   it should "bound legal S waits and report restricted S TW/U WFI timeout precisely" in {
     val legal = new Program
-    legal.enter("supervisor", 1)
+    legal.enter("supervisor", Privilege.SUPERVISOR)
     legal.label("supervisor"); legal.emit(Wfi, addi(5, 0, 0x53), store(5, 128))
     legal.done()
     test(new Chapter8Harness(legal.config(timeout = 7))) { d =>
@@ -652,9 +671,9 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
       r.tick(); d.Instret.expect((retired + 1).U)
       r.finish()
       r.expect(Seq(Write(128, 0x53), doneWrite), Seq.empty)
-      d.Mode.expect(1.U)
+      d.Mode.expect(Privilege.SUPERVISOR.U)
     }
-    for (mode <- Seq(1, 0)) {
+    for (mode <- Seq(Privilege.SUPERVISOR, Privilege.USER)) {
       val p = new Program
       faultSetup(p); p.enter("lower", mode, status = BigInt(1) << 21)
       p.label("lower"); p.label("wait"); p.emit(Wfi, store(2, 160))
@@ -667,8 +686,9 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
         r.until(d.Trap.peek().litToBoolean, limit = started + 12)
         d.WFITimeout.expect(true.B); d.Instret.expect(retired.U)
         r.finish(1200)
-        r.expect(log(p.address("wait"), 2, Wfi) ++ Seq(Write(128, 0x52), doneWrite),
-          Seq(TrapEvent(p.address("wait"), 2, Wfi, mode, 3)))
+        r.expect(log(p.address("wait"), Cause.ILLEGAL_INSTR, Wfi) ++ Seq(Write(128, 0x52),
+          doneWrite),
+          Seq(TrapEvent(p.address("wait"), Cause.ILLEGAL_INSTR, Wfi, mode, Privilege.MACHINE)))
         d.Mode.expect(mode.U)
       }
     }
@@ -677,18 +697,18 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "execute endian word/byte/half and MPRV while preserving instruction fetch" in {
     val p = new Program
     p.li(1, BigInt("11223344", 16)); p.emit(store(1, 0))
-    p.write(0x310, 0x20)
+    p.write(CSR.MSTATUSH, 0x20)
     p.emit(load(2, 0), load(3, 0, 0, 4), load(4, 0, 0, 5))
     p.li(1, BigInt("a1b2c3d4", 16)); p.emit(store(1, 4))
     p.emit(addi(1, 0, 0x5e), store(1, 1, 0))
     p.li(1, 0x6677); p.emit(store(1, 2, 1), load(5, 0))
-    p.write(0x310, 0)
+    p.write(CSR.MSTATUSH, 0)
     p.emit(load(6, 0), load(7, 0, 4), load(8, 0, 1, 4), load(9, 0, 2, 5))
     // MBE=0, UBE=1, MPRV=1 and MPP=U selects big endian only for data.
-    p.write(0x300, (BigInt(1) << 17) | 0x40)
+    p.write(CSR.MSTATUS, (BigInt(1) << 17) | 0x40)
     p.emit(load(10, 0), load(11, 0, 2, 5)); p.li(1, 0x1234)
     p.emit(store(1, 8, 1))
-    p.write(0x300, 0)
+    p.write(CSR.MSTATUS, 0)
     p.emit(load(12, 0, 8, 5))
     for (reg <- 2 to 12) p.emit(store(reg, 128 + 4 * (reg - 2)))
     p.done()
@@ -704,7 +724,7 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
         Write(128 + 4 * i, n)
       } :+ doneWrite, Seq.empty)
       values.zipWithIndex.foreach { case (n, i) => d.Registers(i + 2).expect(n.U) }
-      d.StatusHigh.expect(0.U); d.Mode.expect(3.U)
+      d.StatusHigh.expect(0.U); d.Mode.expect(Privilege.MACHINE.U)
     }
   }
 }

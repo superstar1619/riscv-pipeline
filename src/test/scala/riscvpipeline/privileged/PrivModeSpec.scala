@@ -1,5 +1,6 @@
 package riscvpipeline.privileged
 
+import riscvpipeline.TestEncoding.{Privilege}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -85,7 +86,7 @@ private class PrivModeStatusHarness(s: Boolean = true) extends Module {
 class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
   private case class Inputs(valid: Boolean = true, stall: Boolean = false,
     flush: Boolean = false, trap: Boolean = false, mr: Boolean = false,
-    sr: Boolean = false, delegate: Boolean = false, mpp: Int = 0,
+    sr: Boolean = false, delegate: Boolean = false, mpp: Int = Privilege.USER,
     spp: Boolean = false, tsr: Boolean = false)
   private def drive(d: PrivModeHarness, a: Inputs): Unit = {
     d.io.ValidM.poke(a.valid.B)
@@ -104,8 +105,8 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
     d.reset.poke(true.B)
     d.clock.step()
     d.reset.poke(false.B)
-    d.io.PrivilegeModeW.expect(3.U)
-    d.io.NextPrivilegeModeM.expect(3.U)
+    d.io.PrivilegeModeW.expect(Privilege.MACHINE.U)
+    d.io.NextPrivilegeModeM.expect(Privilege.MACHINE.U)
   }
   private def enter(d: PrivModeHarness, target: Int): Unit = {
     boot(d)
@@ -116,14 +117,16 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
   }
   // 用模式集合和优先事件表描述参考状态机，不调用生产代码。
   private def candidate(s: Boolean, current: Int, a: Inputs): Int = {
-    val supported = if (s) Set(0, 1, 3) else Set(0, 3)
+    val supported = if (s) Set(Privilege.USER, Privilege.SUPERVISOR,
+      Privilege.MACHINE) else Set(Privilege.USER, Privilege.MACHINE)
     if (a.trap) {
-      if (s && a.delegate && Set(0, 1)(current)) 1 else 3
+      if (s && a.delegate && Set(Privilege.USER,
+        Privilege.SUPERVISOR)(current)) Privilege.SUPERVISOR else Privilege.MACHINE
     } else if (a.mr) {
-      if (current == 3 && supported(a.mpp)) a.mpp else current
+      if (current == Privilege.MACHINE && supported(a.mpp)) a.mpp else current
     } else if (a.sr) {
-      if (s && (current == 3 || (current == 1 && !a.tsr))) {
-        if (a.spp) 1 else 0
+      if (s && (current == Privilege.MACHINE || (current == Privilege.SUPERVISOR && !a.tsr))) {
+        if (a.spp) Privilege.SUPERVISOR else Privilege.USER
       } else current
     } else current
   }
@@ -132,22 +135,23 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "reset synchronously to M with priority over stalled return requests" in {
     test(new PrivModeHarness) { d =>
-      enter(d, 0)
+      enter(d, Privilege.USER)
       drive(d, Inputs(mr = true, sr = true, trap = true, delegate = true,
         valid = false, stall = true, flush = true))
       d.reset.poke(true.B)
-      d.io.PrivilegeModeW.expect(0.U)
-      d.io.NextPrivilegeModeM.expect(1.U)
+      d.io.PrivilegeModeW.expect(Privilege.USER.U)
+      d.io.NextPrivilegeModeM.expect(Privilege.SUPERVISOR.U)
       d.clock.step()
-      d.io.PrivilegeModeW.expect(3.U)
-      d.io.NextPrivilegeModeM.expect(3.U)
+      d.io.PrivilegeModeW.expect(Privilege.MACHINE.U)
+      d.io.NextPrivilegeModeM.expect(Privilege.MACHINE.U)
     }
   }
 
   it should "hold the current mode with no event despite delegate and status changes" in {
     for (s <- Seq(false, true)) {
       test(new PrivModeHarness(s)) { d =>
-        for (current <- (if (s) Seq(0, 1, 3) else Seq(0, 3))) {
+        for (current <- (if (s) Seq(Privilege.USER, Privilege.SUPERVISOR,
+          Privilege.MACHINE) else Seq(Privilege.USER, Privilege.MACHINE))) {
           enter(d, current)
           for (mpp <- 0 to 3; spp <- Seq(false, true); delegate <- Seq(false, true)) {
             drive(d, Inputs(mpp = mpp, spp = spp, delegate = delegate, tsr = true))
@@ -165,10 +169,11 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
       test(new PrivModeHarness(s)) { d =>
         for (mpp <- 0 to 3) {
           boot(d)
-          val expected = if (mpp == 2 || (!s && mpp == 1)) 3 else mpp
+          val expected = if (mpp == Privilege.RESERVED || (!s &&
+            mpp == Privilege.SUPERVISOR)) Privilege.MACHINE else mpp
           drive(d, Inputs(mr = true, mpp = mpp))
           d.io.NextPrivilegeModeM.expect(expected.U)
-          d.io.PrivilegeModeW.expect(3.U)
+          d.io.PrivilegeModeW.expect(Privilege.MACHINE.U)
           d.clock.step()
           d.io.PrivilegeModeW.expect(expected.U)
         }
@@ -179,10 +184,12 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "take delegated traps from U or S and retain M for all M traps" in {
     for (s <- Seq(false, true)) {
       test(new PrivModeHarness(s)) { d =>
-        for (current <- (if (s) Seq(0, 1, 3) else Seq(0, 3));
+        for (current <- (if (s) Seq(Privilege.USER, Privilege.SUPERVISOR,
+          Privilege.MACHINE) else Seq(Privilege.USER, Privilege.MACHINE));
              delegate <- Seq(false, true)) {
           enter(d, current)
-          val target = if (s && delegate && current != 3) 1 else 3
+          val target = if (s && delegate &&
+            current != Privilege.MACHINE) Privilege.SUPERVISOR else Privilege.MACHINE
           drive(d, Inputs(trap = true, delegate = delegate, mr = true, sr = true))
           d.io.NextPrivilegeModeM.expect(target.U)
           d.io.PrivilegeModeW.expect(current.U)
@@ -196,11 +203,13 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "permit SRET in M regardless of TSR and in S only when TSR is clear" in {
     for (s <- Seq(false, true)) {
       test(new PrivModeHarness(s)) { d =>
-        for (current <- (if (s) Seq(0, 1, 3) else Seq(0, 3));
+        for (current <- (if (s) Seq(Privilege.USER, Privilege.SUPERVISOR,
+          Privilege.MACHINE) else Seq(Privilege.USER, Privilege.MACHINE));
              tsr <- Seq(false, true); spp <- Seq(false, true)) {
           enter(d, current)
-          val target = if (s && (current == 3 || (current == 1 && !tsr))) {
-            if (spp) 1 else 0
+          val target = if (s && (current == Privilege.MACHINE ||
+            (current == Privilege.SUPERVISOR && !tsr))) {
+            if (spp) Privilege.SUPERVISOR else Privilege.USER
           } else current
           drive(d, Inputs(sr = true, tsr = tsr, spp = spp))
           d.io.NextPrivilegeModeM.expect(target.U)
@@ -214,20 +223,20 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
   it should "preserve raw MRET priority even when its source or MPP is illegal" in {
     test(new PrivModeHarness) { d =>
       boot(d)
-      drive(d, Inputs(mr = true, sr = true, mpp = 2, spp = false))
-      d.io.NextPrivilegeModeM.expect(3.U)
+      drive(d, Inputs(mr = true, sr = true, mpp = Privilege.RESERVED, spp = false))
+      d.io.NextPrivilegeModeM.expect(Privilege.MACHINE.U)
       d.clock.step()
-      d.io.PrivilegeModeW.expect(3.U)
-      enter(d, 1)
-      drive(d, Inputs(mr = true, sr = true, mpp = 0, spp = false))
-      d.io.NextPrivilegeModeM.expect(1.U)
+      d.io.PrivilegeModeW.expect(Privilege.MACHINE.U)
+      enter(d, Privilege.SUPERVISOR)
+      drive(d, Inputs(mr = true, sr = true, mpp = Privilege.USER, spp = false))
+      d.io.NextPrivilegeModeM.expect(Privilege.SUPERVISOR.U)
       d.clock.step()
-      d.io.PrivilegeModeW.expect(1.U)
-      enter(d, 0)
-      drive(d, Inputs(mr = true, sr = true, mpp = 3, spp = true))
-      d.io.NextPrivilegeModeM.expect(0.U)
+      d.io.PrivilegeModeW.expect(Privilege.SUPERVISOR.U)
+      enter(d, Privilege.USER)
+      drive(d, Inputs(mr = true, sr = true, mpp = Privilege.MACHINE, spp = true))
+      d.io.NextPrivilegeModeM.expect(Privilege.USER.U)
       d.clock.step()
-      d.io.PrivilegeModeW.expect(0.U)
+      d.io.PrivilegeModeW.expect(Privilege.USER.U)
     }
   }
 
@@ -235,8 +244,8 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
     test(new PrivModeHarness) { d =>
       for (event <- 0 until 3; valid <- Seq(false, true); stall <- Seq(false, true);
            flush <- Seq(false, true)) {
-        val source = if (event == 0) 0 else 3
-        val target = if (event == 1) 0 else 1
+        val source = if (event == 0) Privilege.USER else Privilege.MACHINE
+        val target = if (event == 1) Privilege.USER else Privilege.SUPERVISOR
         enter(d, source)
         drive(d, Inputs(valid = valid, stall = stall, flush = flush,
           trap = event == 0, delegate = true, mr = event == 1,
@@ -250,29 +259,30 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   it should "retain a pending proposal through stalls and commit it once on release" in {
     test(new PrivModeHarness) { d =>
-      enter(d, 0)
+      enter(d, Privilege.USER)
       drive(d, Inputs(trap = true, delegate = true, stall = true))
       for (_ <- 0 until 4) {
-        d.io.NextPrivilegeModeM.expect(1.U)
+        d.io.NextPrivilegeModeM.expect(Privilege.SUPERVISOR.U)
         d.clock.step()
-        d.io.PrivilegeModeW.expect(0.U)
+        d.io.PrivilegeModeW.expect(Privilege.USER.U)
       }
       drive(d, Inputs(trap = true, delegate = true))
       d.clock.step()
-      d.io.PrivilegeModeW.expect(1.U)
+      d.io.PrivilegeModeW.expect(Privilege.SUPERVISOR.U)
       drive(d, Inputs(sr = true, spp = false, flush = true))
       d.clock.step()
-      d.io.PrivilegeModeW.expect(1.U)
+      d.io.PrivilegeModeW.expect(Privilege.SUPERVISOR.U)
       drive(d, Inputs())
       d.clock.step()
-      d.io.PrivilegeModeW.expect(1.U)
+      d.io.PrivilegeModeW.expect(Privilege.SUPERVISOR.U)
     }
   }
 
   it should "match every raw event status and reachable current-mode combination" in {
     for (s <- Seq(false, true)) {
       test(new PrivModeHarness(s)) { d =>
-        for (current <- (if (s) Seq(0, 1, 3) else Seq(0, 3))) {
+        for (current <- (if (s) Seq(Privilege.USER, Privilege.SUPERVISOR,
+          Privilege.MACHINE) else Seq(Privilege.USER, Privilege.MACHINE))) {
           enter(d, current)
           for (flags <- 0 until 64; mpp <- 0 to 3) {
             val a = Inputs(valid = false, trap = (flags & 1) != 0,
@@ -308,7 +318,7 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
     d.reset.poke(true.B)
     d.clock.step()
     d.reset.poke(false.B)
-    d.io.Mode.expect(3.U)
+    d.io.Mode.expect(Privilege.MACHINE.U)
     d.io.Status.expect(0.U)
   }
 
@@ -319,30 +329,30 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.clock.step()
       integrationDrive(d, instr = 0x30200073)
       d.io.MRet.expect(true.B)
-      d.io.Next.expect(0.U)
-      d.io.Mode.expect(3.U)
+      d.io.Next.expect(Privilege.USER.U)
+      d.io.Mode.expect(Privilege.MACHINE.U)
       d.clock.step()
-      d.io.Mode.expect(0.U)
+      d.io.Mode.expect(Privilege.USER.U)
       d.io.Status.expect(0x8a.U)
       integrationDrive(d, trap = true, delegate = true)
-      d.io.Next.expect(1.U)
+      d.io.Next.expect(Privilege.SUPERVISOR.U)
       d.clock.step()
-      d.io.Mode.expect(1.U)
+      d.io.Mode.expect(Privilege.SUPERVISOR.U)
       d.io.Status.expect(0xa8.U)
       integrationDrive(d, instr = 0x10200073)
       d.io.SRet.expect(true.B)
-      d.io.Next.expect(0.U)
+      d.io.Next.expect(Privilege.USER.U)
       d.clock.step()
-      d.io.Mode.expect(0.U)
+      d.io.Mode.expect(Privilege.USER.U)
       d.io.Status.expect(0xaa.U)
       integrationDrive(d, trap = true)
       d.clock.step()
-      d.io.Mode.expect(3.U)
+      d.io.Mode.expect(Privilege.MACHINE.U)
       d.io.Status.expect(0xa2.U)
       integrationDrive(d, instr = 0x30200073)
-      d.io.Next.expect(0.U)
+      d.io.Next.expect(Privilege.USER.U)
       d.clock.step()
-      d.io.Mode.expect(0.U)
+      d.io.Mode.expect(Privilege.USER.U)
       d.io.Status.expect(0xaa.U)
     }
   }
@@ -354,19 +364,19 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.clock.step()
       integrationDrive(d, instr = 0x30200073)
       d.clock.step()
-      d.io.Mode.expect(1.U)
+      d.io.Mode.expect(Privilege.SUPERVISOR.U)
       integrationDrive(d, trap = true, delegate = true)
       d.clock.step()
-      d.io.Mode.expect(1.U)
+      d.io.Mode.expect(Privilege.SUPERVISOR.U)
       d.io.Status.expect(0x1a8.U)
       integrationDrive(d, instr = 0x10200073)
-      d.io.Next.expect(1.U)
+      d.io.Next.expect(Privilege.SUPERVISOR.U)
       d.clock.step()
-      d.io.Mode.expect(1.U)
+      d.io.Mode.expect(Privilege.SUPERVISOR.U)
       d.io.Status.expect(0xaa.U)
-      d.io.Next.expect(0.U)
+      d.io.Next.expect(Privilege.USER.U)
       d.clock.step()
-      d.io.Mode.expect(0.U)
+      d.io.Mode.expect(Privilege.USER.U)
     }
   }
 
@@ -379,19 +389,19 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
       d.io.Illegal.expect(true.B)
       d.io.SRet.expect(false.B)
       d.clock.step()
-      d.io.Mode.expect(3.U)
+      d.io.Mode.expect(Privilege.MACHINE.U)
       d.io.Status.expect(0x420100.U)
       integrationDrive(d, instr = 0x10200073)
       d.io.Illegal.expect(false.B)
       d.io.SRet.expect(true.B)
-      d.io.Next.expect(1.U)
+      d.io.Next.expect(Privilege.SUPERVISOR.U)
       d.clock.step()
-      d.io.Mode.expect(1.U)
+      d.io.Mode.expect(Privilege.SUPERVISOR.U)
       d.io.Status.expect(0x400020.U)
       d.io.Illegal.expect(true.B)
       d.io.SRet.expect(false.B)
       d.clock.step()
-      d.io.Mode.expect(1.U)
+      d.io.Mode.expect(Privilege.SUPERVISOR.U)
       d.io.Status.expect(0x400020.U)
     }
   }
@@ -405,22 +415,22 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
         integrationDrive(d, instr = 0x30200073, valid = blocked != 0,
           stall = blocked == 1, flush = blocked == 2)
         d.clock.step()
-        d.io.Mode.expect(3.U)
+        d.io.Mode.expect(Privilege.MACHINE.U)
         d.io.Status.expect(0x82.U)
       }
       integrationDrive(d, instr = 0x30200073, trap = true, delegate = true)
-      d.io.Next.expect(3.U)
+      d.io.Next.expect(Privilege.MACHINE.U)
       d.clock.step()
-      d.io.Mode.expect(3.U)
+      d.io.Mode.expect(Privilege.MACHINE.U)
       d.io.Status.expect(0x1802.U)
       integrationDrive(d, instr = 0x30200073)
       d.clock.step()
-      d.io.Mode.expect(3.U)
+      d.io.Mode.expect(Privilege.MACHINE.U)
       d.io.Status.expect(0x82.U)
       integrationDrive(d, instr = 0x30200073, stall = true, flush = true)
       d.reset.poke(true.B)
       d.clock.step()
-      d.io.Mode.expect(3.U)
+      d.io.Mode.expect(Privilege.MACHINE.U)
       d.io.Status.expect(0.U)
     }
   }
@@ -431,16 +441,16 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
       integrationDrive(d, instr = 0x10200073)
       d.io.Illegal.expect(true.B)
       d.clock.step()
-      d.io.Mode.expect(3.U)
+      d.io.Mode.expect(Privilege.MACHINE.U)
       integrationDrive(d, word = 0x20080, write = true)
       d.clock.step()
       integrationDrive(d, instr = 0x30200073)
       d.clock.step()
-      d.io.Mode.expect(0.U)
+      d.io.Mode.expect(Privilege.USER.U)
       d.io.Status.expect(0x88.U)
       integrationDrive(d, trap = true, delegate = true)
       d.clock.step()
-      d.io.Mode.expect(3.U)
+      d.io.Mode.expect(Privilege.MACHINE.U)
       d.io.Status.expect(0x80.U)
     }
   }
@@ -449,7 +459,7 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
     for (s <- Seq(false, true)) {
       test(new PrivModeHarness(s)) { d =>
         boot(d)
-        var current = 3
+        var current = Privilege.MACHINE
         val random = new Random(0x90112026L)
         for (i <- 0 until 1024) {
           val a = Inputs(valid = random.nextBoolean(), stall = i % 7 == 0,
@@ -463,11 +473,13 @@ class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
           d.io.NextPrivilegeModeM.expect(next.U)
           d.io.PrivilegeModeW.expect(current.U)
           d.clock.step()
-          current = if (resetting) 3 else if (a.valid && !a.stall && !a.flush) next
+          current = if (resetting) Privilege.MACHINE else if (a.valid && !a.stall &&
+            !a.flush) next
             else current
           d.io.PrivilegeModeW.expect(current.U)
           d.io.NextPrivilegeModeM.expect(candidate(s, current, a).U)
-          assert((if (s) Set(0, 1, 3) else Set(0, 3))(current))
+          assert((if (s) Set(Privilege.USER, Privilege.SUPERVISOR,
+            Privilege.MACHINE) else Set(Privilege.USER, Privilege.MACHINE))(current))
         }
       }
     }

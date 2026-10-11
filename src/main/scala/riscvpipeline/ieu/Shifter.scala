@@ -2,6 +2,7 @@ package riscvpipeline.ieu
 
 import chisel3._
 import chisel3.util.{Cat, Fill, log2Ceil}
+import riscvpipeline.isa.Architecture._
 
 /** 操作数、以位计的移位量、方向、算术控制与结果；移位量位宽由数据字宽决定。 */
 final class ShifterIO(dataWidth: Int) extends Bundle {
@@ -15,7 +16,7 @@ final class ShifterIO(dataWidth: Int) extends Bundle {
 /** 教材第 7 章 §7.1.3.3，pp. 306–307：漏斗移位器。
   * 纯组合，无时钟、复位或状态；独立支持逻辑左/右移与算术右移，整机仍采用 RV32。
   */
-final class Shifter(val dataWidth: Int = 32) extends RawModule {
+final class Shifter(val dataWidth: Int = XLEN) extends RawModule {
   require(dataWidth >= 2 && (dataWidth & (dataWidth - 1)) == 0,
     "Shifter dataWidth must be a power of two >= 2")
 

@@ -1,5 +1,6 @@
 package riscvpipeline
 
+import riscvpipeline.TestEncoding.{Control}
 import chisel3._
 import chiseltest._
 import org.scalatest.flatspec.AnyFlatSpec
@@ -90,12 +91,12 @@ class PipelineHazardSpec extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.UsesRs1D.poke(true.B)
       dut.io.UsesRs2D.poke(true.B)
       dut.io.ValidD.poke(true.B)
-      dut.io.MemRWD.poke(2.U)
+      dut.io.MemRWD.poke(Control.MEM_READ.U)
       dut.io.Rs1E.poke(5.U)
       dut.io.Rs2E.poke(5.U)
       dut.io.RdE.poke(5.U)
       dut.io.ValidE.poke(true.B)
-      dut.io.MemRWE.poke(0.U)
+      dut.io.MemRWE.poke(Control.MEM_NONE.U)
       dut.io.RdM.poke(5.U)
       dut.io.RegWriteM.poke(true.B)
       dut.io.ValidM.poke(true.B)
@@ -104,27 +105,27 @@ class PipelineHazardSpec extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.RegWriteW.poke(true.B)
       dut.io.ValidW.poke(true.B)
       dut.io.PCSrcE.poke(false.B)
-      dut.io.ForwardAE.expect(2.U)
-      dut.io.ForwardBE.expect(2.U)
+      dut.io.ForwardAE.expect(Control.FORWARD_M.U)
+      dut.io.ForwardBE.expect(Control.FORWARD_M.U)
       dut.io.ValidM.poke(false.B)
-      dut.io.ForwardAE.expect(1.U)
+      dut.io.ForwardAE.expect(Control.FORWARD_W.U)
       dut.io.ValidM.poke(true.B)
       dut.io.ResultSrcM.poke(true.B) // Load data is not an M→E ALU result.
-      dut.io.ForwardAE.expect(1.U)
+      dut.io.ForwardAE.expect(Control.FORWARD_W.U)
       dut.io.ResultSrcM.poke(false.B)
       dut.io.RegWriteM.poke(false.B)
       dut.io.RegWriteW.poke(false.B)
-      dut.io.ForwardAE.expect(0.U)
+      dut.io.ForwardAE.expect(Control.FORWARD_REGISTER.U)
       dut.io.RegWriteM.poke(true.B)
       dut.io.RegWriteW.poke(true.B)
       dut.io.RdM.poke(0.U)
       dut.io.RdW.poke(0.U)
       dut.io.Rs1E.poke(0.U)
-      dut.io.ForwardAE.expect(0.U)
+      dut.io.ForwardAE.expect(Control.FORWARD_REGISTER.U)
       dut.io.ValidE.poke(false.B)
-      dut.io.ForwardBE.expect(0.U)
+      dut.io.ForwardBE.expect(Control.FORWARD_REGISTER.U)
       dut.io.ValidE.poke(true.B)
-      for (memRWE <- Seq(2, 1)) {
+      for (memRWE <- Seq(Control.MEM_READ, Control.MEM_WRITE)) {
         dut.io.MemRWE.poke(memRWE.U)
         dut.io.PCSrcE.poke(false.B)
         dut.io.StallF.expect(true.B)

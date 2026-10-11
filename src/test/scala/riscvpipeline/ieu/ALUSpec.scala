@@ -1,5 +1,6 @@
 package riscvpipeline.ieu
 
+import riscvpipeline.TestEncoding.{ALUFunction, Control}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -22,9 +23,12 @@ private class ALUHarness(dataWidth: Int) extends Module {
 class ALUSpec extends AnyFlatSpec with ChiselScalatestTester {
   // 16 forced-arithmetic settings plus 14 ALU-mode settings. Both comparisons
   // require SubArith=1; other ALU functions exercise either SubArith value.
-  private val cases = (for (control <- Seq(0, 2); funct3 <- 0 until 8)
-    yield (control, funct3)) ++ (for (control <- Seq(1, 3); funct3 <- 0 until 8
-      if control == 3 || (funct3 != 2 && funct3 != 3)) yield (control, funct3))
+  private val cases = (for (control <- Seq(Control.ALU_ADD,
+    Control.ALU_SUBTRACT); funct3 <- 0 until 8)
+    yield (control, funct3)) ++ (for (control <- Seq(Control.ALU_FUNCTION,
+      Control.ALU_FUNCTION_SUBTRACT); funct3 <- 0 until 8
+      if control == Control.ALU_FUNCTION_SUBTRACT || (funct3 != ALUFunction.SLT &&
+        funct3 != ALUFunction.SLTU)) yield (control, funct3))
 
   private def signed(value: BigInt, dataWidth: Int): BigInt =
     if (value.testBit(dataWidth - 1)) value - (BigInt(1) << dataWidth) else value
@@ -38,26 +42,27 @@ class ALUSpec extends AnyFlatSpec with ChiselScalatestTester {
     funct3: Int
   ): Unit = {
     val mask = (BigInt(1) << dataWidth) - 1
-    val subtract = (control & 2) != 0
+    val subtract = (control & Control.ALU_SUBTRACT) != 0
     val address = (if (subtract) a - b else a + b) & mask
-    val function = if ((control & 1) != 0) funct3 else 0
+    val function = if ((control & Control.ALU_FUNCTION) != 0) funct3 else ALUFunction.ADD_SUB
     // Independent arithmetic model: subtraction uses BigInt subtraction,
     // and signed slt directly compares signed numbers, without RTL overflow logic.
     val amountBits = 32 - Integer.numberOfLeadingZeros(dataWidth - 1)
     val amount = (b & ((BigInt(1) << amountBits) - 1)).toInt
     val result = function match {
-      case 0 => address
-      case 1 => (a << amount) & mask
-      case 2 =>
+      case ALUFunction.ADD_SUB => address
+      case ALUFunction.SLL => (a << amount) & mask
+      case ALUFunction.SLT =>
         require(subtract, "Signed slt requires Sub=1, matching the book's controller")
         if (signed(a, dataWidth) < signed(b, dataWidth)) BigInt(1) else BigInt(0)
-      case 3 =>
+      case ALUFunction.SLTU =>
         require(subtract, "Unsigned slt requires SubArith=1, matching the book's controller")
         if (a < b) BigInt(1) else BigInt(0)
-      case 4 => a ^ b
-      case 5 => (if (subtract) signed(a, dataWidth) >> amount else a >> amount) & mask
-      case 6 => a | b
-      case 7 => a & b
+      case ALUFunction.XOR => a ^ b
+      case ALUFunction.SR => (if (subtract) signed(a,
+        dataWidth) >> amount else a >> amount) & mask
+      case ALUFunction.OR => a | b
+      case ALUFunction.AND => a & b
     }
     expectOutputs(dut, a, b, control, funct3, result, address)
   }
@@ -116,25 +121,44 @@ class ALUSpec extends AnyFlatSpec with ChiselScalatestTester {
         // Hand-checked results use operand/control settings at the ALU boundary;
         // immediate operands here have already been extended by Extend.
         val operations = Seq(
-          ("ADD", BigInt(5), BigInt(7), 1, 0, BigInt(12), BigInt(12)),
-          ("SUB", BigInt(5), BigInt(7), 3, 0, mask - 1, mask - 1),
-          ("SLL", BigInt(3), BigInt(4), 1, 1, BigInt(48), BigInt(7)),
-          ("SLT", signBit, signBit - 1, 3, 2, BigInt(1), BigInt(1)),
-          ("SLTU", BigInt(0), mask, 3, 3, BigInt(1), BigInt(1)),
-          ("XOR", BigInt(0x55), BigInt(0xf), 1, 4, BigInt(0x5a), BigInt(0x64)),
-          ("SRL", signBit, BigInt(1), 1, 5, signBit >> 1, signBit + 1),
-          ("SRA", signBit, BigInt(1), 3, 5, signBit | (signBit >> 1), signBit - 1),
-          ("OR", BigInt(0x55), BigInt(0xf), 1, 6, BigInt(0x5f), BigInt(0x64)),
-          ("AND", BigInt(0x55), BigInt(0xf), 1, 7, BigInt(5), BigInt(0x64)),
-          ("ADDI", BigInt(5), mask, 1, 0, BigInt(4), BigInt(4)),
-          ("SLLI", BigInt(3), BigInt(4), 1, 1, BigInt(48), BigInt(7)),
-          ("SLTI", BigInt(0), mask, 3, 2, BigInt(0), BigInt(1)),
-          ("SLTIU", BigInt(0), mask, 3, 3, BigInt(1), BigInt(1)),
-          ("XORI", BigInt(0x55), mask, 1, 4, mask ^ 0x55, BigInt(0x54)),
-          ("SRLI", signBit, BigInt(1), 1, 5, signBit >> 1, signBit + 1),
-          ("SRAI", signBit, BigInt(1), 3, 5, signBit | (signBit >> 1), signBit - 1),
-          ("ORI", BigInt(0x55), mask, 1, 6, mask, BigInt(0x54)),
-          ("ANDI", BigInt(0x55), mask, 1, 7, BigInt(0x55), BigInt(0x54))
+          ("ADD", BigInt(5), BigInt(7), Control.ALU_FUNCTION, ALUFunction.ADD_SUB,
+            BigInt(12), BigInt(12)),
+          ("SUB", BigInt(5), BigInt(7), Control.ALU_FUNCTION_SUBTRACT, ALUFunction.ADD_SUB,
+            mask - 1, mask - 1),
+          ("SLL", BigInt(3), BigInt(4), Control.ALU_FUNCTION, ALUFunction.SLL, BigInt(48),
+            BigInt(7)),
+          ("SLT", signBit, signBit - 1, Control.ALU_FUNCTION_SUBTRACT, ALUFunction.SLT,
+            BigInt(1), BigInt(1)),
+          ("SLTU", BigInt(0), mask, Control.ALU_FUNCTION_SUBTRACT, ALUFunction.SLTU,
+            BigInt(1), BigInt(1)),
+          ("XOR", BigInt(0x55), BigInt(0xf), Control.ALU_FUNCTION, ALUFunction.XOR,
+            BigInt(0x5a), BigInt(0x64)),
+          ("SRL", signBit, BigInt(1), Control.ALU_FUNCTION, ALUFunction.SR, signBit >> 1,
+            signBit + 1),
+          ("SRA", signBit, BigInt(1), Control.ALU_FUNCTION_SUBTRACT, ALUFunction.SR,
+            signBit | (signBit >> 1), signBit - 1),
+          ("OR", BigInt(0x55), BigInt(0xf), Control.ALU_FUNCTION, ALUFunction.OR,
+            BigInt(0x5f), BigInt(0x64)),
+          ("AND", BigInt(0x55), BigInt(0xf), Control.ALU_FUNCTION, ALUFunction.AND,
+            BigInt(5), BigInt(0x64)),
+          ("ADDI", BigInt(5), mask, Control.ALU_FUNCTION, ALUFunction.ADD_SUB, BigInt(4),
+            BigInt(4)),
+          ("SLLI", BigInt(3), BigInt(4), Control.ALU_FUNCTION, ALUFunction.SLL, BigInt(48),
+            BigInt(7)),
+          ("SLTI", BigInt(0), mask, Control.ALU_FUNCTION_SUBTRACT, ALUFunction.SLT,
+            BigInt(0), BigInt(1)),
+          ("SLTIU", BigInt(0), mask, Control.ALU_FUNCTION_SUBTRACT, ALUFunction.SLTU,
+            BigInt(1), BigInt(1)),
+          ("XORI", BigInt(0x55), mask, Control.ALU_FUNCTION, ALUFunction.XOR, mask ^ 0x55,
+            BigInt(0x54)),
+          ("SRLI", signBit, BigInt(1), Control.ALU_FUNCTION, ALUFunction.SR, signBit >> 1,
+            signBit + 1),
+          ("SRAI", signBit, BigInt(1), Control.ALU_FUNCTION_SUBTRACT, ALUFunction.SR,
+            signBit | (signBit >> 1), signBit - 1),
+          ("ORI", BigInt(0x55), mask, Control.ALU_FUNCTION, ALUFunction.OR, mask,
+            BigInt(0x54)),
+          ("ANDI", BigInt(0x55), mask, Control.ALU_FUNCTION, ALUFunction.AND, BigInt(0x55),
+            BigInt(0x54))
         )
         for ((name, a, b, control, funct3, result, address) <- operations) {
           withClue(name) { expectOutputs(dut, a, b, control, funct3, result, address) }
@@ -153,7 +177,10 @@ class ALUSpec extends AnyFlatSpec with ChiselScalatestTester {
         val highBits = mask ^ BigInt(dataWidth - 1)
         for (a <- patterns; amount <- 0 until dataWidth;
             b <- Seq(BigInt(amount), BigInt(amount) | highBits);
-            (control, funct3) <- Seq((1, 1), (3, 1), (1, 5), (3, 5))) {
+            (control, funct3) <- Seq((Control.ALU_FUNCTION, ALUFunction.SLL),
+              (Control.ALU_FUNCTION_SUBTRACT, ALUFunction.SLL),
+              (Control.ALU_FUNCTION, ALUFunction.SR),
+              (Control.ALU_FUNCTION_SUBTRACT, ALUFunction.SR))) {
           check(dut, dataWidth, a, b, control, funct3)
         }
       }

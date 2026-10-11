@@ -1,5 +1,6 @@
 package riscvpipeline.lsu
 
+import riscvpipeline.TestEncoding.{Mask, MemoryFunction}
 import chisel3._
 import chisel3.stage.ChiselStage
 import chiseltest._
@@ -31,13 +32,14 @@ class SubwordWriteSpec extends AnyFlatSpec with ChiselScalatestTester {
 
   // 软件逐字节取值，独立于硬件的 Fill 与选择器结构。
   private def reference(width: Int, data: BigInt, funct3: Int): BigInt = {
-    val accessBytes = Map(0 -> 1, 1 -> 2, 2 -> 4, 3 -> 8).getOrElse(funct3, 0)
+    val accessBytes = Map(MemoryFunction.BYTE -> 1, MemoryFunction.HALF -> 2,
+      MemoryFunction.WORD -> 4, MemoryFunction.DOUBLE -> 8).getOrElse(funct3, 0)
     val wordBytes = width / 8
 
     if (accessBytes == 0 || accessBytes > wordBytes) BigInt(0)
     else (0 until wordBytes).foldLeft(BigInt(0)) { (word, lane) =>
       val sourceByteIndex = lane % accessBytes
-      val sourceByte = (data >> (8 * sourceByteIndex)) & 0xff
+      val sourceByte = (data >> (8 * sourceByteIndex)) & Mask.BYTE
       word | (sourceByte << (8 * lane))
     }
   }
@@ -51,18 +53,18 @@ class SubwordWriteSpec extends AnyFlatSpec with ChiselScalatestTester {
         // 低位是 EF / CDEF / 89ABCDEF；SB/SH/SW 复制它们，SD 原样输出。
         val data = BigInt(if (width == 32) "89abcdef" else "0123456789abcdef", 16)
         val cases = if (width == 32) Seq(
-          (0, "efefefef"), // SB
-          (1, "cdefcdef"), // SH
-          (2, "89abcdef")  // SW
+          (MemoryFunction.BYTE, "efefefef"), // SB
+          (MemoryFunction.HALF, "cdefcdef"), // SH
+          (MemoryFunction.WORD, "89abcdef")  // SW
         ) else Seq(
-          (0, "efefefefefefefef"), // SB
-          (1, "cdefcdefcdefcdef"), // SH
-          (2, "89abcdef89abcdef"), // SW
-          (3, "0123456789abcdef")  // SD
+          (MemoryFunction.BYTE, "efefefefefefefef"), // SB
+          (MemoryFunction.HALF, "cdefcdefcdefcdef"), // SH
+          (MemoryFunction.WORD, "89abcdef89abcdef"), // SW
+          (MemoryFunction.DOUBLE, "0123456789abcdef")  // SD
         )
 
         dut.reset.poke(false.B)
-        check(dut, BigInt(0), 0, BigInt(0))
+        check(dut, BigInt(0), MemoryFunction.BYTE, BigInt(0))
         dut.clock.step(2)
         for ((funct3, expectedHex) <- cases) {
           check(dut, data, funct3, BigInt(expectedHex, 16))
@@ -70,7 +72,7 @@ class SubwordWriteSpec extends AnyFlatSpec with ChiselScalatestTester {
         }
         check(dut, data, 7, BigInt(0)) // 非法编码清零。
         dut.clock.step(2)
-        check(dut, data, 0, BigInt(cases.head._2, 16))
+        check(dut, data, MemoryFunction.BYTE, BigInt(cases.head._2, 16))
         dut.clock.step(2)
       }
     }
@@ -81,7 +83,7 @@ class SubwordWriteSpec extends AnyFlatSpec with ChiselScalatestTester {
         // 32 位的 011 也非法；100/101/110 不能别名到 SB/SH/SW。
         val firstIllegalCode = if (width == 32) 3 else 4
         for (funct3 <- firstIllegalCode until 8) {
-          check(dut, ones, 0, ones)
+          check(dut, ones, MemoryFunction.BYTE, ones)
           check(dut, ones, funct3, BigInt(0))
         }
       }
@@ -91,12 +93,12 @@ class SubwordWriteSpec extends AnyFlatSpec with ChiselScalatestTester {
       test(new SubwordWriteHarness(width)) { dut =>
         // 列顺序：Funct3、高位全零的输入、高位全一的输入、相同期望输出。
         val cases = if (width == 32) Seq(
-          (0, "000000a5", "ffffffa5", "a5a5a5a5"),
-          (1, "0000f00d", "fffff00d", "f00df00d")
+          (MemoryFunction.BYTE, "000000a5", "ffffffa5", "a5a5a5a5"),
+          (MemoryFunction.HALF, "0000f00d", "fffff00d", "f00df00d")
         ) else Seq(
-          (0, "00000000000000a5", "ffffffffffffffa5", "a5a5a5a5a5a5a5a5"),
-          (1, "000000000000f00d", "fffffffffffff00d", "f00df00df00df00d"),
-          (2, "0000000089abcdef", "ffffffff89abcdef", "89abcdef89abcdef")
+          (MemoryFunction.BYTE, "00000000000000a5", "ffffffffffffffa5", "a5a5a5a5a5a5a5a5"),
+          (MemoryFunction.HALF, "000000000000f00d", "fffffffffffff00d", "f00df00df00df00d"),
+          (MemoryFunction.WORD, "0000000089abcdef", "ffffffff89abcdef", "89abcdef89abcdef")
         )
         for ((funct3, highBitsZero, highBitsOne, expectedHex) <- cases) {
           val expected = BigInt(expectedHex, 16)
@@ -113,14 +115,14 @@ class SubwordWriteSpec extends AnyFlatSpec with ChiselScalatestTester {
         val oneByteWord = BigInt(if (width == 32) "01010101" else "0101010101010101", 16)
         val data = BigInt("ff80", 16)
 
-        check(dut, data, 0, byteWord)
+        check(dut, data, MemoryFunction.BYTE, byteWord)
         // 仅数据变化，随后仅 Funct3 变化；全程不调用 clock.step。
-        check(dut, BigInt(1), 0, oneByteWord)
-        check(dut, data, 0, byteWord)
-        check(dut, data, 1, halfWord)
+        check(dut, BigInt(1), MemoryFunction.BYTE, oneByteWord)
+        check(dut, data, MemoryFunction.BYTE, byteWord)
+        check(dut, data, MemoryFunction.HALF, halfWord)
         check(dut, data, 5, BigInt(0))
-        check(dut, data, 0, byteWord)
-        check(dut, BigInt(0), 0, BigInt(0))
+        check(dut, data, MemoryFunction.BYTE, byteWord)
+        check(dut, BigInt(0), MemoryFunction.BYTE, BigInt(0))
       }
     }
 
