@@ -17,14 +17,13 @@ import shutil
 import subprocess
 import time
 import xml.etree.ElementTree as ET
-from cvw_common import publish_report
+from report_catalog import register_report
 
 ROOT = Path(__file__).resolve().parents[2]
 BASE_ART = ROOT / 'target/chapter8-testplan'
 POINTER = BASE_ART / 'current-run.txt'
 ART = ROOT / POINTER.read_text().strip() if POINTER.exists() else BASE_ART
 ARCHIVE = ART
-REPORT = ROOT / 'docs/chapter8/16-testplan-report.md'
 BASE = '5b1804fbbf0eb03636e19502e77e20340698e0c3'
 
 def validate_run(expected, run):
@@ -416,12 +415,12 @@ JUnit通过[ScalaTest官方-u报告参数](https://www.scalatest.org/user_guide/
 ## 9. 归档、校验与复现
 
 归档入口：[results.csv](../reports/chapter8-testplan/results.csv)、[results.json](../reports/chapter8-testplan/results.json)、[metadata.json](../reports/chapter8-testplan/metadata.json)、[SHA256SUMS](../reports/chapter8-testplan/SHA256SUMS)。
-所有报告引用的镜像、预期events、实际JSON、日志、源码差异与工具记录在`docs/reports/chapter8-testplan/`；SHA256SUMS覆盖归档全部文件，不包含自身。
+所有报告引用的镜像、预期events、实际JSON、日志、源码差异与工具记录在`target/chapter8-testplan/`；SHA256SUMS覆盖归档全部文件，不包含自身。
 
 ```sh
-cd docs/reports/chapter8-testplan
+cd target/chapter8-testplan
 sha256sum -c SHA256SUMS
-cd ../../..
+cd ../../../..
 make report-chapter8 SBT=./scripts/sbt-local.sh
 ```
 
@@ -430,7 +429,7 @@ make report-chapter8 SBT=./scripts/sbt-local.sh
 仅复验单个Scala场景可用`CHAPTER8_CASE_FILTER='default-EX02' ./scripts/sbt-local.sh 'testOnly riscvpipeline.Chapter8TestPlanSpec'`；完整报告必须使用全量证据。
 '''
     text = text.replace('../reports/chapter8-testplan/', '')
-    text = text.replace('docs/reports/chapter8-testplan', str(ART.relative_to(ROOT)))
+    text = text.replace('target/chapter8-testplan', str(ART.relative_to(ROOT)))
     (ART / 'report.md').write_text(text)
     (ARCHIVE / 'source.diff').write_text(capture(['git', 'diff', BASE, '--', 'src', 'scripts', 'Makefile', 'build.sbt']))
     # Store all newly added source content as well: git diff omits untracked files.
@@ -442,7 +441,8 @@ make report-chapter8 SBT=./scripts/sbt-local.sh
     sums = [f'{digest(p)}  {p.relative_to(ARCHIVE)}' for p in sorted(ARCHIVE.rglob('*'))
             if p.is_file() and p.name != 'SHA256SUMS']
     (ARCHIVE / 'SHA256SUMS').write_text('\n'.join(sums) + '\n')
-    publish_report(ART / 'report.md', REPORT, 'make report-chapter8 SBT=./scripts/sbt-local.sh')
+    register_report(ART, 'chapter8-testplan', 'make report-chapter8 SBT=./scripts/sbt-local.sh', root=ROOT, status='pass')
+    print('REPORT ' + str(ART / 'report.md'))
     print(f'Report written: {len(cases)} cases, {len(runs)} checked runs, {len(sums)} archived files')
 
 if __name__ == '__main__':

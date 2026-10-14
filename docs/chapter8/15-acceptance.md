@@ -1,7 +1,9 @@
+> 手写历史实施/验收记录。适用版本、日期与验证范围见正文；当前运行结果从报告导航进入。
+
 # 15. 第八章整机验收
 
-统一验证入口、真实签名读回和提交差分见[验证更新](../chapter7-8-verification-update.md)；
-后续开发见[验证指导](../verification-guide.md)和[路线图](../verification-roadmap.md)。
+统一验证入口、真实签名读回和提交差分见[验证更新](../development/chapter7-8-verification-update.md)；
+后续开发见[验证指导](../development/verification-guide.md)和[路线图](../development/verification-roadmap.md)。
 下文既有结果属于原报告运行，不能替代新入口的本轮验收证据。
 
 本轮完成原路线全部 15 阶段；使用 `PrivilegedPipeline` 执行真实 RV32 指令，

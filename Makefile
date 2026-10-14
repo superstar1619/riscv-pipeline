@@ -232,11 +232,11 @@ help:
 	@echo '从项目根目录执行；本地工具链示例：make <目标> SBT=./scripts/sbt-local.sh'
 	@echo 'test-verification    默认冒烟；VERIFY_SUITE=all VERIFY_PROFILE=full 执行完整回归'
 	@echo 'test-diff            RV32I 逐提交差分；可设置 VERIFY_PROFILE=full'
-	@echo 'report-verification 完整回归并发布 Markdown 到 docs/reports；证据保存在 target/'
+	@echo 'report-verification 完整回归；报告、证据和动态索引保存在 target/'
 	@echo 'generate-cpu         生成 RV32I RTL；generate-privileged-cpu 生成特权 RTL'
 	@echo 'test-pipeline        流水线测试；test-chapter8 特权测试；test-rtl 生产 RTL 验收'
 	@echo 'report-chapter8      第八章详细报告；report-chapter7-8-cvw 联合报告'
-	@echo 'clean               删除全部 target/，包括缓存、镜像、波形和原始验证证据；保留 Markdown 报告'
+	@echo 'clean               删除全部 target/，包括缓存、镜像、波形和原始验证证据；保留手写文档与单周期源码快照'
 
 .PHONY: generate-trap test-trap
 generate-trap:

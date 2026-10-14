@@ -9,7 +9,7 @@ description: Use when writing, modifying, or reviewing Chisel hardware in this t
 
 ## 先读取依据
 
-读取 [中文编码规范](../../../docs/chisel-coding-standard.md)，它是条款与示例的唯一完整来源。
+读取 [中文编码规范](../../../docs/development/chisel-coding-standard.md)，它是条款与示例的唯一完整来源。
 相对路径以本 `SKILL.md` 所在目录解析，不以执行命令的 cwd 解析。
 然后读取任务所在项目的 `AGENTS.md`（若存在）、构建文件和相关模块/测试。
 当前项目是 Scala 2.13.14、Chisel 3.6.1；迁移后以实际构建依赖为准。
@@ -65,5 +65,5 @@ Scala 配置/参数小驼峰。只对真实流水线使用阶段后缀。
 ## 调用与搬移
 
 可使用 `$chisel-coding-standard`，或直接要求 AI 读取本文件。
-这是项目本地 skill；复制到其他位置时需要一起复制 `docs/chisel-coding-standard.md`
+这是项目本地 skill；复制到其他位置时需要一起复制 `docs/development/chisel-coding-standard.md`
 并核对引用路径。不依赖原 PDF 存在才能执行已整理的规则。

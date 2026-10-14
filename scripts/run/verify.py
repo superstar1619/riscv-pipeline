@@ -18,7 +18,9 @@ import shutil
 import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from cvw_common import ROOT, Collector, dump, manifest as hash_artifacts, reproduction, process_exit_results, publish_reports
+from cvw_common import ROOT, Collector, dump, manifest as hash_artifacts, reproduction, process_exit_results
+
+from report_catalog import register_report
 
 SMOKE_ARCH = ['addi-01', 'jalr-01', 'lw-align-01']
 SMOKE_PRIV = ['EX02', 'PR01', 'CS01', 'WFWAKE']
@@ -346,7 +348,7 @@ def main():
     parser.add_argument('--suite', choices=['all','pipeline','arch','privileged','cvw','coremark','diff'], default='all')
     parser.add_argument('--profile', choices=['smoke','full'], default='smoke')
     parser.add_argument('--output', type=Path, help='new output directory; existing directories are rejected')
-    parser.add_argument('--archive', action='store_true', help='force all/full; publish Markdown to docs and keep evidence under target')
+    parser.add_argument('--archive', action='store_true', help='force all/full; register reports in target/reports/index.md')
     parser.add_argument('--plan', action='store_true', help='print selected stages without executing')
     args = parser.parse_args()
     if args.archive:
@@ -380,9 +382,8 @@ def main():
             run.rows.append(dict(suite='orchestration', name=stage, status='build_platform_error', reason=repr(exc)))
     passed = run.finish(before)
     if args.archive:
-        archive = ROOT/'docs/reports/verification'/directory.name
-        publish_reports(directory, archive, 'make report-verification SBT=./scripts/sbt-local.sh')
-        print(f'Reports: {archive}; evidence: {directory}', flush=True)
+        index = register_report(directory, 'verification', 'make report-verification SBT=./scripts/sbt-local.sh', root=ROOT)
+        print(f'Report index: {index}; evidence: {directory}', flush=True)
     print(f'{"PASS" if passed else "FAIL"}: {directory}/report.md', flush=True)
     return 0 if passed else 1
 

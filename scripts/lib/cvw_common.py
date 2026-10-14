@@ -35,27 +35,6 @@ def rebase_report_links(text, source, destination, published):
     return re.sub(r'!?\[[^\]\n]*\]\((?P<url><[^>\n]+>|[^\s)]+)(?:\s+"[^"\n]*")?\)', replace, text)
 
 
-def publish_reports(directory, destination, reproduce):
-    """Publish Markdown only; original evidence stays in its disposable run directory."""
-    directory, destination = Path(directory).resolve(), Path(destination).resolve()
-    reports = [p for p in sorted(directory.rglob('*.md'))
-               if not {'source', '__pycache__'} & set(p.relative_to(directory).parts)]
-    published = {p.resolve(): destination / p.relative_to(directory) for p in reports}
-    for source, target in published.items():
-        publish_report(source, target, reproduce, published, directory)
-    return list(published.values())
-
-
-def publish_report(source, destination, reproduce, published=None, directory=None):
-    source, destination = Path(source).resolve(), Path(destination).resolve()
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    text = rebase_report_links(source.read_text(), source, destination, published or {})
-    evidence = quote(os.path.relpath(directory or source.parent, destination.parent), safe='/')
-    note = (f'> 原始证据：[运行目录]({evidence}/)。`make clean` 会清理 target/ 中的证据；'
-            f'报告保留。重新生成：`{reproduce}`。\n\n')
-    destination.write_text(note + text)
-
-
 def dump(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n')

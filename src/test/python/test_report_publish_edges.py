@@ -8,7 +8,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT/'scripts/lib'))
-from cvw_common import publish_reports
+from cvw_common import rebase_report_links
 
 
 class PublicationEdges(unittest.TestCase):
@@ -19,9 +19,9 @@ class PublicationEdges(unittest.TestCase):
             run.mkdir(parents=True)
             (run/'report.md').write_text('[results.json](results.json "raw evidence")\n')
             (run/'results.json').write_text('{}')
-            publish_reports(run, root/'docs/run', 'make report-verification')
-            self.assertIn('[results.json](../../target/run/results.json "raw evidence")',
-                          (root/'docs/run/report.md').read_text())
+            text = rebase_report_links((run/'report.md').read_text(), run/'report.md',
+                                       root/'docs/run/report.md', {})
+            self.assertIn('[results.json](../../target/run/results.json "raw evidence")', text)
 
     def test_direct_entrypoint_propagates_cache_to_children(self):
         with tempfile.TemporaryDirectory() as tmp:

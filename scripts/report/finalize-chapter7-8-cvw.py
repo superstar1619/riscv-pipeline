@@ -11,7 +11,9 @@ os.environ["PYTHONPYCACHEPREFIX"] = sys.pycache_prefix
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
 import shutil
 import xml.etree.ElementTree as ET
-from cvw_common import ROOT, Collector, dump, fresh_run, fresh_reproduction, manifest, save_results, publish_reports, rebase_report_links
+from cvw_common import ROOT, Collector, dump, fresh_run, fresh_reproduction, manifest, save_results, rebase_report_links
+
+from report_catalog import register_report
 
 
 def load_driver():
@@ -105,14 +107,14 @@ def main():
     report=directory/'report.md'
     with report.open('a') as stream:
         stream.write('\n本轮恢复记录：全量 Scala 仅执行一次，首次 314 通过、276 因绝对 TargetDir 在仿真前报错；修正测试夹具后仅补跑 Chapter8TestPlanSpec 的 276 项。原始失败日志与结果原样保存在 initial-attempt/，最终有效矩阵采用补跑结果。CPU 实现未修改。复核修正另以最终四配置 RTL、CVW 双配置 RTL 与 Python 回归验证；各阶段源码快照分别保存。\n')
-    source = ROOT/'docs/chapter7-8-cvw.md'
+    source = ROOT/'docs/development/chapter7-8-cvw.md'
     destination = directory/'coverage-and-adaptation.md'
     destination.write_text(rebase_report_links(source.read_text(), source, destination, {}))
     manifest(directory)
-    archive=ROOT/'docs/reports/chapter7-8-cvw'/directory.name
-    publish_reports(directory, archive, 'make report-chapter7-8-cvw SBT=./scripts/sbt-local.sh')
+    passed = not any(r['status'] not in ('pass', 'not_applicable') and not r.get('resolved_by') for r in rows)
+    register_report(directory, 'chapter7-8-cvw', 'make report-chapter7-8-cvw SBT=./scripts/sbt-local.sh', root=ROOT, status='pass' if passed else 'fail')
     (ROOT/'target/chapter7-8-cvw/latest-run.txt').write_text(str(directory)+'\n')
-    print('FINAL REPORT '+str(archive/'report.md'),flush=True)
+    print('FINAL REPORT '+str(directory/'report.md'),flush=True)
     return int(any(r['status'] not in ('pass','not_applicable') and not r.get('resolved_by') for r in rows))
 
 

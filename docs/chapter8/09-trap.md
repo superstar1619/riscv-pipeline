@@ -16,7 +16,7 @@ cause 与监督模式委托。模块不保存 CSR、特权级或 PC；这些状�
   Committed 与 WFI 延迟、优先级和委托判断。
 - [实施计划 Task 9](plans/2026-10-08-completion.md)：U/M 始终支持，S 可配置；
   本平台地址未对齐总是陷阱，不实现硬件跨边界访问。
-- [工程 Chisel 规范](../chisel-coding-standard.md)：组合模块采用 RawModule，
+- [工程 Chisel 规范](../development/chisel-coding-standard.md)：组合模块采用 RawModule，
   重要接口有明确类型与位宽，组合输出完整驱动，Scala 源码两空格、95 列。
 
 相对于 CVW，独立接口增加确定的无事件输出和支持模式防守；异常请求也受 Valid、

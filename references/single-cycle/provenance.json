@@ -1,0 +1,348 @@
+{
+  "source_project": "/home/unlastingstar/cvw-experiment/single-cycle/riscv-single-cycle",
+  "commit": "83dee1688105ea6b645f08cc5202827f71292e4a",
+  "source_status": "",
+  "imported_date": "2026-10-14",
+  "files": [
+    {
+      "path": "src/main/scala/riscvsingle/GenerateALU.scala",
+      "sha256": "ef904113c5aef48b5e31eaacd85e29ce534558abb9894b1d4d2af0e7fb6db518"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateCmp.scala",
+      "sha256": "3b64afdcd6cfddc0e567a3006c10c2da204d7ade57528ca6fdeced759078931d"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateController.scala",
+      "sha256": "f20009685a60e20512e7723eab2e096bb539e02665cf646800f3ed7c434914e9"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateDTIM.scala",
+      "sha256": "5d5490b47f38fcb99bb1be4eb63c86e25ecfaf435d0c42dd6fd1bdf69baebb0f"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateDatapath.scala",
+      "sha256": "d4936a73545ff0bc8c24ce8573244289be8fd5b5e3292b7d928f01e28e814f05"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateExtend.scala",
+      "sha256": "597f753b456928d8801964ef340b8fd1af28e4dc9130eda283628407dd51552e"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateIEU.scala",
+      "sha256": "6b1466de65c815885c5febf223359f0a7e41348556ba66e09c4c978aa38d234f"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateIFU.scala",
+      "sha256": "c46a8c2706094e95174512f521216f981a7a5c5946a80f08da97797b8579a045"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateIROM.scala",
+      "sha256": "400d5fadcb089e522c08711f99a3c32573f071ec7c98889049bde803165f8662"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateLSU.scala",
+      "sha256": "a4b156343fa628d91974fcfa9bc52d809630e3440b68d8ac78caa8b6ae0d209d"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateRegFile.scala",
+      "sha256": "1ee692630ce227c3b61f12233139b96374d132717816fe809fc6e4e42444b191"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateRiscvSingle.scala",
+      "sha256": "361882c2079dc4c812ef2c221d2d4df9ea7e2b7f6f7d15a94900c94a66ac653c"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateShifter.scala",
+      "sha256": "fe74b03539dd0824234dd403b75da50612dff6a3e60f22b2aae036051e738698"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateSubwordRead.scala",
+      "sha256": "9ae82e08a6201e9bf5ba842b4a52cf44fbbbe3dab556f0b83ace436bfb995173"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateSubwordWrite.scala",
+      "sha256": "352af525e506f134c124945f7be5769533833dec8d9105d0caab8ec20b149c2a"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/GenerateSwByteMask.scala",
+      "sha256": "75ea655ae8f03310f1330b1c1c5cc64b72872ca96a901969b1c2756a281aae30"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/RiscvSingle.scala",
+      "sha256": "45697d3adebffaa52b7129040fee3d7990cc76f97113092759198e82d2804ff2"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/config/CpuConfig.scala",
+      "sha256": "b210e08a7d2866916309b6d7968bb358cfb91683891575bb379a123167b64d6f"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/ieu/ALU.scala",
+      "sha256": "7e85be797d714c5a69bf2111c7b6fa641c522aaa219892a6af88876fd74e5d1e"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/ieu/Cmp.scala",
+      "sha256": "73f3d5e6074ee259a69fb37a41d672ecc13114a368a65d1086e48b02827f1b3c"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/ieu/Controller.scala",
+      "sha256": "3797e77c8c2ddb5dfa342b5f61161c03829702481a3654823d051021ad56e2cf"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/ieu/Datapath.scala",
+      "sha256": "bc1e2ee5bdf0fe19be756d9b266f6989814be59a9fa10db7562cf015a15c0f60"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/ieu/Extend.scala",
+      "sha256": "f7cc64189857ec33ae2258d8e7299fa4b5a41434cd9eeea20d4cdbaef6b4c40d"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/ieu/IEU.scala",
+      "sha256": "8cab97d75a39b4de309f74c1e2566dd27db0ab31793667866f0003dbfb1715e7"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/ieu/RegFile.scala",
+      "sha256": "69ab86b91f009982b444ffec77d75350db0f58a963ce7c9c4bb1abb3b1b42223"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/ieu/Shifter.scala",
+      "sha256": "48006cedac7806a065030e0bda329423ac5204d6d981f22ccd3061be078e8fb1"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/ifu/IFU.scala",
+      "sha256": "771f88692ac0eb9b3c2fc92193c17ddce9e619b9e49bae4f0cf3348070b69207"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/ifu/IROM.scala",
+      "sha256": "07c12c79091c70c35be0f6a5c7bc34577c24a87a5c58412f6b186bbe5dbe2108"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/lsu/DTIM.scala",
+      "sha256": "1db850f82b55ec1373a562f6dbe83a46c5884d696dcdbe08246334ab12e6ac35"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/lsu/LSU.scala",
+      "sha256": "b818953b6c4c48f94b698a8967ea9f055856d357149d2cb4357162f2ef42aaff"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/lsu/SubwordRead.scala",
+      "sha256": "023e5681713f79ee1e3e59791fd9817dbe35a155580f0804d18b220e09e97a6e"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/lsu/SubwordWrite.scala",
+      "sha256": "fd23204fac3fafcb6e55ae582f7fb07abbfd762bdd464bc119ce2dbfa737122d"
+    },
+    {
+      "path": "src/main/scala/riscvsingle/lsu/SwByteMask.scala",
+      "sha256": "187a1c45f7e90f8efa8a6d7766cafb1e1281f3d49d0e33671c91fb7a25d695e8"
+    },
+    {
+      "path": "src/test/cpp/CpuAcceptanceRtlTest.cpp",
+      "sha256": "45f9b8873bafbf017e8ffbb75a885fc33c4557a7b957ee19ebcd64ce7e43d080"
+    },
+    {
+      "path": "src/test/cpp/RiscvSingleRtlTest.cpp",
+      "sha256": "baaeba68e42a3f11c9c78a9c3119a8a538d4d879a7b5a809a1660289d1148913"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/CpuAcceptanceSpec.scala",
+      "sha256": "455b805ba702a561cf2ad113c918451ec312ea4728f4d669ff8bc700497fda9c"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/CpuResetSpec.scala",
+      "sha256": "887c7fb29a2012249f1740f115cab32774522144bdf29a2532960b820bd21776"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/RiscvSingleSpec.scala",
+      "sha256": "6de53286fb4e39df4e8ca7d843debddb20e1af293cb62bdc295035f7e60ae286"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/config/CpuConfigSpec.scala",
+      "sha256": "0bcec2f1ffa9248b475139ae98f3202e3c0297b89ff6663f0cf0b3b7b2b434dc"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/ieu/ALUSpec.scala",
+      "sha256": "c738df300fe1e95a36e5a4da63bf880be17a93c20fba2177a0e21b12502165a5"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/ieu/CmpSpec.scala",
+      "sha256": "0f0c6987bc952c315dc9ec24484b9c26e74e3f182c083a4e08571007ab744603"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/ieu/ControllerSpec.scala",
+      "sha256": "aeb391cc0d99308f825b03b4c60701e403e3246b1b7e2d8ed83b4da3ee673a23"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/ieu/DatapathSpec.scala",
+      "sha256": "616b9af91dad1cecfcdb4463941f38239f74d7b7d169ca4067f0449f3ca45a2b"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/ieu/ExtendSpec.scala",
+      "sha256": "239a103903cbed11563cd72a37e8b616ee14a09d94036c8ef879c6fee940482c"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/ieu/IEUSpec.scala",
+      "sha256": "29427f947e3263e689fa9b9739e977d033c4ec996a730ac1e9fe056e160bf404"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/ieu/RegFileSpec.scala",
+      "sha256": "29cecac5d5fa17afd0fb3c979a22a2a00bdaf2a40351ca539fdf9b48184a8b32"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/ieu/ShifterSpec.scala",
+      "sha256": "929409aca728b6a853cd6168f62735397f8a932b55b71a0fcf7daf8ac64dbe5a"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/ifu/IFUSpec.scala",
+      "sha256": "db4491b9d3432568f57a87a92c450a1998246c69d525f1ce7a51ac0a35a3fef6"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/ifu/IROMSpec.scala",
+      "sha256": "e40f70a0cdbb9e16637c2c1b9a2ab3e7df0667407cf2f71c599155cc6ed9dcf0"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/lsu/DTIMSpec.scala",
+      "sha256": "8e5c03fbead2ec77b70ebdbfebb4354891216c1d0a52e8039d83425c45d01aaa"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/lsu/LSUSpec.scala",
+      "sha256": "2e01ed934d7be46ecb450c3fa62e70591b1334f5f9dfac42b94ca940ebd05c9f"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/lsu/LSUSubwordSpec.scala",
+      "sha256": "53e808824630749622e8f6dd780df60a93c057e841e380bf311c59005375c5ed"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/lsu/SubwordReadSpec.scala",
+      "sha256": "5b56d4fded89fbef98003d143e3da054f8717d1a6e6f81040f9a84ed9f84b9f4"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/lsu/SubwordWriteSpec.scala",
+      "sha256": "23d298d9fe2ac2187119bcd4e80bf8a5318a849ef422d7d9be2e7b4a5f1620b5"
+    },
+    {
+      "path": "src/test/scala/riscvsingle/lsu/SwByteMaskSpec.scala",
+      "sha256": "9d0e9ff8e48d882aa07d7540245bfe0872dbf1ff55da496e88889ba2f2cd2f96"
+    },
+    {
+      "path": "scripts/build-rv32-acceptance.py",
+      "sha256": "948cf4f053142f482cb730a1d3c5db7c309403bbabeb5bcd1f769057af78f0bc"
+    },
+    {
+      "path": "scripts/check-final-waves.py",
+      "sha256": "6730706539f3f0bf57363348b5eda0454ed3fc0e6e9c3b447b8d4a9e4f7e9d52"
+    },
+    {
+      "path": "scripts/sbt-local.sh",
+      "sha256": "c5723e5c284f4d45db5b5a69acb5c847eaca2421ab25264bddb422ca3981e640"
+    },
+    {
+      "path": "scripts/test-rtl.sh",
+      "sha256": "f24e64d4bec1e7c21daf816a255aef7414008a141257fe9bbd467a9c5df385f2"
+    },
+    {
+      "path": "programs/riscvtest.memfile",
+      "sha256": "8fb2402d3085fe466f04c210fc47b3081f37496ce996c760c16e053137577558"
+    },
+    {
+      "path": "programs/riscvtest.s",
+      "sha256": "809e774fc8f94c35cd4a9a5273e8f103ab53c2a3a53cbfb2d1c7a65f344aedc9"
+    },
+    {
+      "path": "programs/rv32-acceptance-expanded.json",
+      "sha256": "69b53c3e99afd2087fd21f18b84c387b6bce78a8f08b5d0d70610af39ba531b1"
+    },
+    {
+      "path": "programs/rv32-acceptance-expanded.memfile",
+      "sha256": "2e98099ac94245d1c43fd930d27d702cd7b37d1c00d4cf3ae328291c294e52c0"
+    },
+    {
+      "path": "programs/rv32-acceptance-expanded.trace",
+      "sha256": "a76aa00e71018d11eb56707d517ed77560e8f37c1f3cb04759e9cea50976ae64"
+    },
+    {
+      "path": "programs/rv32-acceptance.json",
+      "sha256": "82a162da7a53af94a0921fecddd7010a48755443d379892067cf69791209a849"
+    },
+    {
+      "path": "programs/rv32-acceptance.memfile",
+      "sha256": "08ab33e0dc0aa2a40978facd30dcd3a81df8312e673096bc19cb179d301aa360"
+    },
+    {
+      "path": "programs/rv32-acceptance.s",
+      "sha256": "5f5ce94b89be979e78234010857f6e08d00434b2b6d54b4b73bb35e0373a9595"
+    },
+    {
+      "path": "programs/rv32-acceptance.trace",
+      "sha256": "9217ba42757dbab4df6e1bd2566f05b2f4f64b5c659ce195c891544a8395d1fa"
+    },
+    {
+      "path": "programs/rv32-configtest.memfile",
+      "sha256": "dcf569d2eca968a5d1ea1784650576d7c0b3b8df9b3132dec54c47dd877db6d0"
+    },
+    {
+      "path": "waves/code-example-2.16.gtkw",
+      "sha256": "fe36f0b15545867320c3e38449c2e0f450a168ba53c808ce1261cde80aa682bd"
+    },
+    {
+      "path": "waves/dtim32.gtkw",
+      "sha256": "e3d8e4326bd1c66dc32e15c211bfad279be14105707c8f3c779c4d1b393db254"
+    },
+    {
+      "path": "waves/dtim64.gtkw",
+      "sha256": "e3d8e4326bd1c66dc32e15c211bfad279be14105707c8f3c779c4d1b393db254"
+    },
+    {
+      "path": "waves/ifu32.gtkw",
+      "sha256": "04cb9b18fbc6d20a04e53561b853360ebf72485922defe0615bde492e9f327b1"
+    },
+    {
+      "path": "waves/irom32.gtkw",
+      "sha256": "f0903f47b7de96b71c38207a322b6bbd1a7fffd8880577538dcdcbab0229b7df"
+    },
+    {
+      "path": "waves/lsu32.gtkw",
+      "sha256": "b46df9811217973521bb8e2f4597f4c5625bca905505195909e05346b6555827"
+    },
+    {
+      "path": "waves/rv32-acceptance-expanded.gtkw",
+      "sha256": "0d42b6165a15619f2312dbf2618b3585444069226bcb94ec4b40a6b5763df40f"
+    },
+    {
+      "path": "waves/rv32-acceptance.gtkw",
+      "sha256": "0d42b6165a15619f2312dbf2618b3585444069226bcb94ec4b40a6b5763df40f"
+    },
+    {
+      "path": "waves/subwordread32.gtkw",
+      "sha256": "97ad33477b18f238ce540b0d0333f3b2bff6cbf78bcd450b98e8dfe0770e8287"
+    },
+    {
+      "path": "waves/subwordread64.gtkw",
+      "sha256": "97ad33477b18f238ce540b0d0333f3b2bff6cbf78bcd450b98e8dfe0770e8287"
+    },
+    {
+      "path": "waves/subwordwrite32.gtkw",
+      "sha256": "ff908483aabfcda5a5a180d2db84e5512860381bb401eae2ab79b824c15d617d"
+    },
+    {
+      "path": "waves/subwordwrite64.gtkw",
+      "sha256": "ff908483aabfcda5a5a180d2db84e5512860381bb401eae2ab79b824c15d617d"
+    },
+    {
+      "path": "Makefile",
+      "sha256": "3da5c5c111fd7c563276fea3188397d1c0953913179a5bb2d27572f6b1fc2978"
+    },
+    {
+      "path": "build.sbt",
+      "sha256": "039f699081fcaf5b7c6519ce35ce0219cc48c3996e2d65fcc936ae5f13708389"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "60d50c2d046c4ae57721d073a912b799ea9ca171f8bcd963906d584a16f1b324"
+    },
+    {
+      "path": "project/build.properties",
+      "sha256": "84d1a08240c782d6691e9829ec54530a45d10809b0e5200db4035723d852928c"
+    }
+  ]
+}

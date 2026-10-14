@@ -1,6 +1,6 @@
-> 历史证据已迁至 [target 中的证据目录](../../target/reports/)。`make clean` 会删除原始证据，Markdown 报告保留；重新运行相应报告命令将产生新的一次运行。
+# 第八章：特权模块设计与历史实施
 
-# 第八章：特权操作分模块实施
+模块说明保留当时的核验结果和提交记录；当前运行从[报告导航](../reports/README.md)进入。
 
 参考《RISC-V System-on-Chip Design, Edition 1》第八章，书页 335–381
 （PDF 页 370–416），以及本地 CVW 源码。采用增量路线：各阶段交付独立模块、测试和中文说明。
@@ -11,7 +11,7 @@
 U/S/M 模式转换、WFI 和数据端序；原 `RiscvPipeline` 默认保持第七章行为。
 使用入口见 [流水线集成](14-pipeline.md)，实际测试结果见 [整机验收](15-acceptance.md)。
 2026-10-11 的命名常量重构、CSR 地址及状态位与指令集的逐字段对应关系，见
-[常量重构与字段对照报告](../constants-refactor/README.md)。
+[常量重构与字段对照报告](../reference/constants/README.md)。
 
 ## 路线与状态
 
@@ -93,8 +93,8 @@ make test-rtl SBT=./scripts/sbt-local.sh
 
 ## §8.3 TestPlan与本轮证据
 
-[16：TestPlan实施与详尽报告](16-testplan-report.md)对照印刷页360–366和表8.5–8.9，
+[16：TestPlan实施与详尽报告](../../target/reports/imported-docs/2026-10-14/docs/chapter8/16-testplan-report.md)对照印刷页360–366和表8.5–8.9，
 提供共享Scala/独立RTL的逐例预期、实际、周期、陷阱签名、配置适用性与检查器负向验证。
 新入口为`test-chapter8-plan`、`test-chapter8-rtl`、`report-chapter8`；
-归档位于[`target/reports/chapter8-testplan/`](../../target/reports/chapter8-testplan)。
+新运行位于[`target/chapter8-testplan/runs/`](../../target/chapter8-testplan/runs/)，从[详细测试报告入口](../reports/README.md#chapter8-testplan)查看。
 历史验收只作背景，§8.3结论均引用本轮重新执行的证据。

@@ -26,7 +26,7 @@ RV32 验收镜像在测试编译前自动生成，需要 RISC-V GNU binutils，�
 ```bash
 # 默认 all/smoke
 make test-verification SBT=./scripts/sbt-local.sh
-# 全部套件及配置，并发布 Markdown 报告
+# 全部套件及配置，报告与证据存入 target
 make report-verification SBT=./scripts/sbt-local.sh
 # 只查看完整调度
 python3 scripts/run/verify.py --suite all --profile full --plan
@@ -34,9 +34,10 @@ python3 scripts/run/verify.py --suite all --profile full --plan
 make clean SBT=./scripts/sbt-local.sh
 ```
 
-`docs/` 只保存 Markdown。完整结果、日志、校验清单和源码快照位于 `target/`，
-报告链接指向对应运行证据。`make clean` 清理整个 `target/`，报告正文保留；
-清理后需要重新运行报告命令生成新证据。历史报告的结论只对应当次源码和运行。
+`docs/` 保存长期设计说明、开发指导和手写历史记录。自动生成报告、运行证据与动态索引
+全部位于 `target/`，从[报告导航](docs/reports/README.md)直接访问。
+`make clean` 会清除这些运行产物；文档和独立单周期源码快照保留。
+历史测试结论只对应当时的源码和运行，新结果以新运行的逐例证据为准。
 
 ## 目录与开发入口
 
@@ -47,13 +48,14 @@ make clean SBT=./scripts/sbt-local.sh
 | `programs/` | 程序源码、链接脚本、配置和固定测试输入 |
 | `scripts/build/`、`scripts/run/` | 镜像/RTL 预处理与验证调度 |
 | `scripts/report/`、`scripts/lib/` | 报告生成与共享检查器、覆盖统计 |
-| `docs/` | 设计说明、开发指导与 Markdown 报告 |
-| `target/` | RTL、测试工作目录、镜像、缓存和运行证据，全部可清理 |
+| `docs/` | 设计说明、开发指导、手写历史记录与固定报告导航 |
+| `references/single-cycle/` | 带提交号和哈希的独立单周期源码、测试及复现输入快照 |
+| `target/` | 生成报告、动态索引、RTL、测试工作目录、镜像、缓存和运行证据，全部可清理 |
 
 生成器入口为 `riscvpipeline.generators.Generate*`，参数顺序保留；Make 目标和参数继续可用。
 默认 RTL 输出为 `target/generated/`，测试工作目录为 `target/test-runs/`，本地缓存为 `target/cache/`。
 外部指定的输出路径和 `CHISEL_CACHE_DIR` 仍按调用者设置使用。
 
-完整导航见[文档索引](docs/README.md)，接口见[时序与接口](docs/interfaces.md)，
-开发遵循[Chisel 编码规范](docs/chisel-coding-standard.md)。
-单周期基线保存在 `baseline/single-cycle` 分支。
+完整导航见[文档索引](docs/README.md)，接口见[时序与接口](docs/chapter7/pipeline/interfaces.md)，
+开发遵循[Chisel 编码规范](docs/development/chisel-coding-standard.md)。
+单周期资料见[单周期导航](docs/chapter7/single-cycle/README.md)，源码与独立复现见[参考快照](references/single-cycle/README.md)。

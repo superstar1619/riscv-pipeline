@@ -15,7 +15,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
 import re
 import shutil
 import xml.etree.ElementTree as ET
-from cvw_common import ROOT, Collector, dump, fresh_run, manifest, reproduction, save_results, fresh_reproduction, publish_reports
+from cvw_common import ROOT, Collector, dump, fresh_run, manifest, reproduction, save_results, fresh_reproduction
+
+from report_catalog import register_report
 
 
 def sources():
@@ -186,9 +188,9 @@ def main():
         save_results(directory, rows)
         render(directory, rows, collector.commands, before == after)
         manifest(directory)
-        archive = ROOT/'docs/reports/chapter7-8-cvw'/directory.name
-        publish_reports(directory, archive, 'make report-chapter7-8-cvw SBT=./scripts/sbt-local.sh')
-        print('REPORT '+str(archive/'report.md'), flush=True)
+        passed = not any(r['status'] not in ('pass', 'not_applicable') and not r.get('resolved_by') for r in rows)
+        register_report(directory, 'chapter7-8-cvw', 'make report-chapter7-8-cvw SBT=./scripts/sbt-local.sh', root=ROOT, status='pass' if passed else 'fail')
+        print('REPORT '+str(directory/'report.md'), flush=True)
     return int(any(r['status'] not in ('pass','not_applicable') for r in rows))
 
 
