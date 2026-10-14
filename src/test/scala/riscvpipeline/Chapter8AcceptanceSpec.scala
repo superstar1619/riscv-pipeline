@@ -30,6 +30,8 @@ private[riscvpipeline] final class Chapter8Harness(config: CpuConfig) extends Mo
   val InstrM = expose(dut.ieu.dp.io.InstrM)
   val PCM = expose(dut.ieu.dp.io.PCM)
   val ValidW = expose(dut.ieu.dp.io.ValidW)
+  val LoadStallD = expose(dut.ieu.io.LoadStallD)
+  val MemRWE = expose(dut.ieu.io.MemRWE)
   val RegWriteW = expose(dut.ieu.dp.io.RegWriteW)
   val RdW = expose(dut.ieu.dp.io.RdW)
   val Trap = expose(p.io.TrapM)
@@ -53,6 +55,27 @@ private[riscvpipeline] final class Chapter8Harness(config: CpuConfig) extends Mo
   val SCause = expose(p.csr.supervisor.io.SCAUSE_REGW)
   val STval = expose(p.csr.supervisor.io.STVAL_REGW)
   val Pending = expose(p.csr.io.MIP_REGW)
+  val BigEndian = expose(p.io.BigEndianM)
+  // W contains the older instruction accepted on the previous edge. A younger
+  // trap in M must not suppress its writeback; a held WFI cannot retire twice.
+  private val acceptedM = ValidM && !Trap && !WFIStall && !reset.asBool
+  private val expectedW = RegNext(acceptedM, false.B)
+  when(!reset.asBool) {
+    assert(ValidW === expectedW, "privileged W valid lost or repeated accepted M")
+    assert(!RegWriteW || ValidW, "privileged writeback without valid W")
+    assert(Registers(0) === 0.U, "privileged architectural x0 changed")
+    when(Trap || WFIStall) {
+      assert(!io.MemWrite && io.ByteMask === 0.U, "suppressed M produced a store")
+    }
+  }
+  // Chisel normally disables assertions during reset; this assertion must
+  // explicitly remain active to observe synchronous-reset write suppression.
+  withReset(false.B) {
+    when(reset.asBool) {
+      assert(!io.MemWrite && io.ByteMask === 0.U && !RegWriteW,
+        "reset permitted a store or register write")
+    }
+  }
 }
 
 /** Independent hand encoder and label relocations, requiring no assembler installation. */
@@ -725,6 +748,98 @@ class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
       } :+ doneWrite, Seq.empty)
       values.zipWithIndex.foreach { case (n, i) => d.Registers(i + 2).expect(n.U) }
       d.StatusHigh.expect(0.U); d.Mode.expect(Privilege.MACHINE.U)
+    }
+  }
+
+  // Stable IDs for the added reset cross coverage. These stimuli inspect actual
+  // pipeline boundaries; no elapsed-cycle guess or internal state write is used.
+  private def resetAtBoundary(d: Chapter8Harness, vector: Int): Unit = {
+    d.reset.poke(true.B)
+    d.io.MemWrite.expect(false.B)
+    d.io.ByteMask.expect(0.U)
+    d.RegWriteW.expect(false.B)
+    d.clock.step(2)
+    d.ValidM.expect(false.B)
+    d.ValidW.expect(false.B)
+    d.PCF.expect(vector.U)
+    d.MEPC.expect(0.U)
+    d.MCause.expect(0.U)
+    d.reset.poke(false.B)
+  }
+
+  it should "RESET-LOADSTALL restart from the reset vector during a real load-use stall" in {
+    val p = new Program(0x100)
+    p.emit(addi(5, 0, 7), store(5, 64), Nop, load(6, 0, 64),
+      addi(7, 6, 1), store(7, 128))
+    p.done()
+    test(new Chapter8Harness(p.config())) { d =>
+      for (_ <- 0 until 2) {
+        resetCpu(d)
+        val interrupted = new Run(d)
+        interrupted.until(d.LoadStallD.peek().litToBoolean)
+        assert(interrupted.writes.toSeq == Seq(Write(64, 7)))
+        resetAtBoundary(d, p.base)
+        val resumed = new Run(d)
+        resumed.finish()
+        resumed.expect(Seq(Write(64, 7), Write(128, 8), doneWrite), Seq.empty)
+        d.Registers(0).expect(0.U)
+      }
+    }
+  }
+
+  it should "RESET-WFI cancel a held WFI and restart without a stale pending interrupt" in {
+    val p = new Program(0x100)
+    p.write(CSR.MIE, 1 << Cause.MACHINE_TIMER_IRQ)
+    p.emit(addi(5, 0, 7), store(5, 64), Wfi, load(6, 0, 64), store(6, 128))
+    p.done()
+    test(new Chapter8Harness(p.config(timeout = 80))) { d =>
+      for (_ <- 0 until 2) {
+        resetCpu(d)
+        val interrupted = new Run(d)
+        interrupted.until(d.WFIStall.peek().litToBoolean)
+        interrupted.tick(); interrupted.tick()
+        d.WFIStall.expect(true.B)
+        assert(interrupted.writes.toSeq == Seq(Write(64, 7)))
+        resetAtBoundary(d, p.base)
+        d.WFIStall.expect(false.B)
+        d.Pending.expect(0.U)
+        val resumed = new Run(d)
+        resumed.until(d.WFIStall.peek().litToBoolean)
+        // Local pending wakes WFI with global MIE clear, so no trap is legal.
+        d.interrupts.MTimerInt.poke(true.B)
+        resumed.until(!d.WFIStall.peek().litToBoolean)
+        resumed.tick()
+        d.interrupts.MTimerInt.poke(false.B)
+        resumed.finish()
+        resumed.expect(Seq(Write(64, 7), Write(128, 7), doneWrite), Seq.empty)
+      }
+    }
+  }
+
+  it should "RESET-TRAP cancel an uncommitted trap and young store before clean reentry" in {
+    val p = new Program(0x100)
+    faultSetup(p)
+    p.label("fault")
+    p.emit(Ecall, store(2, 160))
+    p.label("resume")
+    p.emit(store(2, 128))
+    p.done()
+    p.org(0x400)
+    p.machineLogger(resume = Some("resume"))
+    test(new Chapter8Harness(p.config())) { d =>
+      for (_ <- 0 until 2) {
+        resetCpu(d)
+        val interrupted = new Run(d)
+        interrupted.until(d.Trap.peek().litToBoolean)
+        d.PCM.expect(p.address("fault").U)
+        assert(interrupted.traps.isEmpty && interrupted.writes.isEmpty)
+        resetAtBoundary(d, p.base)
+        val resumed = new Run(d)
+        resumed.finish()
+        resumed.expect(log(p.address("fault"), Cause.ECALL_MACHINE, 0) ++
+          Seq(Write(128, 0x33), doneWrite),
+          Seq(TrapEvent(p.address("fault"), Cause.ECALL_MACHINE, 0)))
+      }
     }
   }
 }

@@ -21,5 +21,10 @@ SECTIONS {
   ASSERT(. < 0x8021c000, "Data leaves insufficient stack space")
   __stack_top = 0x8021f000;
   .tohost 0x8021ff00 : { tohost = .; QUAD(0); fromhost = .; QUAD(0); }
+  .benchmark_output 0x8021ff10 (NOLOAD) : { __benchmark_output = .; . += 4; }
+  .signature_output 0x8021ff20 (NOLOAD) : { __signature_output = .; . += 12; }
+  ASSERT(__stack_top < ADDR(.tohost), "Stack overlaps completion protocol")
+  ASSERT(ADDR(.signature_output) + SIZEOF(.signature_output) <= 0x80220000,
+         "Signature protocol exceeds DTIM")
   /DISCARD/ : { *(.comment .riscv.attributes .eh_frame*) }
 }

@@ -1,5 +1,9 @@
 #include "VChapter8.h"
 #include "verilated.h"
+#if VM_COVERAGE
+#include "verilated_cov.h"
+#endif
+#include <cstdlib>
 #include <array>
 #include <cstdint>
 #include <fstream>
@@ -9,6 +13,17 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+// Keep failed-run coverage too; adapters merge only fully passing runs.
+struct CoverageSnapshot {
+    VerilatedContext* context;
+    ~CoverageSnapshot() {
+#if VM_COVERAGE
+        if (const char* output = std::getenv("COVERAGE_OUTPUT"))
+            context->coveragep()->write(output);
+#endif
+    }
+};
 
 // Only production top-level ports are used. Observe stores before their commit edge.
 using Event = std::array<uint32_t, 3>;
@@ -51,6 +66,7 @@ int main(int argc, char** argv) {
         context->randSeed(seed);
         context->randReset(2);
         auto dut = std::make_unique<VChapter8>(context.get());
+        CoverageSnapshot coverage{context.get()};
         unsigned pins = 0;
         uint64_t time = initialTime;
         auto drive = [&]() {

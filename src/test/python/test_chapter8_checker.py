@@ -1,5 +1,6 @@
 """Exercise the actual independent RTL checker with deliberately bad expectations."""
 import json
+import os
 import subprocess
 import unittest
 from pathlib import Path
@@ -7,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 BASE_ART = ROOT / 'target/chapter8-testplan'
 POINTER = BASE_ART / 'current-run.txt'
-ART = ROOT / POINTER.read_text().strip() if POINTER.exists() else BASE_ART
+ART = (Path(os.environ['CHAPTER8_RUN_DIR']) if os.environ.get('CHAPTER8_RUN_DIR') else (ROOT / POINTER.read_text().strip() if POINTER.exists() else BASE_ART)).resolve()
 
 class Chapter8CheckerNegativeTests(unittest.TestCase):
     def test_reject_signature_missing_extra_and_timeout(self):
@@ -36,7 +37,7 @@ class Chapter8CheckerNegativeTests(unittest.TestCase):
                 result = directory / f'{name}.json'
                 expected.write_text('\n'.join(events) + '\n')
                 command = [str(binary), str(expected), '1', str(limit), '0', '0', '0', '0', '0', str(result)]
-                run = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+                run = subprocess.run(command, cwd=ART / 'rtl/default', capture_output=True, text=True)
                 (directory / f'{name}.log').write_text(run.stdout + run.stderr)
                 self.assertEqual(run.returncode, 1, run.stdout + run.stderr)
                 evidence = json.loads(result.read_text())

@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "independentCases": 820,
+  "configurationPairs": 1042,
+  "runs": 2939,
+  "statuses": {
+    "pass": 2950,
+    "not_applicable": 11
+  }
+}

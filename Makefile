@@ -63,6 +63,8 @@ CSR_BIG_ENDIAN_SUPPORTED ?= true
 CSR_SSTC_SUPPORTED ?= false
 CSR_HPM_COUNTERS ?= 0
 VALIDATION_SUITE ?= all
+VALIDATION_BUILD_DIR ?= target/validation
+VALIDATION_RTL_DIR ?= generated/validation
 
 .PHONY: generate generate-cmp generate-shifter generate-swbytemask \
   generate-subwordwrite generate-subwordread generate-dtim generate-alu \
@@ -84,13 +86,13 @@ test-validation-builder:
 	python3 -m unittest discover -s src/test/python -v
 
 build-validation: test-validation-builder
-	python3 scripts/build-validation.py $(VALIDATION_SUITE)
+	VALIDATION_BUILD_DIR="$(VALIDATION_BUILD_DIR)" python3 scripts/build-validation.py $(VALIDATION_SUITE)
 
 generate-validation: build-validation
-	$(SBT) "runMain riscvpipeline.GenerateRiscvPipeline 524288 32768 generated/validation target/validation/program.memfile 0x80000000"
+	$(SBT) "runMain riscvpipeline.GenerateRiscvPipeline 524288 32768 $(VALIDATION_RTL_DIR) $(VALIDATION_BUILD_DIR)/program.memfile 0x80000000"
 
 test-validation: generate-validation
-	VERILATOR="$(VERILATOR)" bash scripts/test-validation.sh $(VALIDATION_SUITE)
+	VERILATOR="$(VERILATOR)" VALIDATION_BUILD_DIR="$(VALIDATION_BUILD_DIR)" VALIDATION_RTL_FILE="$(VALIDATION_RTL_DIR)/RiscvPipeline.v" bash scripts/test-validation.sh $(VALIDATION_SUITE)
 
 test-arch:
 	$(MAKE) test-validation VALIDATION_SUITE=arch
@@ -290,3 +292,25 @@ report-chapter8:
 	$(MAKE) test-rtl SBT="$(SBT)" > "$(CHAPTER8_OUTPUT)/chapter7-rtl.log" 2>&1 || { tail -80 "$(CHAPTER8_OUTPUT)/chapter7-rtl.log"; exit 1; }
 	python3 -m unittest discover -s src/test/python -v > "$(CHAPTER8_OUTPUT)/python.log" 2>&1 || { cat "$(CHAPTER8_OUTPUT)/python.log"; exit 1; }
 	python3 scripts/report-chapter8.py
+
+# Fresh joint evidence; reports are emitted even when a CPU case fails.
+.PHONY: test-chapter8-cvw test-chapter7-8-cvw report-chapter7-8-cvw
+CVW_ROOT ?= /home/unlastingstar/cvw
+test-chapter8-cvw:
+	CVW_ROOT="$(CVW_ROOT)" SBT="$(SBT)" VERILATOR="$(VERILATOR)" python3 scripts/run-chapter8-cvw.py
+
+test-chapter7-8-cvw report-chapter7-8-cvw:
+	CVW_ROOT="$(CVW_ROOT)" SBT="$(SBT)" VERILATOR="$(VERILATOR)" python3 scripts/test-chapter7-8-cvw.py
+
+# Shared chapter 5.11.3 program-level verification workflow.
+VERIFY_SUITE ?= all
+VERIFY_PROFILE ?= smoke
+.PHONY: test-verification test-diff report-verification
+test-verification:
+	CVW_ROOT="$(CVW_ROOT)" SBT="$(SBT)" VERILATOR="$(VERILATOR)" python3 scripts/verify.py --suite "$(VERIFY_SUITE)" --profile "$(VERIFY_PROFILE)"
+
+test-diff:
+	CVW_ROOT="$(CVW_ROOT)" SBT="$(SBT)" VERILATOR="$(VERILATOR)" python3 scripts/verify.py --suite diff --profile "$(VERIFY_PROFILE)"
+
+report-verification:
+	CVW_ROOT="$(CVW_ROOT)" SBT="$(SBT)" VERILATOR="$(VERILATOR)" python3 scripts/verify.py --archive

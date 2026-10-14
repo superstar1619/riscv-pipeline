@@ -1,0 +1,12 @@
+{
+  "configuration": "sstc-hpm",
+  "passingRunsOnly": true,
+  "includedSimulatorRuns": 255,
+  "resetRunsPerSimulator": 2,
+  "linePoints": 2063,
+  "hitLinePoints": 2024,
+  "togglePoints": 14672,
+  "hitTogglePoints": 14472,
+  "exclusions": [],
+  "gaps": "All unhit line/toggle points retained in coverage.dat/info; no exclusions applied."
+}

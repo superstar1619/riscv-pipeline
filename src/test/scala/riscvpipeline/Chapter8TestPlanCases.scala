@@ -17,8 +17,12 @@ object Chapter8TestPlanCases {
   private val runPointer = outputBase.resolve("current-run.txt")
 
   // 完整报告使用独立运行目录；直接testOnly时也可以使用默认目录。
-  val Root: Path =
-    if (Files.exists(runPointer)) Paths.get(Files.readString(runPointer).trim) else outputBase
+  private val selectedRoot: Path =
+    sys.env.get("CHAPTER8_RUN_DIR").map(Paths.get(_)).getOrElse(
+      if (Files.exists(runPointer)) Paths.get(Files.readString(runPointer).trim) else outputBase)
+  // Treadle requires both target directories and memory image names to be relative.
+  val Root: Path = Paths.get("").toAbsolutePath.normalize.relativize(
+    selectedRoot.toAbsolutePath.normalize)
 
   // 程序通过存储标记与测试驱动握手，这两个地址不属于陷阱签名区。
   val Raise = 600
@@ -149,8 +153,10 @@ object Chapter8TestPlanCases {
       addInterruptReentryCases()
       addInterruptMaskCases()
       addInterruptPriorityCases()
+      addInterruptLoadStallCase()
       addCounterEventCases()
       addEndianCases()
+      addEndianWidthCase()
       addSstcCases()
       fixtures.toSeq
     }
@@ -628,6 +634,29 @@ object Chapter8TestPlanCases {
       }
     }
 
+    /** Pending IRQ overlaps repeated load-use stalls while MIE is clear, then
+      * the enabling CSR defines a precise acceptance boundary and EPC.
+      */
+    private def addInterruptLoadStallCase(): Unit = {
+      val program = newProgram()
+      initializeTrapLog(program)
+      program.write(CSR.MIE,128)
+      program.write(CSR.MSTATUS,0)
+      program.emit(addi(1,0,41),store(1,64),store(0,Raise))
+      for(_ <- 0 until 24) program.emit(load(5,0,64),addi(6,5,1))
+      program.write(CSR.MSTATUS,0x1888)
+      program.label("boundary")
+      program.emit(addi(5,0,42),store(5,128))
+      program.done()
+      program.org(variant.resetVector+TrapHandlerOffset)
+      emitTrapHandler(program,skip=0,pins=4)
+      addCase("IRLOAD", "pending IRQ与load-use停顿、全局使能切换边界", "interrupt", "8.9",
+        "WALLY-status-mie-01 / directed-load-stall", program,
+        Seq(Write(64,41),Write(Raise,0)) ++
+          expectedTrapWrites(program.address("boundary"),(BigInt(1)<<31)|7,0,0x1880,128) ++
+          Seq(Write(Ack,0),Write(128,42)),Stimulus(pins=4,delayed=true))
+    }
+
     /** 异常、停顿、WFI与退休计数；64位进位和五类HPM事件。 */
     private def addCounterEventCases(): Unit = {
       {
@@ -734,6 +763,51 @@ object Chapter8TestPlanCases {
             Write(128, if (variant.bigEndianSupported) BigInt("44332211", 16) else BigInt("11223344", 16)),
             Write(132, 0x44), Write(136, if (variant.bigEndianSupported) 0x4433 else 0x3344)))
       }
+    }
+
+    /** Width/offset × endian transitions, with independent byte-array expectations.
+      * The following full-word and neighbour loads prove untouched bytes survive.
+      */
+    private def addEndianWidthCase(): Unit = {
+      val program = newProgram()
+      val expected = ArrayBuffer.empty[Write]
+      var signature = 128
+      def emitResult(value: BigInt): Unit = {
+        program.emit(store(5, signature))
+        expected += Write(signature, value & Mask)
+        signature += 4
+      }
+      val phases = if(variant.bigEndianSupported) Seq(false,true,false) else Seq(false)
+      for(big <- phases) {
+        program.write(CSR.MSTATUSH, if(big) 0x30 else 0)
+        for(width <- Seq(1,2,4); offset <- 0 until 4 by width) {
+          val initial = BigInt("11223344",16)
+          val incoming = BigInt("89abcdef",16)
+          val neighbor = BigInt("55667788",16)
+          val f3 = if(width==1) 0 else if(width==2) 1 else 2
+          program.li(1,initial); program.emit(store(1,64))
+          expected += Write(64,initial)
+          program.li(1,neighbor); program.emit(store(1,68))
+          expected += Write(68,neighbor)
+          program.li(1,incoming); program.emit(store(1,64+offset,op=f3))
+          expected += Write(64+offset,incoming,((1<<width)-1)<<offset)
+          val bytes = Array.tabulate(4)(i => ((initial >> (8*(if(big) 3-i else i))) & 255).toInt)
+          for(i <- 0 until width)
+            bytes(offset+i) = ((incoming >> (8*(if(big) width-1-i else i))) & 255).toInt
+          val bits=8*width
+          val low=incoming & ((BigInt(1)<<bits)-1)
+          val signed=if(low.testBit(bits-1)) low-(BigInt(1)<<bits) else low
+          program.emit(load(5,0,64+offset,f3)); emitResult(signed)
+          if(width<4) { program.emit(load(5,0,64+offset,f3+4)); emitResult(low) }
+          val whole=(0 until 4).map(i => BigInt(bytes(i)) << (8*(if(big) 3-i else i))).reduce(_|_)
+          program.emit(load(5,0,64)); emitResult(whole)
+          program.emit(load(5,0,68)); emitResult(neighbor)
+        }
+      }
+      program.write(CSR.MSTATUSH,0)
+      program.done()
+      addCase("ENWIDTH", "byte/half/word合法偏移、符号扩展、未覆盖字节与端序切换", "endian",
+        "8.7", "WALLY-endianness-01 / directed-width-offset", program, expected.toSeq)
     }
 
     /** 可选Sstc：64位比较、STCE控制、定时中断与访问权限。 */

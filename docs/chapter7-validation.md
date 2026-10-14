@@ -1,5 +1,9 @@
 # 第七章完整验收、§7.4 与 CoreMark
 
+统一验证入口、真实签名读回和提交差分见[验证更新](chapter7-8-verification-update.md)；
+后续开发见[验证指导](verification-guide.md)和[路线图](verification-roadmap.md)。
+下文既有结果属于原报告运行，不能替代新入口的本轮验收证据。
+
 性能测量口径、派生指标、功能验证分析和永久证据快照见
 [完整性能与正确性报告](chapter7-performance-correctness-report.md)。
 

@@ -1,5 +1,10 @@
 # RV32 五级流水线 CPU（Chisel）
 
+本轮统一入口与能力边界见[第七、八章验证更新](docs/chapter7-8-verification-update.md)，
+新增用例流程见[验证指导](docs/verification-guide.md)，后续模块见[测试路线图](docs/verification-roadmap.md)。
+运行 `make test-verification SBT=./scripts/sbt-local.sh` 执行默认冒烟，
+`make report-verification SBT=./scripts/sbt-local.sh` 执行并归档完整回归。
+
 依据教材第七章 §7.2–7.3，将原单周期核心改为 F/D/E/M/W 五级流水线。
 Scala 包名为 `riscvpipeline`，顶层为 `RiscvPipeline`，接口为 `RiscvPipelineIO`，
 生成入口为 `GenerateRiscvPipeline`。单周期基线保存在本工程独立 Git 仓库的 `baseline/single-cycle`，

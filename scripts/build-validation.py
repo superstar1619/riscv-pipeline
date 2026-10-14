@@ -8,9 +8,10 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
-BUILD = ROOT / 'target/validation'
+BUILD = Path(os.environ.get('VALIDATION_BUILD_DIR', str(ROOT / 'target/validation'))).resolve()
 CVW = Path(os.environ.get('CVW_ROOT', ROOT.parents[2] / 'cvw'))
 ARCH = CVW / 'addins/riscv-arch-test'
 CORE = CVW / 'addins/coremark'
@@ -19,6 +20,9 @@ DMEM_DEPTH = 32768
 BASE = 0x80000000
 ARCH_REVISION = 'c8c813af55ea79acb97fe832c5737cc4539af3ee'
 CORE_REVISION = 'f3e8f2e0941e42961aadcc52750b1b5577c157c9'
+BUILD_ERRORS = []
+SOURCE_HASHES = {}
+COMMAND_INDEX = 0
 CORE_FILES = ('core_list_join.c', 'core_main.c', 'core_matrix.c',
               'core_state.c', 'core_util.c', 'coremark.h')
 FLAGS = ['-march=rv32i', '-mabi=ilp32', '-O2', '-ffreestanding', '-fno-builtin',
@@ -37,8 +41,34 @@ def tool(name):
 
 
 def run(args, timeout=120):
-    return subprocess.check_output(list(map(str, args)), text=True, stderr=subprocess.STDOUT,
-                                   cwd=ROOT, timeout=timeout)
+    global COMMAND_INDEX
+    BUILD.mkdir(parents=True, exist_ok=True)
+    COMMAND_INDEX += 1
+    argv = list(map(str, args))
+    started = time.time()
+    try:
+        process = subprocess.run(argv, text=True, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT, cwd=ROOT, timeout=timeout)
+        output, code = process.stdout, process.returncode
+    except subprocess.TimeoutExpired as exc:
+        output, code = str(exc.output or ''), 124
+    log = BUILD / f'build-commands/{COMMAND_INDEX:04d}.log'
+    log.parent.mkdir(parents=True, exist_ok=True)
+    log.write_text(output)
+    with (BUILD / 'build-commands.jsonl').open('a') as stream:
+        stream.write(json.dumps(dict(argv=argv, cwd=str(ROOT), exit=code,
+                                    seconds=time.time()-started, log=str(log)))+'\n')
+    if code:
+        raise subprocess.CalledProcessError(code, argv, output=output)
+    return output
+
+
+def build_failure(name, exc):
+    work = BUILD/name
+    work.mkdir(parents=True, exist_ok=True)
+    text = str(exc) + '\n' + str(getattr(exc, 'output', ''))
+    (work/'build-error.log').write_text(text)
+    BUILD_ERRORS.append(dict(name=name, reason=text, log=str(work/'build-error.log')))
 
 
 def symbols(elf):
@@ -56,7 +86,13 @@ def verify_source(repo, source, revision):
     committed = subprocess.check_output(['git', '-C', str(repo), 'show',
                                          f'{revision}:{source.relative_to(repo)}'])
     assert source.read_bytes() == committed, f'Upstream source changed: {source}'
-    return hashlib.sha256(committed).hexdigest()
+    sha = hashlib.sha256(committed).hexdigest()
+    relative = source.relative_to(repo)
+    copy = BUILD/'upstream'/repo.name/relative
+    copy.parent.mkdir(parents=True, exist_ok=True)
+    copy.write_bytes(committed)
+    SOURCE_HASHES[repo.name+'/'+str(relative)] = sha
+    return sha
 
 
 def pinned_files(repo, directory, suffix, revision):
@@ -66,6 +102,15 @@ def pinned_files(repo, directory, suffix, revision):
     if not files:
         raise ValueError(f'No pinned sources in {directory}')
     return files
+
+
+def artifact_path(path):
+    """Keep existing relative manifests while allowing external run directories."""
+    path = Path(path).resolve()
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
 
 
 def build_image(name, objects, entry, extra=(), cases=0):
@@ -146,8 +191,8 @@ def build_image(name, objects, entry, extra=(), cases=0):
                  [0x18f2, 0xe3c1, 0x0747, 0x8d84])
         assert expected[:4] == known and expected[5:] == [0, 10], \
             f'CoreMark official CRC/iteration mismatch: {expected}'
-    result = dict(name=name, image=str(image.relative_to(ROOT)),
-                  reference=str(reference.relative_to(ROOT)), sigbase=f'{after["begin_signature"]:08x}',
+    result = dict(name=name, elf=artifact_path(elf), image=artifact_path(image),
+                  reference=artifact_path(reference), sigbase=f'{after["begin_signature"]:08x}',
                   signatureWords=count, cycleLimit=30000000 if name.startswith('coremark') else 1000000,
                   instructionWords=len(instructions), testCases=cases,
                   crc=[f'{v:08x}' for v in expected] if name.startswith('coremark') else None)
@@ -185,11 +230,14 @@ def arch_tests(selected):
         work = BUILD / source.stem
         work.mkdir(parents=True, exist_ok=True)
         obj = work / 'test.o'
-        compile_file(source, obj, [ROOT / 'programs/validation', env],
-                     ['-DXLEN=32', '-DTEST_CASE_1', '-DFLEN=0'])
-        cases = len(re.findall(r'^inst_\d+:', source.read_text(), re.M))
-        results.append(build_image(source.stem, [obj], 'rvtest_entry_point', cases=cases))
-    assert results, 'No selected architecture tests'
+        try:
+            compile_file(source, obj, [ROOT / 'programs/validation', env],
+                         ['-DXLEN=32', '-DTEST_CASE_1', '-DFLEN=0'])
+            cases = len(re.findall(r'^inst_\d+:', source.read_text(), re.M))
+            results.append(build_image(source.stem, [obj], 'rvtest_entry_point', cases=cases))
+        except Exception as exc:
+            build_failure(source.stem, exc)
+    assert results or BUILD_ERRORS, 'No selected architecture tests'
     return results
 
 
@@ -203,20 +251,23 @@ def coremark_tests():
         name = f'coremark-{mode}'
         work = BUILD / name
         work.mkdir(parents=True, exist_ok=True)
-        objects = []
-        sources = [CORE / f'core_{unit}.c' for unit in
-                   ('main', 'list_join', 'matrix', 'state', 'util')]
-        sources += [ROOT / 'programs/coremark' / f for f in ('core_portme.c', 'benchmark.c')]
-        for source in sources:
-            obj = work / (source.stem + '.o')
-            extra = [f'-DVALIDATION_RUN={validation}']
-            if source.stem == 'core_main':
-                extra.append('-Dmain=coremark_timed_main')
-            compile_file(source, obj, [ROOT / 'programs/coremark', CORE], extra)
-            objects.append(obj)
-        results.append(build_image(name, objects, 'benchmark_main', extra=[
-            '-Wl,--defsym,begin_signature=benchmark_signature',
-            '-Wl,--defsym,end_signature=benchmark_signature+28']))
+        try:
+            objects = []
+            sources = [CORE / f'core_{unit}.c' for unit in
+                       ('main', 'list_join', 'matrix', 'state', 'util')]
+            sources += [ROOT / 'programs/coremark' / f for f in ('core_portme.c', 'benchmark.c')]
+            for source in sources:
+                obj = work / (source.stem + '.o')
+                extra = [f'-DVALIDATION_RUN={validation}']
+                if source.stem == 'core_main':
+                    extra.append('-Dmain=coremark_timed_main')
+                compile_file(source, obj, [ROOT / 'programs/coremark', CORE], extra)
+                objects.append(obj)
+            results.append(build_image(name, objects, 'benchmark_main', extra=[
+                '-Wl,--defsym,begin_signature=benchmark_signature',
+                '-Wl,--defsym,end_signature=benchmark_signature+28']))
+        except Exception as exc:
+            build_failure(name, exc)
     return results
 
 
@@ -237,7 +288,8 @@ def main():
         results += arch_tests(args.tests)
     if args.suite in ('coremark', 'all'):
         results += coremark_tests()
-    manifest = dict(imemDepth=IMEM_DEPTH, dmemDepth=DMEM_DEPTH, resetVector=f'0x{BASE:x}',
+    manifest = dict(platformVersion=2, startupSha256=hashlib.sha256((ROOT/'programs/validation/start.S').read_bytes()).hexdigest(),
+                    imemDepth=IMEM_DEPTH, dmemDepth=DMEM_DEPTH, resetVector=f'0x{BASE:x}',
                     coremarkRevision=CORE_REVISION if args.suite in ('coremark', 'all') else None,
                     archRevision=ARCH_REVISION if args.suite in ('arch', 'all') else None,
                     compiler=run([tool('gcc'), '--version']).splitlines()[0],
@@ -245,9 +297,14 @@ def main():
                     coremarkSha256={name: hashlib.sha256((CORE / name).read_bytes()).hexdigest()
                                     for name in CORE_FILES}
                                     if args.suite in ('coremark', 'all') else {},
-                    programs=results)
+                    programs=results, buildErrors=BUILD_ERRORS, upstreamSha256=SOURCE_HASHES)
     (BUILD / f'{args.suite}.json').write_text(json.dumps(manifest, indent=2) + '\n')
-    shutil.copyfile(ROOT / results[0]['image'], BUILD / 'program.memfile')
+    if results:
+        shutil.copyfile(ROOT / results[0]['image'], BUILD / 'program.memfile')
+    else:
+        (BUILD/'program.memfile').write_text('00000013\n'*IMEM_DEPTH)
+    if BUILD_ERRORS:
+        print(f'{len(BUILD_ERRORS)} independent builds failed; remaining programs collected; test-validation will fail', flush=True)
 
 
 if __name__ == '__main__':

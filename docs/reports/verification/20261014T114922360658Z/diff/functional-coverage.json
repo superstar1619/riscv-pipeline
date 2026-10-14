@@ -1,0 +1,943 @@
+{
+  "bins": {
+    "instruction.alu": {
+      "count": 745128,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 4,
+        "pc": 2147483648,
+        "order": 0
+      }
+    },
+    "instruction.auipc": {
+      "count": 5940,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 35,
+        "pc": 2147483772,
+        "order": 31
+      }
+    },
+    "dependency.alu.A.gap0": {
+      "count": 190188,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 36,
+        "pc": 2147483776,
+        "order": 32
+      }
+    },
+    "instruction.jalr": {
+      "count": 1560,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 38,
+        "pc": 2147483784,
+        "order": 34
+      }
+    },
+    "dependency.jalr.A.gap0": {
+      "count": 720,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 38,
+        "pc": 2147483784,
+        "order": 34
+      }
+    },
+    "instruction.lui": {
+      "count": 163278,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 41,
+        "pc": 2147497056,
+        "order": 35
+      }
+    },
+    "instruction.store": {
+      "count": 542076,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 44,
+        "pc": 2147497068,
+        "order": 38
+      }
+    },
+    "dependency.store.A.gap2": {
+      "count": 594,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 44,
+        "pc": 2147497068,
+        "order": 38
+      }
+    },
+    "dependency.store.B.gap0": {
+      "count": 365244,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 44,
+        "pc": 2147497068,
+        "order": 38
+      }
+    },
+    "memory.store.4.offset0": {
+      "count": 541194,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 44,
+        "pc": 2147497068,
+        "order": 38
+      }
+    },
+    "dependency.store.A.gap1": {
+      "count": 246,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 1073,
+        "pc": 2147501184,
+        "order": 1067
+      }
+    },
+    "instruction.branch": {
+      "count": 98856,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 3877,
+        "pc": 2147483804,
+        "order": 3869
+      }
+    },
+    "branch.taken": {
+      "count": 11874,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 3877,
+        "pc": 2147483804,
+        "order": 3869
+      }
+    },
+    "dependency.branch.A.gap2": {
+      "count": 75888,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 3877,
+        "pc": 2147483804,
+        "order": 3869
+      }
+    },
+    "dependency.branch.B.gap0": {
+      "count": 240,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 3877,
+        "pc": 2147483804,
+        "order": 3869
+      }
+    },
+    "dependency.alu.A.gap1": {
+      "count": 23502,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 3887,
+        "pc": 2147483948,
+        "order": 3875
+      }
+    },
+    "dependency.alu.B.gap0": {
+      "count": 34776,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 3888,
+        "pc": 2147483952,
+        "order": 3876
+      }
+    },
+    "dependency.alu.A.gap2": {
+      "count": 39588,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 4003,
+        "pc": 2147484412,
+        "order": 3991
+      }
+    },
+    "instruction.jal": {
+      "count": 121710,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 7147,
+        "pc": 2147496988,
+        "order": 7135
+      }
+    },
+    "dependency.alu.B.gap2": {
+      "count": 240,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 7159,
+        "pc": 2147483852,
+        "order": 7143
+      }
+    },
+    "dependency.store.A.gap0": {
+      "count": 1740,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 7163,
+        "pc": 2147483868,
+        "order": 7147
+      }
+    },
+    "dependency.store.B.gap2": {
+      "count": 1428,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 7163,
+        "pc": 2147483868,
+        "order": 7147
+      }
+    },
+    "branch.not_taken": {
+      "count": 86982,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 7165,
+        "pc": 2147483876,
+        "order": 7149
+      }
+    },
+    "instruction.load": {
+      "count": 76638,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 7166,
+        "pc": 2147483880,
+        "order": 7150
+      }
+    },
+    "memory.load.4.offset0": {
+      "count": 75828,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 7166,
+        "pc": 2147483880,
+        "order": 7150
+      }
+    },
+    "dependency.store.B.gap1": {
+      "count": 98352,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 7168,
+        "pc": 2147483888,
+        "order": 7152
+      }
+    },
+    "forward.x0.none": {
+      "count": 338064,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2
+      }
+    },
+    "forward.alu.A.M": {
+      "count": 189786,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 34
+      }
+    },
+    "redirect.execute": {
+      "count": 135864,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 36
+      }
+    },
+    "forward.jalr.A.M": {
+      "count": 720,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 36
+      }
+    },
+    "forward.store.B.M": {
+      "count": 365184,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 42
+      }
+    },
+    "forward.priority.M": {
+      "count": 109956,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 42
+      }
+    },
+    "forward.store.A.W": {
+      "count": 246,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 1071
+      }
+    },
+    "forward.branch.B.M": {
+      "count": 240,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 3875
+      }
+    },
+    "forward.alu.A.W": {
+      "count": 23520,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 3885
+      }
+    },
+    "forward.alu.B.M": {
+      "count": 34776,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 3886
+      }
+    },
+    "forward.store.A.M": {
+      "count": 1740,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 7161
+      }
+    },
+    "forward.store.B.W": {
+      "count": 75654,
+      "first": {
+        "case": "add-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 7166
+      }
+    },
+    "dependency.alu.B.gap1": {
+      "count": 384,
+      "first": {
+        "case": "auipc-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2409,
+        "pc": 2147484332,
+        "order": 2397
+      }
+    },
+    "forward.alu.B.W": {
+      "count": 384,
+      "first": {
+        "case": "auipc-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2407
+      }
+    },
+    "dependency.branch.B.gap2": {
+      "count": 22698,
+      "first": {
+        "case": "beq-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 3973,
+        "pc": 2147486392,
+        "order": 3959
+      }
+    },
+    "instruction.fence": {
+      "count": 6,
+      "first": {
+        "case": "fence-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2217,
+        "pc": 2147484328,
+        "order": 2205
+      }
+    },
+    "memory.load.1.offset0": {
+      "count": 246,
+      "first": {
+        "case": "lb-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2321,
+        "pc": 2147484352,
+        "order": 2309
+      }
+    },
+    "memory.load.1.offset2": {
+      "count": 54,
+      "first": {
+        "case": "lb-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2385,
+        "pc": 2147484608,
+        "order": 2373
+      }
+    },
+    "memory.load.1.offset1": {
+      "count": 60,
+      "first": {
+        "case": "lb-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2449,
+        "pc": 2147484864,
+        "order": 2437
+      }
+    },
+    "memory.load.1.offset3": {
+      "count": 54,
+      "first": {
+        "case": "lb-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2529,
+        "pc": 2147485184,
+        "order": 2517
+      }
+    },
+    "memory.load.2.offset0": {
+      "count": 342,
+      "first": {
+        "case": "lh-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2318,
+        "pc": 2147484352,
+        "order": 2306
+      }
+    },
+    "memory.load.2.offset2": {
+      "count": 54,
+      "first": {
+        "case": "lh-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2382,
+        "pc": 2147484608,
+        "order": 2370
+      }
+    },
+    "memory.store.1.offset0": {
+      "count": 348,
+      "first": {
+        "case": "sb-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2428,
+        "pc": 2147484336,
+        "order": 2416
+      }
+    },
+    "memory.store.1.offset2": {
+      "count": 30,
+      "first": {
+        "case": "sb-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2465,
+        "pc": 2147484484,
+        "order": 2453
+      }
+    },
+    "memory.store.1.offset1": {
+      "count": 36,
+      "first": {
+        "case": "sb-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2495,
+        "pc": 2147484604,
+        "order": 2483
+      }
+    },
+    "memory.store.1.offset3": {
+      "count": 30,
+      "first": {
+        "case": "sb-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2525,
+        "pc": 2147484724,
+        "order": 2513
+      }
+    },
+    "memory.store.2.offset0": {
+      "count": 408,
+      "first": {
+        "case": "sh-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2431,
+        "pc": 2147484336,
+        "order": 2419
+      }
+    },
+    "memory.store.2.offset2": {
+      "count": 30,
+      "first": {
+        "case": "sh-align-01",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 2475,
+        "pc": 2147484512,
+        "order": 2463
+      }
+    },
+    "dependency.branch.A.gap0": {
+      "count": 6,
+      "first": {
+        "case": "dependencies",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 131,
+        "pc": 2147483956,
+        "order": 119
+      }
+    },
+    "dependency.branch.A.gap1": {
+      "count": 6,
+      "first": {
+        "case": "dependencies",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 160,
+        "pc": 2147484056,
+        "order": 142
+      }
+    },
+    "dependency.jalr.A.gap1": {
+      "count": 6,
+      "first": {
+        "case": "dependencies",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 168,
+        "pc": 2147484084,
+        "order": 148
+      }
+    },
+    "dependency.jalr.A.gap2": {
+      "count": 6,
+      "first": {
+        "case": "dependencies",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 203,
+        "pc": 2147484208,
+        "order": 177
+      }
+    },
+    "forward.branch.A.M": {
+      "count": 6,
+      "first": {
+        "case": "dependencies",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 129
+      }
+    },
+    "stall.store_load": {
+      "count": 60,
+      "first": {
+        "case": "dependencies",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 144
+      }
+    },
+    "stall.load_use": {
+      "count": 60,
+      "first": {
+        "case": "dependencies",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 146
+      }
+    },
+    "forward.branch.A.W": {
+      "count": 6,
+      "first": {
+        "case": "dependencies",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 158
+      }
+    },
+    "forward.jalr.A.W": {
+      "count": 6,
+      "first": {
+        "case": "dependencies",
+        "seed": 1,
+        "repeat": 0,
+        "cycle": 166
+      }
+    }
+  },
+  "required": [
+    "stall.load_use",
+    "stall.store_load",
+    "forward.priority.M",
+    "forward.x0.none",
+    "branch.taken",
+    "branch.not_taken",
+    "redirect.execute",
+    "dependency.alu.A.gap0",
+    "dependency.alu.A.gap1",
+    "dependency.alu.A.gap2",
+    "forward.alu.A.M",
+    "forward.alu.A.W",
+    "dependency.branch.A.gap0",
+    "dependency.branch.A.gap1",
+    "dependency.branch.A.gap2",
+    "forward.branch.A.M",
+    "forward.branch.A.W",
+    "dependency.jalr.A.gap0",
+    "dependency.jalr.A.gap1",
+    "dependency.jalr.A.gap2",
+    "forward.jalr.A.M",
+    "forward.jalr.A.W",
+    "dependency.store.A.gap0",
+    "dependency.store.A.gap1",
+    "dependency.store.A.gap2",
+    "forward.store.A.M",
+    "forward.store.A.W",
+    "dependency.store.B.gap0",
+    "dependency.store.B.gap1",
+    "dependency.store.B.gap2",
+    "forward.store.B.M",
+    "forward.store.B.W",
+    "memory.load.1.offset0",
+    "memory.load.1.offset1",
+    "memory.load.1.offset2",
+    "memory.load.1.offset3",
+    "memory.load.2.offset0",
+    "memory.load.2.offset2",
+    "memory.load.4.offset0",
+    "memory.store.1.offset0",
+    "memory.store.1.offset1",
+    "memory.store.1.offset2",
+    "memory.store.1.offset3",
+    "memory.store.2.offset0",
+    "memory.store.2.offset2",
+    "memory.store.4.offset0"
+  ],
+  "missing": [],
+  "sampling": "commits for architectural bins; actual E advance for forwarding; actual hazard for stalls",
+  "mapping": {
+    "stall.load_use": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "stall.store_load": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.priority.M": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.x0.none": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "branch.taken": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "branch.not_taken": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "redirect.execute": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.alu.A.gap0": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.alu.A.gap1": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.alu.A.gap2": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.alu.A.M": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.alu.A.W": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.branch.A.gap0": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.branch.A.gap1": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.branch.A.gap2": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.branch.A.M": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.branch.A.W": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.jalr.A.gap0": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.jalr.A.gap1": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.jalr.A.gap2": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.jalr.A.M": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.jalr.A.W": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.store.A.gap0": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.store.A.gap1": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.store.A.gap2": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.store.A.M": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.store.A.W": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.store.B.gap0": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.store.B.gap1": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "dependency.store.B.gap2": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.store.B.M": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "forward.store.B.W": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.load.1.offset0": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.load.1.offset1": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.load.1.offset2": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.load.1.offset3": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.load.2.offset0": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.load.2.offset2": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.load.4.offset0": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.store.1.offset0": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.store.1.offset1": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.store.1.offset2": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.store.1.offset3": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.store.2.offset0": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.store.2.offset2": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    },
+    "memory.store.4.offset0": {
+      "book": "§7.2.2 pp.321–324; §7.4 pp.329–332",
+      "stimulus": "dependencies / RV32I arch",
+      "checker": "commit_diff + VerificationObserver assertions"
+    }
+  }
+}

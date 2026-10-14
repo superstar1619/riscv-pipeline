@@ -1,0 +1,58 @@
+ M Makefile
+ M README.md
+ M docs/chapter7-validation.md
+ M docs/chapter8/15-acceptance.md
+ M docs/chapter8/16-testplan-report.md
+ M programs/coremark/benchmark.c
+ M programs/validation/link.ld
+ M programs/validation/model_test.h
+ M programs/validation/start.S
+ M scripts/build-validation.py
+ M scripts/run-validation.py
+ M scripts/test-chapter8-rtl.py
+ M scripts/test-rtl.sh
+ M scripts/test-validation.sh
+ M src/test/cpp/Chapter8RtlTest.cpp
+ M src/test/cpp/SignatureRtlTest.cpp
+ M src/test/python/test_chapter8_checker.py
+ M src/test/python/test_validation_sources.py
+ M src/test/scala/riscvpipeline/Chapter8AcceptanceSpec.scala
+ M src/test/scala/riscvpipeline/Chapter8TestPlanCases.scala
+ M src/test/scala/riscvpipeline/Chapter8TestPlanSpec.scala
+?? docs/chapter7-8-cvw.md
+?? docs/chapter7-8-verification-update.md
+?? docs/reports/chapter7-8-cvw/
+?? docs/verification-guide.md
+?? docs/verification-roadmap.md
+?? programs/chapter8-cvw/
+?? programs/verification/
+?? scripts/build-chapter8-cvw.py
+?? scripts/commit_diff.py
+?? scripts/cvw_common.py
+?? scripts/diff_sensitivity.py
+?? scripts/finalize-chapter7-8-cvw.py
+?? scripts/prepare-validation-rtl.py
+?? scripts/privileged_coverage.py
+?? scripts/reproduce-chapter7-8.py
+?? scripts/run-chapter8-cvw.py
+?? scripts/run-diff.py
+?? scripts/test-chapter7-8-cvw.py
+?? scripts/verification_coverage.py
+?? scripts/verify.py
+?? src/test/cpp/CommitRtlTest.cpp
+?? src/test/cpp/CvwPrivilegedRtlTest.cpp
+?? src/test/cpp/SignatureProtocol.h
+?? src/test/cpp/SignatureProtocolTest.cpp
+?? src/test/python/test_commit_diff.py
+?? src/test/python/test_cvw_adapter.py
+?? src/test/python/test_cvw_collection.py
+?? src/test/python/test_cvw_review_fixes.py
+?? src/test/python/test_diff_sensitivity.py
+?? src/test/python/test_privileged_coverage.py
+?? src/test/python/test_signature_protocol.py
+?? src/test/python/test_validation_runtime.py
+?? src/test/python/test_verification.py
+?? src/test/python/test_verification_coverage.py
+?? src/test/scala/riscvpipeline/VerificationMatrixSpec.scala
+?? src/test/scala/riscvpipeline/VerificationObserver.scala
+?? src/test/scala/riscvpipeline/VerificationObserverSpec.scala

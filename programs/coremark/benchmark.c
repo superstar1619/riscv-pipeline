@@ -3,6 +3,7 @@
  */
 #include "coremark.h"
 extern ee_s32 get_seed_32(int i);
+extern void validation_finish(ee_u32 status) __attribute__((noreturn));
 static ee_u8 data[TOTAL_DATA_SIZE];
 static core_results result;
 volatile ee_u32 benchmark_signature[7];
@@ -40,6 +41,5 @@ int benchmark_main(void) {
   benchmark_signature[4] = result.crc;
   benchmark_signature[5] = errors;
   benchmark_signature[6] = result.iterations;
-  *(volatile ee_u32 *)0x8021ff00 = errors ? 3 : 1;
-  for (;;) __asm__ volatile ("nop");
+  validation_finish(errors ? 3 : 1);
 }

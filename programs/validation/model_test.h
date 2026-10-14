@@ -1,7 +1,7 @@
 #ifndef PIPELINE_MODEL_TEST_H
 #define PIPELINE_MODEL_TEST_H
 #define RVMODEL_BOOT
-#define RVMODEL_HALT li t0,1; li t1,0x8021ff00; sw t0,0(t1); 1: j 1b
+#define RVMODEL_HALT li a0,1; tail validation_finish
 #define RVMODEL_DATA_BEGIN .align 2; .global begin_signature; begin_signature:
 #define RVMODEL_DATA_END .align 2; .global end_signature; end_signature:
 #define RVMODEL_IO_INIT

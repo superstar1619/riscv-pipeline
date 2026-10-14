@@ -1,0 +1,6 @@
+Picked up JAVA_TOOL_OPTIONS:  -XX:ActiveProcessorCount=4 -Xmx3g
+[info] welcome to sbt 1.10.7 (Eclipse Adoptium Java 17.0.20.1)
+[info] loading project definition from /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/project
+[info] loading settings for project riscv-pipeline from build.sbt...
+[info] set current project to riscv-pipeline (in build file:/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/)
+[info] 1.10.7

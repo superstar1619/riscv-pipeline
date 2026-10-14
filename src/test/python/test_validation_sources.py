@@ -45,6 +45,13 @@ class SourceInventorySpec(unittest.TestCase):
             p.start()
             self.addCleanup(p.stop)
 
+    def test_independent_build_failure_keeps_remaining_programs(self):
+        builder.BUILD_ERRORS = []
+        with patch.object(builder, 'build_image', side_effect=[RuntimeError('compile fixture'), {}, {}]):
+            self.assertEqual(len(builder.arch_tests(None)), 2)
+        self.assertEqual(len(builder.BUILD_ERRORS), 1)
+        self.assertIn('compile fixture', builder.BUILD_ERRORS[0]['reason'])
+
     def test_deleted_test_is_rejected(self):
         (self.src / 'xor-01.S').unlink()
         with self.assertRaisesRegex(ValueError, 'Missing upstream source'):
