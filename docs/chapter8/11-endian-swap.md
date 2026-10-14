@@ -59,12 +59,12 @@ Funct3、字节掩码或有效信号；所有输入组合均有确定的输出�
 ```bash
 ./scripts/sbt-local.sh 'testOnly riscvpipeline.privileged.EndianSwapSpec'
 ./scripts/sbt-local.sh \
-  'runMain riscvpipeline.GenerateEndianSwap target/chapter8/completion/endian/rtl'
+  'runMain riscvpipeline.generators.GenerateEndianSwap target/chapter8/completion/endian/rtl'
 verilator --lint-only --top-module EndianSwap \
   target/chapter8/completion/endian/rtl/EndianSwap.v
 ```
 
-`GenerateEndianSwap [targetDir]` 默认输出到 `generated/endian-swap`。
+`GenerateEndianSwap [targetDir]` 默认输出到 `target/generated/endian-swap`。
 测试先运行固定旁路的行为骨架，6 项中 5 项按未交换行为失败。6 项覆盖手工整字结果、
 全部 32 个 one-hot 位及字节内位位置、无时钟沿的立即更新、1024 个固定种子全宽随机字、
 128 个二次交换恢复，以及实际 RTL 的三个端口与无状态属性。

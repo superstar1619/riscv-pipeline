@@ -18,7 +18,7 @@ private class CmpHarness(dataWidth: Int) extends Module {
   io.LTU := dut.io.LTU
 }
 
-class CmpSpec extends AnyFlatSpec with ChiselScalatestTester {
+class CmpSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private def signedValue(value: BigInt, dataWidth: Int): BigInt = {
     val halfRange = BigInt(1) << (dataWidth - 1)
     if (value >= halfRange) value - (BigInt(1) << dataWidth) else value

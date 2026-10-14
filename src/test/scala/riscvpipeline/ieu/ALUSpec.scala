@@ -20,7 +20,7 @@ private class ALUHarness(dataWidth: Int) extends Module {
   io.IEUAdr := dut.io.IEUAdr
 }
 
-class ALUSpec extends AnyFlatSpec with ChiselScalatestTester {
+class ALUSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   // 16 forced-arithmetic settings plus 14 ALU-mode settings. Both comparisons
   // require SubArith=1; other ALU functions exercise either SubArith value.
   private val cases = (for (control <- Seq(Control.ALU_ADD,

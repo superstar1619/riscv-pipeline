@@ -175,7 +175,7 @@ csrw sstatus, t0       # SIE=1；保留mstatus的MIE/MPIE/MPP/MPRV等M字段
 ./scripts/sbt-local.sh compile 'Test / compile'
 make test-csr-status SBT=./scripts/sbt-local.sh
 make generate-csr-status SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRStatus generated/csr-status/CSRStatus.v
+verilator --lint-only --top-module CSRStatus target/generated/csr-status/CSRStatus.v
 make test-pipeline SBT=./scripts/sbt-local.sh
 make test SBT=./scripts/sbt-local.sh
 ```
@@ -186,7 +186,7 @@ Makefile 可覆盖 `CSR_STATUS_TARGET_DIR`、`CSR_STATUS_SUPERVISOR_SUPPORTED`�
 
 ```bash
 make generate-csr-status SBT=./scripts/sbt-local.sh \
-  CSR_STATUS_TARGET_DIR=generated/csr-status-vm-be \
+  CSR_STATUS_TARGET_DIR=target/generated/csr-status-vm-be \
   CSR_STATUS_SUPERVISOR_SUPPORTED=true CSR_STATUS_VIRTUAL_MEMORY_SUPPORTED=true \
   CSR_STATUS_BIG_ENDIAN_SUPPORTED=true
 ```

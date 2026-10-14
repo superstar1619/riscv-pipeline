@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[3]
-spec = importlib.util.spec_from_file_location('builder', ROOT / 'scripts/build-validation.py')
+spec = importlib.util.spec_from_file_location('builder', ROOT / 'scripts/build/build-validation.py')
 builder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builder)
 

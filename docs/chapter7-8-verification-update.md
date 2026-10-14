@@ -1,3 +1,5 @@
+> 历史证据已迁至 [target 中的证据目录](../target/reports/)。`make clean` 会删除原始证据，Markdown 报告保留；重新运行相应报告命令将产生新的一次运行。
+
 # 第七、八章验证更新
 
 本文记录统一验证入口及证据口径。后续开发流程见[验证指导](verification-guide.md)，尚未接入的模块与能力见[测试路线图](verification-roadmap.md)。本文中的“已接入”表示有可执行入口；某次回归是否通过，必须以该次 `summary.json` 和逐例记录为准。
@@ -37,7 +39,7 @@ make test-diff SBT=./scripts/sbt-local.sh VERIFY_PROFILE=full
 # 必须重新执行 all/full，随后归档；失败结果也保留
 make report-verification SBT=./scripts/sbt-local.sh
 # 仅查看调度，不构建、不仿真
-python3 scripts/verify.py --suite all --profile full --plan
+python3 scripts/run/verify.py --suite all --profile full --plan
 ```
 
 `VERIFY_SUITE` 支持 `all|pipeline|arch|privileged|cvw|coremark`；`VERIFY_PROFILE` 支持 `smoke|full`。旧 `test-pipeline`、`test-arch`、`test-coremark`、`test-chapter8-rtl` 等仍可用。统一调度调用既有构建/运行适配器，不另外复制同类检查器；`all/full` 的全部 Scala 测试只执行一次，不重复调用 `test-acceptance`。
@@ -91,19 +93,19 @@ Spike 与 RTL 使用同一个 ELF、RV32I ISA 与内存布局。比较器只允�
 | 复位 | 原有 store 提交边界；新增 load-use、WFI、陷阱入口附近复位；差分双复位 | 不依赖 RAM 清零，无非法副作用；从复位向量恢复 |
 | 比较器敏感性 | 寄存器/store/顺序/截断故障注入 | 首差类型与注入故障一致，即使最终签名不变 |
 
-表格定义验证意图，不代表每个交叉组合已经命中。功能覆盖必须由提交或真实流水线事件采样，失败运行单独保存而不用于通过验收；具体稳定 bin ID 由 `scripts/verification_coverage.py::required_bins()` 定义，必达集合和实际首个命中证据见 `diff/functional-coverage.json`。其 `dependency.<consumer>.<A|B>.gap<0|1|2>`、前递、M 优先级、x0、分支结果、访存宽度/偏移和两类 stall 均从真实事件统计。第八章由 `Chapter8TestPlanSpec` 在真实 M 级退休/陷阱边界及 load-use/WFI 事件处采样，`scripts/privileged_coverage.py` 汇总到 `privileged/functional-coverage.json`。各配置独立检查 CSR 六种操作/抑制、异常原因/来源/目标模式、中断 pending/全局使能/接受状态、WFI 唤醒及端序×宽度×偏移。每个 bin 保留首个实际周期、PC、指令、case/reset 文件和检查器映射；缺失轮次、无事件证据及失败运行不能满足必达集合。最小配置的 S 模式和大端按能力显式排除。计数器和运行中复位的定向断言仍按对应实际运行证据检查，不把测试名自动转成动态命中。
+表格定义验证意图，不代表每个交叉组合已经命中。功能覆盖必须由提交或真实流水线事件采样，失败运行单独保存而不用于通过验收；具体稳定 bin ID 由 `scripts/lib/verification_coverage.py::required_bins()` 定义，必达集合和实际首个命中证据见 `diff/functional-coverage.json`。其 `dependency.<consumer>.<A|B>.gap<0|1|2>`、前递、M 优先级、x0、分支结果、访存宽度/偏移和两类 stall 均从真实事件统计。第八章由 `Chapter8TestPlanSpec` 在真实 M 级退休/陷阱边界及 load-use/WFI 事件处采样，`scripts/lib/privileged_coverage.py` 汇总到 `privileged/functional-coverage.json`。各配置独立检查 CSR 六种操作/抑制、异常原因/来源/目标模式、中断 pending/全局使能/接受状态、WFI 唤醒及端序×宽度×偏移。每个 bin 保留首个实际周期、PC、指令、case/reset 文件和检查器映射；缺失轮次、无事件证据及失败运行不能满足必达集合。最小配置的 S 模式和大端按能力显式排除。计数器和运行中复位的定向断言仍按对应实际运行证据检查，不把测试名自动转成动态命中。
 
 代码覆盖使用 Verilator 实测 line/toggle 数据；RV32I 在 `diff/code-coverage.json`、`diff/coverage.dat/info`，第八章在 `privileged/coverage/<config>/code-coverage.json` 和同目录 `.dat/.info`。统一入口启用 `CHAPTER8_COVERAGE=1`，每配置仅合并完整通过的运行，失败原始数据另留。保留未命中项，当前未应用排除项；没有采集的配置不能填成 0% 或 100%。人工功能矩阵不能替代代码覆盖。`--fcov` 尚未接通为本项目入口，不列为可用命令。
 
 ## 本轮结果与归档
 
-本轮完整验收的权威入口是 `make report-verification`：任何未解决失败或必执行项未执行都会返回非零。报告归档在 `docs/reports/verification/<运行ID>/`，不会覆盖历史目录。查看 `summary.json` 的 `passed`、`results.json` 中的逐例状态及 `report.md`；不能仅看末尾一个 PASS 字样。
+本轮完整验收的权威入口是 `make report-verification`：任何未解决失败或必执行项未执行都会返回非零。Markdown 报告在 `docs/reports/verification/<运行ID>/`，原始证据在 `target/verification/runs/<运行ID>/`，不会覆盖历史目录。进入证据目录查看 `summary.json` 的 `passed`、`results.json` 中的逐例状态及 `report.md`；不能仅看末尾一个 PASS 字样。
 
 每个目录应包含工具版本、运行前后源码哈希及快照、manifest、ELF、镜像、参考与实际签名、提交日志、差异记录、功能/代码覆盖、命令与原始退出码、逐例复现入口和 `SHA256SUMS`。尚未实际执行的结果不得写入本文成为固定成功数量。生成报告后应在评审中给出具体运行 ID；历史归档只作基线比较。
 
 ## 2026-10-14 最终完整验收实测
 
-最终运行 ID 为 **`20261014T114922360658Z`**，`all/full` 返回 **0 / PASS**。永久证据见[本轮总报告](reports/verification/20261014T114922360658Z/report.md)、[汇总 JSON](reports/verification/20261014T114922360658Z/summary.json)和[逐例结果](reports/verification/20261014T114922360658Z/results.json)。运行前后源码哈希一致；归档 `SHA256SUMS` 的 9349 个文件已独立逐项核验通过。本节只使用这个最终目录中的产物。
+最终运行 ID 为 **`20261014T114922360658Z`**，`all/full` 返回 **0 / PASS**。永久证据见[本轮总报告](reports/verification/20261014T114922360658Z/report.md)、[汇总 JSON](../target/reports/verification/20261014T114922360658Z/summary.json)和[逐例结果](../target/reports/verification/20261014T114922360658Z/results.json)。运行前后源码哈希一致；归档 `SHA256SUMS` 的 9349 个文件已独立逐项核验通过。本节只使用这个最终目录中的产物。
 
 早先 `target/verification-work/unified-smoke` 和 `unified-smoke-v2` 是实施中的冒烟试跑，均已通过；其后补充了退出码矛盾检查和差分漏执行回填。最终完整运行包含这些最终修正，不用试跑结果替代最终验收。
 
@@ -125,8 +127,8 @@ Spike 与 RTL 使用同一个 ELF、RV32I ISA 与内存布局。比较器只允�
 
 | 配置 | 必达 bins | 未命中 | 证据 |
 | --- | ---: | ---: | --- |
-| RV32I 观察层 | 46 | 0 | [提交/流水线事件覆盖](reports/verification/20261014T114922360658Z/diff/functional-coverage.json) |
-| privileged default | 87 | 0 | [第八章逐配置功能覆盖](reports/verification/20261014T114922360658Z/privileged/functional-coverage.json) |
+| RV32I 观察层 | 46 | 0 | [提交/流水线事件覆盖](../target/reports/verification/20261014T114922360658Z/diff/functional-coverage.json) |
+| privileged default | 87 | 0 | [第八章逐配置功能覆盖](../target/reports/verification/20261014T114922360658Z/privileged/functional-coverage.json) |
 | privileged minimal | 60 | 0 | 同上；S 模式、大端依能力排除 |
 | privileged reset100 | 87 | 0 | 同上 |
 | privileged sstc-hpm | 87 | 0 | 同上 |
@@ -137,12 +139,18 @@ Verilator line/toggle 实测如下，均仅合并通过运行，未应用人工�
 
 | 配置 | line 命中/点数 | 未命中 line | toggle 命中/点数 | 未命中 toggle | 原始摘要 |
 | --- | ---: | ---: | ---: | ---: | --- |
-| RV32I 观察层 + 生产一致性实例 | 1943/1995 | 52 | 12729/12771 | 42 | [摘要](reports/verification/20261014T114922360658Z/diff/code-coverage.json) |
-| privileged default | 1928/1946 | 18 | 13420/13571 | 151 | [摘要](reports/verification/20261014T114922360658Z/privileged/coverage/default/code-coverage.json) |
-| privileged minimal | 1660/1678 | 18 | 11570/11688 | 118 | [摘要](reports/verification/20261014T114922360658Z/privileged/coverage/minimal/code-coverage.json) |
-| privileged reset100 | 1928/1946 | 18 | 13420/13571 | 151 | [摘要](reports/verification/20261014T114922360658Z/privileged/coverage/reset100/code-coverage.json) |
-| privileged sstc-hpm | 2024/2063 | 39 | 14472/14672 | 200 | [摘要](reports/verification/20261014T114922360658Z/privileged/coverage/sstc-hpm/code-coverage.json) |
+| RV32I 观察层 + 生产一致性实例 | 1943/1995 | 52 | 12729/12771 | 42 | [摘要](../target/reports/verification/20261014T114922360658Z/diff/code-coverage.json) |
+| privileged default | 1928/1946 | 18 | 13420/13571 | 151 | [摘要](../target/reports/verification/20261014T114922360658Z/privileged/coverage/default/code-coverage.json) |
+| privileged minimal | 1660/1678 | 18 | 11570/11688 | 118 | [摘要](../target/reports/verification/20261014T114922360658Z/privileged/coverage/minimal/code-coverage.json) |
+| privileged reset100 | 1928/1946 | 18 | 13420/13571 | 151 | [摘要](../target/reports/verification/20261014T114922360658Z/privileged/coverage/reset100/code-coverage.json) |
+| privileged sstc-hpm | 2024/2063 | 39 | 14472/14672 | 200 | [摘要](../target/reports/verification/20261014T114922360658Z/privileged/coverage/sstc-hpm/code-coverage.json) |
 
 未命中点的具体源码位置/信号保留在各摘要旁的 `coverage.info` 和 `coverage.dat`，没有因功能表通过而删去。当前实测不是 100% 代码覆盖；后续需逐项分析未命中点并补充激励，或给出具体配置/不可达依据后才能建立排除项。CVW 独立大存储配置、无包装的四个小型生产场景未单独采集 line/toggle，不套用表中其他配置的数值。
 
 CoreMark 的测量区间在三个 seed 下保持一致：performance 为 **10,533,211 cycles**，validation 为 **11,331,447 cycles**；包含初始化和真实签名读回的完成周期分别为 10,558,980 和 11,357,422。两者均通过原 CRC/错误数/迭代数检查。这是本轮正确性与周期证据，不是官方 CoreMark 得分认证。
+
+## 目录与清理
+
+文档导航见[文档索引](README.md)。`docs/` 只保存 Markdown；原始结果、日志、源码快照和校验清单留在 `target/`。报告发布只复制 Markdown，并调整相对证据链接。
+
+`make clean SBT=./scripts/sbt-local.sh` 删除整个 `target/`，包括运行证据与本地缓存。报告正文仍保留，证据清理后需重新运行报告命令；新运行使用新的时间戳目录。

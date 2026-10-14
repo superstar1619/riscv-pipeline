@@ -28,7 +28,7 @@
 
 ### Task 1: 流水线验收入口
 
-**Files:** 新建 src/test/scala/riscvpipeline/CpuAcceptanceSpec.scala、src/test/cpp/PipelineRtlTest.cpp；修改 Makefile、scripts/test-rtl.sh。
+**Files:** 新建 src/test/scala/riscvpipeline/CpuAcceptanceSpec.scala、src/test/cpp/PipelineRtlTest.cpp；修改 Makefile、scripts/run/test-rtl.sh。
 **Interfaces:** 读取旧 .trace 的架构访存事件；top M 级接口保持不变。C++ runner 参数为事件文件、随机种子、周期上限。
 
 - [x] 写验收测试：两种配置按顺序匹配每个 MemRW 非零事件，最终检查固定签名；原定向测试保留。
@@ -39,7 +39,7 @@
 
 ### Task 2: 教材 §7.4 架构测试
 
-**Files:** 新建 scripts/build-validation.py、scripts/test-validation.sh、programs/validation 平台头/启动/链接脚本和 src/test/cpp/SignatureRtlTest.cpp。
+**Files:** 新建 scripts/build/build-validation.py、scripts/run/test-validation.sh、programs/validation 平台头/启动/链接脚本和 src/test/cpp/SignatureRtlTest.cpp。
 **Interfaces:** 大型测试共用 524288-word IROM、32768-word DTIM，入口 0x80000000；目标镜像 target/validation/program.memfile，签名地址和值及运行元数据位于 target/validation。
 
 - [x] 使用本地固定 riscv-arch-test rv32i_m/I 所有源文件及教材 misalign1-jalr 用例，保留原始向量与宏，关闭无关 trap/instret harness。

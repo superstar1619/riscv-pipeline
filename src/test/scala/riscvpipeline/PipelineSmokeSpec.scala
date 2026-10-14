@@ -6,7 +6,7 @@ import chiseltest._
 import org.scalatest.flatspec.AnyFlatSpec
 import riscvpipeline.config.CpuConfig
 
-class PipelineSmokeSpec extends AnyFlatSpec with ChiselScalatestTester {
+class PipelineSmokeSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   import PipelineTestSupport._
   behavior of "RV32I five-stage pipeline"
 

@@ -27,7 +27,7 @@ M 模式误置 Delegate 时仍进入 M 的保护。CVW 原逻辑依赖上游提�
 
 源码：[PrivMode.scala](../../src/main/scala/riscvpipeline/privileged/PrivMode.scala)。
 测试：[PrivModeSpec.scala](../../src/test/scala/riscvpipeline/privileged/PrivModeSpec.scala)。
-生成：[GeneratePrivMode.scala](../../src/main/scala/riscvpipeline/GeneratePrivMode.scala)。
+生成：[GeneratePrivMode.scala](../../src/main/scala/riscvpipeline/generators/GeneratePrivMode.scala)。
 
 ## 配置与接口
 
@@ -159,10 +159,10 @@ TSR 算例：M 中设置 TSR=1、SPP=1，SRET 仍能进入 S；进入 S 后同�
 ./scripts/sbt-local.sh compile 'Test / compile'
 make test-priv-mode SBT=./scripts/sbt-local.sh
 make generate-priv-mode SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module PrivMode generated/priv-mode/PrivMode.v
+verilator --lint-only --top-module PrivMode target/generated/priv-mode/PrivMode.v
 make generate-priv-mode SBT=./scripts/sbt-local.sh \
-  PRIV_MODE_SUPERVISOR_SUPPORTED=false PRIV_MODE_TARGET_DIR=generated/priv-mode-no-s
-verilator --lint-only --top-module PrivMode generated/priv-mode-no-s/PrivMode.v
+  PRIV_MODE_SUPERVISOR_SUPPORTED=false PRIV_MODE_TARGET_DIR=target/generated/priv-mode-no-s
+verilator --lint-only --top-module PrivMode target/generated/priv-mode-no-s/PrivMode.v
 make test-pipeline SBT=./scripts/sbt-local.sh
 make test SBT=./scripts/sbt-local.sh
 ```

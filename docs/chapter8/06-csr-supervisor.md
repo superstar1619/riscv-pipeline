@@ -201,7 +201,7 @@ SCAUSE=0x80000005、STVAL=0xCAFE。同拍 sscratch/sie 写不提交。
 ./scripts/sbt-local.sh compile 'Test / compile'
 make test-csr-supervisor SBT=./scripts/sbt-local.sh
 make generate-csr-supervisor SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRSupervisor generated/csr-supervisor/CSRSupervisor.v
+verilator --lint-only --top-module CSRSupervisor target/generated/csr-supervisor/CSRSupervisor.v
 make test-pipeline SBT=./scripts/sbt-local.sh
 make test SBT=./scripts/sbt-local.sh
 ```
@@ -211,7 +211,7 @@ make test SBT=./scripts/sbt-local.sh
 
 ```bash
 make generate-csr-supervisor SBT=./scripts/sbt-local.sh \
-  CSR_SUPERVISOR_TARGET_DIR=generated/csr-supervisor-vm-sstc \
+  CSR_SUPERVISOR_TARGET_DIR=target/generated/csr-supervisor-vm-sstc \
   CSR_SUPERVISOR_SUPPORTED=true CSR_SUPERVISOR_VIRTUAL_MEMORY_SUPPORTED=true \
   CSR_SUPERVISOR_SSTC_SUPPORTED=true CSR_SUPERVISOR_VECTORED_INTERRUPTS_SUPPORTED=true \
   CSR_SUPERVISOR_HPM_COUNTERS=29 CSR_SUPERVISOR_ASID_BITS=9

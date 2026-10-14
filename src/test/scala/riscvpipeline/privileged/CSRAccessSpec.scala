@@ -15,7 +15,7 @@ private class CSRAccessHarness extends Module {
   io <> dut.io
 }
 
-class CSRAccessSpec extends AnyFlatSpec with ChiselScalatestTester {
+class CSRAccessSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private val mask = BigInt("ffffffff", 16)
   private def hex(s: String): BigInt = BigInt(s, 16)
 

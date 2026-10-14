@@ -4,12 +4,12 @@ import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT / 'scripts'))
+sys.path.insert(0, str(ROOT / 'scripts/lib'))
 
 
 class AdapterTests(unittest.TestCase):
     def module(self):
-        path = ROOT / 'scripts/build-chapter8-cvw.py'
+        path = ROOT / 'scripts/build/build-chapter8-cvw.py'
         self.assertTrue(path.exists(), 'missing CVW adapter')
         spec = importlib.util.spec_from_file_location('cvw_adapter', path)
         module = importlib.util.module_from_spec(spec)

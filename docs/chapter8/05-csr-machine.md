@@ -199,7 +199,7 @@ MEPC=0x80001234、MCAUSE=0x80000007、MTVAL=0。同拍软件写 mscratch 或 mie
 ./scripts/sbt-local.sh compile 'Test / compile'
 make test-csr-machine SBT=./scripts/sbt-local.sh
 make generate-csr-machine SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRMachine generated/csr-machine/CSRMachine.v
+verilator --lint-only --top-module CSRMachine target/generated/csr-machine/CSRMachine.v
 make test-pipeline SBT=./scripts/sbt-local.sh
 make test SBT=./scripts/sbt-local.sh
 ```
@@ -209,7 +209,7 @@ make test SBT=./scripts/sbt-local.sh
 
 ```bash
 make generate-csr-machine SBT=./scripts/sbt-local.sh \
-  CSR_MACHINE_TARGET_DIR=generated/csr-machine-vm-sstc \
+  CSR_MACHINE_TARGET_DIR=target/generated/csr-machine-vm-sstc \
   CSR_MACHINE_SUPERVISOR_SUPPORTED=true CSR_MACHINE_VIRTUAL_MEMORY_SUPPORTED=true \
   CSR_MACHINE_SSTC_SUPPORTED=true CSR_MACHINE_VECTORED_INTERRUPTS_SUPPORTED=true \
   CSR_MACHINE_HPM_COUNTERS=29 CSR_MACHINE_HART_ID=0xffffffff

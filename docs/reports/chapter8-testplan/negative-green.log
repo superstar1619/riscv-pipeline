@@ -1,6 +1,0 @@
-test_reject_signature_missing_extra_and_timeout (test_chapter8_checker.Chapter8CheckerNegativeTests.test_reject_signature_missing_extra_and_timeout) ... ok
-
-----------------------------------------------------------------------
-Ran 1 test in 0.048s
-
-OK

@@ -18,7 +18,7 @@ private class SubwordReadHarness(dataWidth: Int) extends Module {
   io.ReadData := dut.io.ReadData
 }
 
-class SubwordReadSpec extends AnyFlatSpec with ChiselScalatestTester {
+class SubwordReadSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   // 设置输入后立即检查组合输出；只有波形测试按需推进观察时钟。
   private def check(
     dut: SubwordReadHarness,

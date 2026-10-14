@@ -93,11 +93,11 @@ pending 组合解除停顿，下一沿清计数；若 pending 与饱和计数同
 ```bash
 ./scripts/sbt-local.sh 'testOnly riscvpipeline.privileged.WFISpec'
 ./scripts/sbt-local.sh \
-  'runMain riscvpipeline.GenerateWFI target/chapter8/completion/wfi/rtl-3 3'
+  'runMain riscvpipeline.generators.GenerateWFI target/chapter8/completion/wfi/rtl-3 3'
 verilator --lint-only --top-module WFI target/chapter8/completion/wfi/rtl-3/WFI.v
 ```
 
-`GenerateWFI [targetDir] [timeoutCycles]` 默认输出到 `generated/wfi`，默认阈值 65536。
+`GenerateWFI [targetDir] [timeoutCycles]` 默认输出到 `target/generated/wfi`，默认阈值 65536。
 测试先运行计数恒零、stall/timeout 恒假的行为骨架，11 项中 10 项按缺失行为失败；
 随后换为真实计数实现。11 项包含阈值 1/3/8 的逐沿 deadline、饱和、独立取消、pending、
 同步复位优先、到期陷阱反馈边界、等待重新进入，以及固定种子随机序列。

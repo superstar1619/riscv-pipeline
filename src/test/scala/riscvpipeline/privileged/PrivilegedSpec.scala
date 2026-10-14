@@ -13,7 +13,7 @@ private class PrivilegedHarness(c: PrivilegedConfig) extends Module {
   io <> dut.io
 }
 
-class PrivilegedSpec extends AnyFlatSpec with ChiselScalatestTester {
+class PrivilegedSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private val flags = Seq("StallW", "FlushM", "CommittedM", "CommittedF", "wfiW",
     "MExtInt", "SExtInt", "MTimerInt", "MSwInt", "InstrMisalignedFaultM",
     "InstrAccessFaultM", "InstrPageFaultM", "IllegalIEUInstrM", "BreakpointFaultM",

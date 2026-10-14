@@ -1,7 +1,0 @@
-test_fail_closed_on_incomplete_or_changed_evidence (test_chapter8_report.Chapter8ReportEvidenceTests.test_fail_closed_on_incomplete_or_changed_evidence) ... ok
-test_reject_stale_sources_and_incomplete_junit (test_chapter8_report.Chapter8ReportEvidenceTests.test_reject_stale_sources_and_incomplete_junit) ... ok
-
-----------------------------------------------------------------------
-Ran 2 tests in 0.012s
-
-OK

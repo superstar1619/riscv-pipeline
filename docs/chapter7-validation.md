@@ -89,7 +89,7 @@ store 重建签名，检查每个字节确实写入，再逐字与完整参考�
 
 构建、ELF、反汇编、参考、镜像、逐 seed 日志和 JSON 报告在忽略的
 `target/validation` 下；`*-results.json` 包含 revision、编译参数、每个程序的签名
-范围和执行周期。`generated/validation` 顶层保持原 8 端口及位宽，6 个状态更新块
+范围和执行周期。`target/generated/validation` 顶层保持原 8 端口及位宽，6 个状态更新块
 均为 `posedge clk`，同步 IROM/DTIM 与原复位契约保持一致。
 
 ## §7.4 覆盖与结果

@@ -1,9 +1,0 @@
-[info] welcome to sbt 1.10.7 (Eclipse Adoptium Java 17.0.20.1)
-[info] loading project definition from /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/project
-[info] loading settings for project riscv-pipeline from build.sbt...
-[info] set current project to riscv-pipeline (in build file:/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/)
-[info] compiling 1 Scala source to /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/scala-2.13/test-classes ...
-[info] done compiling
-[info] running riscvpipeline.ExportChapter8TestPlan 
-Exported 276 independent cases to target/chapter8-testplan
-[success] Total time: 9 s, completed Oct 11, 2026, 9:31:43 PM

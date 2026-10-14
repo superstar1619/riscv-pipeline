@@ -1,3 +1,5 @@
+> 历史证据已迁至 [target 中的证据目录](../target/reports/)。`make clean` 会删除原始证据，Markdown 报告保留；重新运行相应报告命令将产生新的一次运行。
+
 # RV32I 五级流水线处理器性能测评与功能正确性验证报告
 
 **报告日期：2026-10-05**
@@ -187,7 +189,7 @@ CoreMark 额外要求开始/结束标记顺序正确，测量区间大于零。
 | CpuConfigSpec | 2 | 合法参数与非法宽度/容量/向量约束 |
 | **合计** | **122** | **14 类，全部通过** |
 
-逐类数据来自[完整 Scala 日志](reports/chapter7/evidence/scala-full.log)，而不是
+逐类数据来自[完整 Scala 日志](../target/reports/chapter7/evidence/scala-full.log)，而不是
 可能残留旧包名或被后续 `testOnly` 覆盖的 JUnit 文件。
 
 ### 5.2 流水线特有行为
@@ -368,8 +370,8 @@ CRC 具有碰撞可能，CoreMark 用于综合软件执行验证，并与逐字�
 | 全部来源完整，选择附加 JALR | 原来没有附加用例 | 完整清单及单独选择均可执行 |
 
 四项源清单回归先在原脚本上全部失败，再在修正后全部通过；最终合并入口包括
-这四项检查。归档保留[修正前日志](reports/chapter7/evidence/inventory-before-fix.log)
-及[修正后完整运行日志](reports/chapter7/evidence/validation-all.log)。
+这四项检查。归档保留[修正前日志](../target/reports/chapter7/evidence/inventory-before-fix.log)
+及[修正后完整运行日志](../target/reports/chapter7/evidence/validation-all.log)。
 
 只读分支审查没有发现 Critical；发现的一项 Important 为源清单可能静默缩减。
 该项在 `8c51597` 修复，回归由失败转为通过，再完成全部 41 程序 × 3 seed 验证。
@@ -399,7 +401,7 @@ make test-validation SBT=./scripts/sbt-local.sh
 仅复核本报告归档数据和计算，无需仿真工具：
 
 ```bash
-python3 docs/reports/chapter7/recompute_metrics.py
+python3 target/reports/chapter7/recompute_metrics.py
 ```
 
 此命令核对 123 条结果、39 架构程序、41 份参考签名、种子覆盖、日志统计和边界，
@@ -425,16 +427,16 @@ python3 docs/reports/chapter7/recompute_metrics.py
 
 | 文件 | 用途 |
 | --- | --- |
-| [validation-results.json](reports/chapter7/evidence/validation-results.json) | 最终 41 程序的配置、版本、CRC、每 seed 原始结果 |
-| [artifact-manifest.json](reports/chapter7/evidence/artifact-manifest.json) | 工程来源 SHA256、ELF/镜像/参考哈希及静态容量 |
-| [results.csv](reports/chapter7/results.csv) | 全部 123 次执行的表格数据 |
-| [metrics.json](reports/chapter7/metrics.json) | 从原始结果计算的性能及统计量 |
-| [scala-full.log](reports/chapter7/evidence/scala-full.log) | 完整 122 项 Scala 运行日志 |
-| [scala-acceptance.log](reports/chapter7/evidence/scala-acceptance.log) | 单独 8 项验收入口日志 |
-| [rtl-acceptance.log](reports/chapter7/evidence/rtl-acceptance.log) | 4 配置、12 进程、24 次复位执行日志 |
-| [validation-all.log](reports/chapter7/evidence/validation-all.log) | 源清单检查、Spike、RTL 生成、123 次执行及负向检查 |
+| [validation-results.json](../target/reports/chapter7/evidence/validation-results.json) | 最终 41 程序的配置、版本、CRC、每 seed 原始结果 |
+| [artifact-manifest.json](../target/reports/chapter7/evidence/artifact-manifest.json) | 工程来源 SHA256、ELF/镜像/参考哈希及静态容量 |
+| [results.csv](../target/reports/chapter7/results.csv) | 全部 123 次执行的表格数据 |
+| [metrics.json](../target/reports/chapter7/metrics.json) | 从原始结果计算的性能及统计量 |
+| [scala-full.log](../target/reports/chapter7/evidence/scala-full.log) | 完整 122 项 Scala 运行日志 |
+| [scala-acceptance.log](../target/reports/chapter7/evidence/scala-acceptance.log) | 单独 8 项验收入口日志 |
+| [rtl-acceptance.log](../target/reports/chapter7/evidence/rtl-acceptance.log) | 4 配置、12 进程、24 次复位执行日志 |
+| [validation-all.log](../target/reports/chapter7/evidence/validation-all.log) | 源清单检查、Spike、RTL 生成、123 次执行及负向检查 |
 | `reports/chapter7/evidence/*.signature` | 41 份完整 Spike 参考签名，按程序命名 |
-| [recompute_metrics.py](reports/chapter7/recompute_metrics.py) | 使用 Python 标准库复核归档并重算派生指标 |
+| [recompute_metrics.py](../target/reports/chapter7/recompute_metrics.py) | 使用 Python 标准库复核归档并重算派生指标 |
 
 ELF、代码镜像和生成 RTL 的大文件未随报告归档；可以通过复现入口重新生成，
 并用 manifest 的哈希核对软件产物。归档的 PASS 日志并不是全指令退休轨迹，
@@ -448,7 +450,7 @@ ELF、代码镜像和生成 RTL 的大文件未随报告归档；可以通过复
   [smoke 测试](../src/test/scala/riscvpipeline/PipelineSmokeSpec.scala)。
 - [整机 Scala 验收](../src/test/scala/riscvpipeline/CpuAcceptanceSpec.scala)、
   [整机 RTL 检查器](../src/test/cpp/PipelineRtlTest.cpp)。
-- [软件构建](../scripts/build-validation.py)、[软件验证调度](../scripts/run-validation.py)、
+- [软件构建](../scripts/build/build-validation.py)、[软件验证调度](../scripts/run/run-validation.py)、
   [签名及周期检查器](../src/test/cpp/SignatureRtlTest.cpp)。
 - [CoreMark 功能驱动](../programs/coremark/benchmark.c)、
   [测量标记移植层](../programs/coremark/core_portme.c)。

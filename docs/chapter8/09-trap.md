@@ -6,7 +6,7 @@ cause 与监督模式委托。模块不保存 CSR、特权级或 PC；这些状�
 
 源码：[Trap.scala](../../src/main/scala/riscvpipeline/privileged/Trap.scala)。
 测试：[TrapSpec.scala](../../src/test/scala/riscvpipeline/privileged/TrapSpec.scala)。
-生成：[GenerateTrap.scala](../../src/main/scala/riscvpipeline/GenerateTrap.scala)。
+生成：[GenerateTrap.scala](../../src/main/scala/riscvpipeline/generators/GenerateTrap.scala)。
 
 ## 依据与适配
 
@@ -111,14 +111,14 @@ Delegate=0，即使原始故障、委托 CSR 或 pending 输入仍为 1。
 
 ```bash
 ./scripts/sbt-local.sh 'testOnly riscvpipeline.privileged.TrapSpec'
-./scripts/sbt-local.sh 'runMain riscvpipeline.GenerateTrap generated/trap true'
-./scripts/sbt-local.sh 'runMain riscvpipeline.GenerateTrap generated/trap-no-s false'
-verilator --lint-only --top-module Trap generated/trap/Trap.v
-verilator --lint-only --top-module Trap generated/trap-no-s/Trap.v
+./scripts/sbt-local.sh 'runMain riscvpipeline.generators.GenerateTrap target/generated/trap true'
+./scripts/sbt-local.sh 'runMain riscvpipeline.generators.GenerateTrap target/generated/trap-no-s false'
+verilator --lint-only --top-module Trap target/generated/trap/Trap.v
+verilator --lint-only --top-module Trap target/generated/trap-no-s/Trap.v
 ```
 
 生成入口为 `GenerateTrap [targetDir] [supervisorSupported]`，参数默认
-`generated/trap` 与 `true`；拒绝超过两个参数。
+`target/generated/trap` 与 `true`；拒绝超过两个参数。
 
 9 项测试包含所有单项异常与 U/S/M ECALL、所有异常成对优先级、12 个中断位的局部
 enable/实现掩码、每个实现来源的模式与全局 enable/委托组合、全部非空中断集合配

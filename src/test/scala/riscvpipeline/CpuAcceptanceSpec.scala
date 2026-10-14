@@ -7,13 +7,13 @@ import riscvpipeline.config.CpuConfig
 import scala.io.Source
 
 /** 独立架构 trace 按访存顺序匹配，不将单周期行号作为流水线周期。 */
-class CpuAcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
+class CpuAcceptanceSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   behavior of "Pipeline RV32I acceptance"
 
   for ((suffix, vector, imem, dmem) <- Seq(("", 0, 128, 64),
     ("-expanded", 256, 256, 128))) {
     it should s"match all memory events and fixed signatures at vector $vector" in {
-      val name = s"programs/rv32-acceptance$suffix"
+      val name = s"target/acceptance-images/rv32-acceptance$suffix"
       val source = Source.fromFile(s"$name.trace")
       val events = try {
         source.getLines().filterNot(_.startsWith("#"))

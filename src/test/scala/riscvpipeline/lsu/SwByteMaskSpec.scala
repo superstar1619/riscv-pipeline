@@ -16,7 +16,7 @@ private class SwByteMaskHarness(dataWidth: Int) extends Module {
   io.ByteMask := dut.io.ByteMask
 }
 
-class SwByteMaskSpec extends AnyFlatSpec with ChiselScalatestTester {
+class SwByteMaskSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   // Use byte membership rather than the hardware's shifted base mask.
   private def reference(dataWidth: Int, funct3: Int, offset: Int): BigInt = {
     val size = Map(MemoryFunction.BYTE -> 1, MemoryFunction.HALF -> 2,

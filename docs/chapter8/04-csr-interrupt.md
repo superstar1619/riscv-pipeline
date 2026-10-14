@@ -194,7 +194,7 @@ MIP=0x222、委托=0x222，写 SIP=0 后软件状态为 0x220，仅 SSIP 被清�
 ./scripts/sbt-local.sh compile 'Test / compile'
 make test-csr-interrupt SBT=./scripts/sbt-local.sh
 make generate-csr-interrupt SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRInterrupt generated/csr-interrupt/CSRInterrupt.v
+verilator --lint-only --top-module CSRInterrupt target/generated/csr-interrupt/CSRInterrupt.v
 make test-pipeline SBT=./scripts/sbt-local.sh
 make test SBT=./scripts/sbt-local.sh
 ```
@@ -204,7 +204,7 @@ make test SBT=./scripts/sbt-local.sh
 
 ```bash
 make generate-csr-interrupt SBT=./scripts/sbt-local.sh \
-  CSR_INTERRUPT_TARGET_DIR=generated/csr-interrupt-sstc \
+  CSR_INTERRUPT_TARGET_DIR=target/generated/csr-interrupt-sstc \
   CSR_INTERRUPT_SUPERVISOR_SUPPORTED=true CSR_INTERRUPT_SSTC_SUPPORTED=true
 ```
 

@@ -12,7 +12,7 @@ private class HazardHarness extends Module {
   dut.io <> io
 }
 
-class PipelineHazardSpec extends AnyFlatSpec with ChiselScalatestTester {
+class PipelineHazardSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   import PipelineTestSupport._
   behavior of "Pipeline dependencies"
 

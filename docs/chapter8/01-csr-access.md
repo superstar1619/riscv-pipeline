@@ -123,12 +123,12 @@ Chisel 3.6.1、chiseltest 0.6.2：
 ./scripts/sbt-local.sh compile 'Test / compile'
 make test-csr-access SBT=./scripts/sbt-local.sh
 make generate-csr-access SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRAccess generated/csr-access/CSRAccess.v
+verilator --lint-only --top-module CSRAccess target/generated/csr-access/CSRAccess.v
 make test-pipeline SBT=./scripts/sbt-local.sh
 make test SBT=./scripts/sbt-local.sh
 ```
 
-生成入口 `GenerateCSRAccess [targetDir]`，默认输出 `generated/csr-access`；
+生成入口 `GenerateCSRAccess [targetDir]`，默认输出 `target/generated/csr-access`；
 Makefile 可用 `CSR_ACCESS_TARGET_DIR` 覆盖目录。无 XLEN 参数，避免暗示 RV64 已支持。
 生成产物和测试缓存依照现有 `.gitignore` 排除。
 
@@ -147,7 +147,7 @@ Makefile 可用 `CSR_ACCESS_TARGET_DIR` 覆盖目录。无 XLEN 参数，避免�
 | --- | --- |
 | `compile`、`Test / compile` | 通过 |
 | `make test-csr-access` | 10/10 通过，包含 2048 个固定种子随机输入 |
-| `make generate-csr-access` | 通过，生成 `generated/csr-access/CSRAccess.v` |
+| `make generate-csr-access` | 通过，生成 `target/generated/csr-access/CSRAccess.v` |
 | RTL 接口和组合属性 | 16 个端口方向/位宽匹配，无 clock、reset、寄存器或时序块 |
 | Verilator 5.036 `--lint-only` | 退出码 0，无 lint 警告 |
 | `make test-pipeline` | 3 个 suite、18/18 通过 |

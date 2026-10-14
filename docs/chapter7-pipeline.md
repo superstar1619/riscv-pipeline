@@ -49,8 +49,8 @@
 ```bash
 ./scripts/sbt-local.sh compile 'Test / compile' \
   'testOnly riscvpipeline.PipelineHazardSpec riscvpipeline.PipelineMemorySpec riscvpipeline.PipelineSmokeSpec' \
-  'runMain riscvpipeline.GenerateRiscvPipeline' \
-  'runMain riscvpipeline.GenerateRiscvPipeline 128 128 generated/riscv-pipeline128 programs/rv32-configtest.memfile 0x100'
+  'runMain riscvpipeline.generators.GenerateRiscvPipeline' \
+  'runMain riscvpipeline.generators.GenerateRiscvPipeline 128 128 target/generated/riscv-pipeline128 programs/rv32-configtest.memfile 0x100'
 ```
 
 Scala 主/测试源码编译通过，两种配置 RTL 生成通过。Chisel 3.6.1 的旧生成器存在
@@ -65,7 +65,7 @@ Scala 主/测试源码编译通过，两种配置 RTL 生成通过。Chisel 3.6.
 - IROM 和四个 DTIM 字节通道的读地址均有同步采样寄存器；深度分别为 64 或 128。
 - PCF 复位值分别为 `0x0`、`0x100`；D/E/M/W 有效位复位清零，包含独立 Hazard。
 
-生成产物位于 `generated/riscv-pipeline` 和 `generated/riscv-pipeline128`，不提交缓存、
+生成产物位于 `target/generated/riscv-pipeline` 和 `target/generated/riscv-pipeline128`，不提交缓存、
 RTL 或波形。这些检查不代表综合质量或时序收敛验证。
 
 ## 实施决定与后续范围

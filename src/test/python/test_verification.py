@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-PATH = Path(__file__).resolve().parents[3] / 'scripts/verify.py'
+PATH = Path(__file__).resolve().parents[3] / 'scripts/run/verify.py'
 spec = importlib.util.spec_from_file_location('verification', PATH)
 verify = importlib.util.module_from_spec(spec)
 if PATH.exists():

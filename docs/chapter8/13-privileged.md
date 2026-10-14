@@ -54,7 +54,7 @@ mret
 
 ```sh
 make test-privileged generate-privileged SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module Privileged generated/privileged/Privileged.v
+verilator --lint-only --top-module Privileged target/generated/privileged/Privileged.v
 ```
 
 独立测试 **8/8 通过**：CSR 旧值与串行化、U→M→U、U→S→U、

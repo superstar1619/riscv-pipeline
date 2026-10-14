@@ -136,7 +136,7 @@ private class SupervisorAccessHarness extends Module {
   io.Compare := supervisor.io.STIMECMP_REGW
 }
 
-class CSRSupervisorSpec extends AnyFlatSpec with ChiselScalatestTester {
+class CSRSupervisorSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private def hex(s: String): BigInt = BigInt(s, 16)
   private val full = hex("ffffffff")
   private val full64 = hex("ffffffffffffffff")

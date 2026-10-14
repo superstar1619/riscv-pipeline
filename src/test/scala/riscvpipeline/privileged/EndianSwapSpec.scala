@@ -14,7 +14,7 @@ private class EndianSwapHarness extends Module {
   io <> dut.io
 }
 
-class EndianSwapSpec extends AnyFlatSpec with ChiselScalatestTester {
+class EndianSwapSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private def check(d: EndianSwapHarness, data: BigInt, big: Boolean,
                     expected: BigInt): Unit = {
     d.io.a.poke(data.U)

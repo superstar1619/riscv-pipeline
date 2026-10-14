@@ -83,7 +83,7 @@ private class PrivModeStatusHarness(s: Boolean = true) extends Module {
   io.SRet := decode.io.sretM
 }
 
-class PrivModeSpec extends AnyFlatSpec with ChiselScalatestTester {
+class PrivModeSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private case class Inputs(valid: Boolean = true, stall: Boolean = false,
     flush: Boolean = false, trap: Boolean = false, mr: Boolean = false,
     sr: Boolean = false, delegate: Boolean = false, mpp: Int = Privilege.USER,

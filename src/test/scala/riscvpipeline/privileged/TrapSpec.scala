@@ -14,7 +14,7 @@ private class TrapHarness(supportedS: Boolean) extends Module {
   io <> dut.io
 }
 
-class TrapSpec extends AnyFlatSpec with ChiselScalatestTester {
+class TrapSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private val interrupts = Seq(Cause.MACHINE_EXTERNAL_IRQ, Cause.MACHINE_SOFTWARE_IRQ,
     Cause.MACHINE_TIMER_IRQ, Cause.SUPERVISOR_EXTERNAL_IRQ,
     Cause.SUPERVISOR_SOFTWARE_IRQ, Cause.SUPERVISOR_TIMER_IRQ)

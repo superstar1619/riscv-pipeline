@@ -113,7 +113,7 @@ private class CounterAccessHarness extends Module {
   io.Inhibit := machine.io.MCOUNTINHIBIT_REGW
 }
 
-class CSRCountersSpec extends AnyFlatSpec with ChiselScalatestTester {
+class CSRCountersSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private val full = BigInt("ffffffff", 16)
   private val full64 = BigInt("ffffffffffffffff", 16)
   private val indices = Seq(0, 2) ++ (3 to 31)

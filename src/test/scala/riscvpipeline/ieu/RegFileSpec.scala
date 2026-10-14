@@ -23,7 +23,7 @@ private class RegFileHarness(dataWidth: Int, registerCount: Int) extends Module 
   io.RD2 := dut.io.RD2
 }
 
-class RegFileSpec extends AnyFlatSpec with ChiselScalatestTester {
+class RegFileSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private def idle(dut: RegFileHarness): Unit = {
     dut.io.WE3.poke(false.B)
     dut.io.A1.poke(0.U)

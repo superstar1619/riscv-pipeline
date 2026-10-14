@@ -42,7 +42,7 @@ private class ControllerALUHarness extends Module {
   io.IEUAdr := alu.io.IEUAdr
 }
 
-class ControllerSpec extends AnyFlatSpec with ChiselScalatestTester {
+class ControllerSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   // Independent behavioral table; this reference never packs control bits.
   private case class MainControls(
     regWrite: Boolean = false,

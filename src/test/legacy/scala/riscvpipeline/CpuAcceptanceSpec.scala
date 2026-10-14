@@ -21,7 +21,7 @@ class CpuAcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
   for ((suffix, vector, imem, dmem) <- Seq(("", 0, 128, 64),
     ("-expanded", 256, 256, 128))) {
     it should s"execute complete RV32 acceptance at reset vector $vector" in {
-      val name = s"programs/rv32-acceptance$suffix"
+      val name = s"target/acceptance-images/rv32-acceptance$suffix"
       val config = CpuConfig(imemDepth = imem, dmemDepth = dmem, resetVector = vector,
         instructionInitFile = Some(s"$name.memfile"))
       val source = Source.fromFile(s"$name.trace")

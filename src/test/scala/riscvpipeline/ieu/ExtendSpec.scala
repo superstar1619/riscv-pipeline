@@ -18,7 +18,7 @@ private class ExtendHarness(outputWidth: Int) extends Module {
   io.ImmExt := dut.io.ImmExt
 }
 
-class ExtendSpec extends AnyFlatSpec with ChiselScalatestTester {
+class ExtendSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private val mask32 = (BigInt(1) << 32) - 1
 
   // Maps immediate bit positions to architectural instruction positions.

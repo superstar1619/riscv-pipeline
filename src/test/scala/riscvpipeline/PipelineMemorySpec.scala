@@ -29,7 +29,7 @@ private class PipelineIFUHarness(config: CpuConfig) extends Module {
   dut.io <> io
 }
 
-class PipelineMemorySpec extends AnyFlatSpec with ChiselScalatestTester {
+class PipelineMemorySpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   behavior of "Synchronous pipeline memories"
 
   it should "sample DTIM read addresses at the rising edge" in {

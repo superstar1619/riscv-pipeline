@@ -16,3 +16,8 @@ obj_dir/
 .superpowers/
 __pycache__/
 *.v
+
+# Documentation contains Markdown only; evidence and snapshots belong in target/.
+docs/**
+!docs/**/
+!docs/**/*.md

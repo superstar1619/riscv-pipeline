@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[3]
 
 class CollectionTests(unittest.TestCase):
     def module(self):
-        path = ROOT / 'scripts/cvw_common.py'
+        path = ROOT / 'scripts/lib/cvw_common.py'
         self.assertTrue(path.exists(), 'missing evidence collector')
         spec = importlib.util.spec_from_file_location('cvw_common', path)
         module = importlib.util.module_from_spec(spec)

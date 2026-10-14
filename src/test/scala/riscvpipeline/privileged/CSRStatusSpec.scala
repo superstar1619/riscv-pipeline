@@ -84,7 +84,7 @@ private class StatusAccessHarness extends Module {
   io.Ret := decode.io.RetM
 }
 
-class CSRStatusSpec extends AnyFlatSpec with ChiselScalatestTester {
+class CSRStatusSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private def hex(s: String): BigInt = BigInt(s, 16)
   private case class Inputs(
     word: BigInt = 0, mwrite: Boolean = false, hwrite: Boolean = false,

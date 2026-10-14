@@ -17,7 +17,7 @@ private class SubwordWriteHarness(dataWidth: Int) extends Module {
   io.WriteDataWord := dut.io.WriteDataWord
 }
 
-class SubwordWriteSpec extends AnyFlatSpec with ChiselScalatestTester {
+class SubwordWriteSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   // 设置输入后立即检查，不推进时钟；调用者按需保留波形观察周期。
   private def check(
     dut: SubwordWriteHarness,

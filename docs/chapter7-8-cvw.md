@@ -1,3 +1,5 @@
+> 历史证据已迁至 [target 中的证据目录](../target/reports/)。`make clean` 会删除原始证据，Markdown 报告保留；重新运行相应报告命令将产生新的一次运行。
+
 # 第七、八章 CVW 本轮回归入口
 
 统一验证入口、真实签名读回和提交差分见[验证更新](chapter7-8-verification-update.md)；
@@ -14,7 +16,7 @@ make test-chapter8-cvw SBT=./scripts/sbt-local.sh
 
 复用 `CVW_ROOT`、`SBT`、`VERILATOR`、`SPIKE`、`RISCV_TOOL_PREFIX`。默认上游 `/home/unlastingstar/cvw`，仅作读取。上游 CVW revision 固定为 `2f82f001139358be7646e910ff6fa2a140bed620`；第七章架构测试与 CoreMark revision 沿用既有构建器。逐个源文件与 Git blob 比较，不使用旧 ELF 或旧结果替代本轮执行。
 
-每轮创建 `target/chapter7-8-cvw/runs/<UTC>/`；联合入口生成结果后归档到 `docs/reports/chapter7-8-cvw/<UTC>/`。`latest-run.txt` 仅为运行目录定位文件。旧章节报告与旧 current-run 指针均不覆盖。失败命令记录退出码并继续独立测试；依赖构建失败的项目记录未执行原因。全部适用项通过时退出 0，其他情况退出非零。结果行区分 `pass`、`cpu_failure`、`timeout`、`build_platform_error`、`not_applicable` 和 `not_executed`。
+每轮创建 `target/chapter7-8-cvw/runs/<UTC>/`；联合入口将 Markdown 报告发布到 `docs/reports/chapter7-8-cvw/<UTC>/`，完整原始证据保留在运行目录。`latest-run.txt` 仅为运行目录定位文件。旧章节报告与旧 current-run 指针均不覆盖。失败命令记录退出码并继续独立测试；依赖构建失败的项目记录未执行原因。全部适用项通过时退出 0，其他情况退出非零。结果行区分 `pass`、`cpu_failure`、`timeout`、`build_platform_error`、`not_applicable` 和 `not_executed`。
 
 全量 Scala 只运行一次，通过独立 JUnit 目录逐测试名按章节汇总。`test-acceptance` 的重复执行用于核验既有入口，`counted=false`，不能增加独立功能覆盖。RTL 的种子和复位重跑次数与 Scala 用例数分开统计。
 

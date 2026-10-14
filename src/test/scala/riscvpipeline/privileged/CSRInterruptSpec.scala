@@ -92,7 +92,7 @@ private class InterruptAccessHarness(s: Boolean = true, sstc: Boolean = false)
   io.Software := interrupts.io.MIP_REGW_writeable
 }
 
-class CSRInterruptSpec extends AnyFlatSpec with ChiselScalatestTester {
+class CSRInterruptSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private case class Inputs(
     word: BigInt = 0, mie: Boolean = false, mip: Boolean = false,
     sie: Boolean = false, sip: Boolean = false, deleg: Int = 0, pins: Int = 0,

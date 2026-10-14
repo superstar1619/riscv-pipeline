@@ -15,7 +15,7 @@ private class CSRHarness(config: PrivilegedConfig = PrivilegedConfig()) extends 
   io <> dut.io
 }
 
-class CSRSpec extends AnyFlatSpec with ChiselScalatestTester {
+class CSRSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private val wordMask = BigInt("ffffffff", 16)
   private def hex(s: String): BigInt = BigInt(s, 16)
   private def csr(adr: Int, funct: Int, rs: Int = 1, rd: Int = 1): BigInt =

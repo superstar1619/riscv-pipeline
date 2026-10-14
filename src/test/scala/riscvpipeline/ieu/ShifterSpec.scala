@@ -18,7 +18,7 @@ private class ShifterHarness(dataWidth: Int) extends Module {
   io.Y := dut.io.Y
 }
 
-class ShifterSpec extends AnyFlatSpec with ChiselScalatestTester {
+class ShifterSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   // Ordinary software shifts form an oracle independent of the funnel's
   // source concatenation and complemented right-shift offset.
   private def reference(

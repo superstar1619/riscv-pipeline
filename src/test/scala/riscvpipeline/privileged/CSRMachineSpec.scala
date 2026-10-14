@@ -122,7 +122,7 @@ private class MachineAccessHarness extends Module {
   io.Scratch := machine.io.MSCRATCH_REGW
 }
 
-class CSRMachineSpec extends AnyFlatSpec with ChiselScalatestTester {
+class CSRMachineSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private def hex(s: String): BigInt = BigInt(s, 16)
   private val full = hex("ffffffff")
   private val owned = Seq(CSR.MTVEC, CSR.MEDELEG, CSR.MIDELEG, CSR.MSCRATCH, CSR.MEPC,

@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
-SPEC = importlib.util.spec_from_file_location('privileged_coverage', ROOT / 'scripts/privileged_coverage.py')
+SPEC = importlib.util.spec_from_file_location('privileged_coverage', ROOT / 'scripts/lib/privileged_coverage.py')
 coverage = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(coverage)
 

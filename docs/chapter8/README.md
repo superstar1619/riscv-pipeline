@@ -1,3 +1,5 @@
+> 历史证据已迁至 [target 中的证据目录](../../target/reports/)。`make clean` 会删除原始证据，Markdown 报告保留；重新运行相应报告命令将产生新的一次运行。
+
 # 第八章：特权操作分模块实施
 
 参考《RISC-V System-on-Chip Design, Edition 1》第八章，书页 335–381
@@ -40,28 +42,28 @@ MMU、PMP、浮点单元、CLINT/PLIC 本体留给后续章节，相关接口和
 ```bash
 make test-csr-access SBT=./scripts/sbt-local.sh
 make generate-csr-access SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRAccess generated/csr-access/CSRAccess.v
+verilator --lint-only --top-module CSRAccess target/generated/csr-access/CSRAccess.v
 make test-priv-decode SBT=./scripts/sbt-local.sh
 make generate-priv-decode SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module PrivDecode generated/priv-decode/PrivDecode.v
+verilator --lint-only --top-module PrivDecode target/generated/priv-decode/PrivDecode.v
 make test-csr-status SBT=./scripts/sbt-local.sh
 make generate-csr-status SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRStatus generated/csr-status/CSRStatus.v
+verilator --lint-only --top-module CSRStatus target/generated/csr-status/CSRStatus.v
 make test-csr-interrupt SBT=./scripts/sbt-local.sh
 make generate-csr-interrupt SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRInterrupt generated/csr-interrupt/CSRInterrupt.v
+verilator --lint-only --top-module CSRInterrupt target/generated/csr-interrupt/CSRInterrupt.v
 make test-csr-machine SBT=./scripts/sbt-local.sh
 make generate-csr-machine SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRMachine generated/csr-machine/CSRMachine.v
+verilator --lint-only --top-module CSRMachine target/generated/csr-machine/CSRMachine.v
 make test-csr-supervisor SBT=./scripts/sbt-local.sh
 make generate-csr-supervisor SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRSupervisor generated/csr-supervisor/CSRSupervisor.v
+verilator --lint-only --top-module CSRSupervisor target/generated/csr-supervisor/CSRSupervisor.v
 make test-csr-counters SBT=./scripts/sbt-local.sh
 make generate-csr-counters SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRCounters generated/csr-counters/CSRCounters.v
+verilator --lint-only --top-module CSRCounters target/generated/csr-counters/CSRCounters.v
 make test-priv-mode SBT=./scripts/sbt-local.sh
 make generate-priv-mode SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module PrivMode generated/priv-mode/PrivMode.v
+verilator --lint-only --top-module PrivMode target/generated/priv-mode/PrivMode.v
 ```
 
 源码、接口语义、测试覆盖与实际结果见 [CSRAccess](01-csr-access.md)、
@@ -94,5 +96,5 @@ make test-rtl SBT=./scripts/sbt-local.sh
 [16：TestPlan实施与详尽报告](16-testplan-report.md)对照印刷页360–366和表8.5–8.9，
 提供共享Scala/独立RTL的逐例预期、实际、周期、陷阱签名、配置适用性与检查器负向验证。
 新入口为`test-chapter8-plan`、`test-chapter8-rtl`、`report-chapter8`；
-归档位于[`docs/reports/chapter8-testplan/`](../reports/chapter8-testplan/)。
+归档位于[`target/reports/chapter8-testplan/`](../../target/reports/chapter8-testplan)。
 历史验收只作背景，§8.3结论均引用本轮重新执行的证据。

@@ -73,7 +73,7 @@ make test-verification SBT=./scripts/sbt-local.sh
 make test-verification SBT=./scripts/sbt-local.sh VERIFY_SUITE=privileged VERIFY_PROFILE=full
 make test-diff SBT=./scripts/sbt-local.sh VERIFY_PROFILE=full
 make report-verification SBT=./scripts/sbt-local.sh
-python3 -m unittest discover -s src/test/python -p test_verification.py -v
+PYTHONPYCACHEPREFIX=target/cache/python python3 -m unittest discover -s src/test/python -p test_verification.py -v
 ```
 
 旧独立入口可以用于缩小问题。统一回归使用新目录，记录的 `reproduce` 默认重新构建；`reproduceOriginal` 是原始精确命令，依赖原目录中的镜像和二进制。生产程序的镜像目录各自独立；负向检查会使用专用 scratch 目录，重放这类检查时仍应避免并发覆盖同一个 scratch。
@@ -92,3 +92,9 @@ python3 -m unittest discover -s src/test/python -p test_verification.py -v
 评审应具备：源码快照与哈希；工具版本；完整 manifest 与适用性；ELF/反汇编/镜像；参考推导；实际签名；原始提交及流水线日志；首差报告；功能覆盖与 line/toggle 原始数据；命令和原始退出码；每个复位轮次的记录；负向检查结果；`SHA256SUMS`；具体归档运行 ID。
 
 性能报告只使用定义好的测量区间，保留编译选项、数据大小和迭代数；正确性失败时不接受性能数字。CoreMark 当前记录 CRC、错误数、迭代数和周期，不据此宣称官方认证得分。更改频率假设、仿真 wall time 或测试循环次数不能替代等条件比较。
+
+## 目录与清理
+
+文档导航见[文档索引](README.md)。`docs/` 只保存 Markdown；原始结果、日志、源码快照和校验清单留在 `target/`。报告发布只复制 Markdown，并调整相对证据链接。
+
+`make clean SBT=./scripts/sbt-local.sh` 删除整个 `target/`，包括运行证据与本地缓存。报告正文仍保留，证据清理后需重新运行报告命令；新运行使用新的时间戳目录。

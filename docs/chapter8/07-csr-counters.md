@@ -213,7 +213,7 @@ time 输入为 0x1234567889ABCDEF 时，读取 time/timeh 得到 0x89ABCDEF/0x12
 ./scripts/sbt-local.sh compile 'Test / compile'
 make test-csr-counters SBT=./scripts/sbt-local.sh
 make generate-csr-counters SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module CSRCounters generated/csr-counters/CSRCounters.v
+verilator --lint-only --top-module CSRCounters target/generated/csr-counters/CSRCounters.v
 make test-pipeline SBT=./scripts/sbt-local.sh
 make test SBT=./scripts/sbt-local.sh
 ```
@@ -223,7 +223,7 @@ Makefile 默认与构造器一致；例如最大 HPM 且无 S：
 
 ```bash
 make generate-csr-counters SBT=./scripts/sbt-local.sh \
-  CSR_COUNTERS_TARGET_DIR=generated/csr-counters-no-s-hpm29 \
+  CSR_COUNTERS_TARGET_DIR=target/generated/csr-counters-no-s-hpm29 \
   CSR_COUNTERS_SUPERVISOR_SUPPORTED=false CSR_COUNTERS_HPM_COUNTERS=29
 ```
 

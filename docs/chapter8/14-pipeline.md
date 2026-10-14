@@ -82,7 +82,7 @@ MMU/PMP、浮点、虚拟化、CLINT/PLIC 本体、原子扩展和乘除法不�
 ```sh
 make generate-privileged-cpu SBT=./scripts/sbt-local.sh
 verilator --lint-only --top-module PrivilegedPipeline \
-  generated/privileged-pipeline/PrivilegedPipeline.v
+  target/generated/privileged-pipeline/PrivilegedPipeline.v
 make test-chapter8 SBT=./scripts/sbt-local.sh
 ```
 

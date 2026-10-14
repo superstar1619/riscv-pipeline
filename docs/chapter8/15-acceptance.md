@@ -15,7 +15,7 @@
 make test-chapter8 SBT=./scripts/sbt-local.sh
 make generate-privileged-cpu SBT=./scripts/sbt-local.sh
 verilator --lint-only --top-module PrivilegedPipeline \
-  generated/privileged-pipeline/PrivilegedPipeline.v
+  target/generated/privileged-pipeline/PrivilegedPipeline.v
 make test-rtl SBT=./scripts/sbt-local.sh
 ```
 

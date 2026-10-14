@@ -3,7 +3,9 @@ set -euo pipefail
 
 project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 toolchain_dir=${CHISEL_TOOLCHAIN_DIR:-"$project_dir/../../.tools/chisel"}
-cache_dir=${CHISEL_CACHE_DIR:-"$project_dir/.cache/chisel"}
+cache_dir=${CHISEL_CACHE_DIR:-"$project_dir/target/cache/chisel"}
+runtime_tmp_dir=${TMPDIR:-"$project_dir/target/tmp"}
+mkdir -p "$runtime_tmp_dir"
 
 if [[ ! -x "$toolchain_dir/jdk/bin/java" || ! -r "$toolchain_dir/sbt-launch-1.10.7.jar" ]]; then
   echo "Local Chisel toolchain not found. Set CHISEL_TOOLCHAIN_DIR or use an installed sbt." >&2
@@ -27,7 +29,7 @@ cd "$project_dir"
 # forcestart allows batch execution to continue without a boot socket if
 # the environment disallows sockets; the build server remains disabled.
 exec env -u XDG_RUNTIME_DIR "$JAVA_HOME/bin/java" \
-  -Djava.io.tmpdir="${TMPDIR:-/tmp}" \
+  -Djava.io.tmpdir="$runtime_tmp_dir" \
   -Dsbt.boot.directory="$cache_dir/boot" \
   -Dsbt.global.base="$cache_dir/global" \
   -Dsbt.ivy.home="$cache_dir/ivy" \

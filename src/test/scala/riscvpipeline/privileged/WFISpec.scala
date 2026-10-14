@@ -15,7 +15,7 @@ private class WFIHarness(timeoutCycles: Int) extends Module {
   io <> dut.io
 }
 
-class WFISpec extends AnyFlatSpec with ChiselScalatestTester {
+class WFISpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private case class Inputs(valid: Boolean = true, wfi: Boolean = true,
     flush: Boolean = false, trap: Boolean = false, pending: Boolean = false)
 

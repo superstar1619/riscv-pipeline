@@ -136,9 +136,9 @@ mcounteren，不要求不存在的 scounteren。
 
 ```bash
 ./scripts/sbt-local.sh 'testOnly riscvpipeline.privileged.CSRSpec'
-./scripts/sbt-local.sh 'runMain riscvpipeline.GenerateCSR target/chapter8/completion/csr/default'
-./scripts/sbt-local.sh 'runMain riscvpipeline.GenerateCSR target/chapter8/completion/csr/no-s false'
-./scripts/sbt-local.sh 'runMain riscvpipeline.GenerateCSR target/chapter8/completion/csr/sstc true true true 1'
+./scripts/sbt-local.sh 'runMain riscvpipeline.generators.GenerateCSR target/chapter8/completion/csr/default'
+./scripts/sbt-local.sh 'runMain riscvpipeline.generators.GenerateCSR target/chapter8/completion/csr/no-s false'
+./scripts/sbt-local.sh 'runMain riscvpipeline.generators.GenerateCSR target/chapter8/completion/csr/sstc true true true 1'
 verilator --lint-only --top-module CSR target/chapter8/completion/csr/default/CSR.v
 ```
 

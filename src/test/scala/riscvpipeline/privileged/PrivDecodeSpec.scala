@@ -56,7 +56,7 @@ private class CSRPrivDecodeHarness extends Module {
   io.Ret := decode.io.RetM
 }
 
-class PrivDecodeSpec extends AnyFlatSpec with ChiselScalatestTester {
+class PrivDecodeSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   private def hex(s: String): BigInt = BigInt(s, 16)
   private val ecall = hex("00000073")
   private val ebreak = hex("00100073")

@@ -121,14 +121,14 @@ GeneratePrivilegedPipeline [imem] [dmem] [dir] [file|-] [resetVector] [S] [BE] [
 ```
 
 两者默认指令/数据深度均 64，镜像为 `CpuConfig.DEFAULT_PROGRAM_FILE`，复位字节地址为零。
-普通输出目录为 `generated/riscv-pipeline`，特权输出目录为 `generated/privileged-pipeline`。
+普通输出目录为 `target/generated/riscv-pipeline`，特权输出目录为 `target/generated/privileged-pipeline`。
 镜像参数 `-` 表示 `None`；复位地址接受十进制或 `0x`/`0X` 十六进制。
 特权入口的 S/BE/Sstc/HPM/WFI 默认值分别为 `true/true/false/0/65536`，复用配置默认值。
 `hartId` 与 `vectoredInterruptsSupported` 没有对应的位置参数；需要通过 Scala 配置改变。
 
 ```bash
 ./scripts/sbt-local.sh \
-  'runMain riscvpipeline.GeneratePrivilegedPipeline 128 64 generated/privileged-custom programs/riscvtest.memfile 0 true true false 0 65536'
+  'runMain riscvpipeline.generators.GeneratePrivilegedPipeline 128 64 target/generated/privileged-custom programs/riscvtest.memfile 0 true true false 0 65536'
 ```
 
 ## 本次验证记录
@@ -155,8 +155,8 @@ RTL 验收各使用种子 `1/17/2026`，配置如下（深度单位为 32 位字
 | --- | --- | --- | --- |
 | book | 64／64 | `0` | `programs/riscvtest.memfile` |
 | expanded | 128／128 | `0x100` | `programs/rv32-configtest.memfile` |
-| acceptance | 128／64 | `0` | `programs/rv32-acceptance.memfile` |
-| acceptance-expanded | 256／128 | `0x100` | `programs/rv32-acceptance-expanded.memfile` |
+| acceptance | 128／64 | `0` | `target/acceptance-images/rv32-acceptance.memfile` |
+| acceptance-expanded | 256／128 | `0x100` | `target/acceptance-images/rv32-acceptance-expanded.memfile` |
 
 复现本次验证：
 
@@ -165,7 +165,7 @@ RTL 验收各使用种子 `1/17/2026`，配置如下（深度单位为 32 位字
 make test-rtl SBT=./scripts/sbt-local.sh
 make generate-privileged-cpu SBT=./scripts/sbt-local.sh
 verilator --lint-only -Wall -Wno-DECLFILENAME -Wno-UNUSEDSIGNAL \
-  --top-module PrivilegedPipeline generated/privileged-pipeline/PrivilegedPipeline.v
+  --top-module PrivilegedPipeline target/generated/privileged-pipeline/PrivilegedPipeline.v
 git diff --check
 ```
 

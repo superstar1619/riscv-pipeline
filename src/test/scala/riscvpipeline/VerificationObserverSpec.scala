@@ -5,7 +5,7 @@ import chiseltest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class VerificationObserverSpec extends AnyFlatSpec with ChiselScalatestTester with Matchers {
+class VerificationObserverSpec extends AnyFlatSpec with riscvpipeline.ProjectTest with Matchers {
   "Verification observer" should "align M memory events with W results and cancel wrong path instructions" in {
     import PipelineTestSupport._
     val words = Seq(addi(1,0,40), addi(2,1,2), store(2,0), load(3,0,0),

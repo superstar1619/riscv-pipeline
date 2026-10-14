@@ -5,8 +5,23 @@ import unittest
 import os
 import tempfile
 import time
+from unittest.mock import patch
 
-PATH = Path(__file__).resolve().parents[3] / 'scripts/report-chapter8.py'
+PATH = Path(__file__).resolve().parents[3] / 'scripts/report/report-chapter8.py'
+
+
+class FreshSessionTests(unittest.TestCase):
+    def test_begin_after_clean_does_not_require_historical_baseline(self):
+        spec = importlib.util.spec_from_file_location('fresh_chapter8_report', PATH)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        (module.ROOT / 'target').mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=module.ROOT / 'target') as directory:
+            base = Path(directory) / 'chapter8'
+            with patch.object(module, 'BASE_ART', base), patch.object(module, 'POINTER', base / 'current-run.txt'):
+                module.begin()
+                self.assertTrue((module.ART / 'session.json').is_file())
+                self.assertTrue((base / 'current-run.txt').is_file())
 
 class Chapter8ReportEvidenceTests(unittest.TestCase):
     def test_fail_closed_on_incomplete_or_changed_evidence(self):

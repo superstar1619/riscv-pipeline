@@ -151,7 +151,7 @@ sfence.vma a0, a1         # 默认配置非法；启用VM译码后检查模式�
 ./scripts/sbt-local.sh compile 'Test / compile'
 make test-priv-decode SBT=./scripts/sbt-local.sh
 make generate-priv-decode SBT=./scripts/sbt-local.sh
-verilator --lint-only --top-module PrivDecode generated/priv-decode/PrivDecode.v
+verilator --lint-only --top-module PrivDecode target/generated/priv-decode/PrivDecode.v
 make test-pipeline SBT=./scripts/sbt-local.sh
 make test SBT=./scripts/sbt-local.sh
 ```
@@ -163,7 +163,7 @@ Makefile 对应 `PRIV_DECODE_TARGET_DIR`、`PRIV_DECODE_SUPERVISOR_SUPPORTED`、
 
 ```bash
 make generate-priv-decode SBT=./scripts/sbt-local.sh \
-  PRIV_DECODE_TARGET_DIR=generated/priv-decode-vm \
+  PRIV_DECODE_TARGET_DIR=target/generated/priv-decode-vm \
   PRIV_DECODE_SUPERVISOR_SUPPORTED=true PRIV_DECODE_VIRTUAL_MEMORY_SUPPORTED=true
 ```
 

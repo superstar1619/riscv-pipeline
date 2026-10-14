@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
-SPEC = importlib.util.spec_from_file_location('commit_diff', ROOT / 'scripts/commit_diff.py')
+SPEC = importlib.util.spec_from_file_location('commit_diff', ROOT / 'scripts/lib/commit_diff.py')
 diff = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(diff)
 

@@ -205,7 +205,7 @@ private[riscvpipeline] object Chapter8Programs {
   val doneWrite: Write = Write(DoneAddress, DoneValue)
 }
 
-class Chapter8AcceptanceSpec extends AnyFlatSpec with ChiselScalatestTester {
+class Chapter8AcceptanceSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   import Chapter8Programs._
   behavior of "Chapter 8 real privileged pipeline acceptance"
 
