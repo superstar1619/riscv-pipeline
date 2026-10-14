@@ -1,0 +1,303 @@
+[info] welcome to sbt 1.10.7 (Eclipse Adoptium Java 17.0.20.1)
+[info] loading project definition from /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/project
+[info] loading settings for project riscv-pipeline from build.sbt...
+[info] set current project to riscv-pipeline (in build file:/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/)
+[info] compiling 1 Scala source to /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/scala-2.13/test-classes ...
+[info] done compiling
+[info] running riscvpipeline.ExportChapter8TestPlan 
+Exported 224 independent cases to target/chapter8-testplan
+[success] Total time: 5 s, completed Oct 11, 2026, 9:12:42 PM
+[info] Chapter8TestPlanSpec:
+[info] Chapter 8.3 shared architectural test plan
+[info] - should default-EX00: 非页异常 cause=0 与精确副作用
+[info] - should default-EX01: 非页异常 cause=1 与精确副作用
+[info] - should default-EX02: 非页异常 cause=2 与精确副作用
+[info] - should default-EX03: 非页异常 cause=3 与精确副作用
+[info] - should default-EX04: 非页异常 cause=4 与精确副作用
+[info] - should default-EX05: 非页异常 cause=5 与精确副作用
+[info] - should default-EX06: 非页异常 cause=6 与精确副作用
+[info] - should default-EX07: 非页异常 cause=7 与精确副作用
+[info] - should default-EX08: 非页异常 cause=8 与精确副作用 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty default-EX08 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-EX09: 非页异常 cause=9 与精确副作用 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty default-EX09 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-EX11: 非页异常 cause=11 与精确副作用
+[info] - should default-PR01: 老指令完成、故障rd保留、年轻跳转与存储取消
+[info] - should default-PR02: 取消错误路径异常及未采取分支的未对齐目标
+[info] - should default-CS01: 六种CSR读改写、rd/rs1抑制与依赖
+[info] - should default-CS02: 身份寄存器及固定RV32 I/U/S misa
+[info] - should default-CS03: WARL掩码、EPC/TVEC对齐及Bare SATP *** FAILED ***
+[info]   Some("store 8 expected Write(160,2044,15), got Write(160,1985,15)") was not empty default-CS03 repeat=0: store 8 expected Write(160,2044,15), got Write(160,1985,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-CS04: 权限/只读/特权指令非法：mode=3 word=0xf1101373
+[info] - should default-CS05: 权限/只读/特权指令非法：mode=0 word=0x34002373 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty default-CS05 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-PV01: 权限/只读/特权指令非法：mode=0 word=0x30200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty default-PV01 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-PV02: 权限/只读/特权指令非法：mode=0 word=0x10200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty default-PV02 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-PV03: 权限/只读/特权指令非法：mode=3 word=0x12000073
+[info] - should default-CS06: 权限/只读/特权指令非法：mode=1 word=0x34002373 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty default-CS06 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-PV04: 权限/只读/特权指令非法：mode=1 word=0x10200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,4196480,15), got Write(1036,4196352,15)") was not empty default-PV04 repeat=0: store 3 expected Write(1036,4196480,15), got Write(1036,4196352,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-PV05: 权限/只读/特权指令非法：mode=1 word=0x30200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty default-PV05 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-CT01: 64位计数器写入/高低半/禁止增长/固定零HPM槽
+[info] - should default-CTD0: mode=0 counteren许可=false *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty default-CTD0 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-CTA0: mode=0 counteren许可=true
+[info] - should default-CTD1: mode=1 counteren许可=false *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty default-CTD1 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-CTA1: mode=1 counteren许可=true
+[info] - should default-WF30: WFI有界等待 mode=3 TW=false
+[info] - should default-WF31: WFI有界等待 mode=3 TW=true
+[info] - should default-WF10: WFI有界等待 mode=1 TW=false
+[info] - should default-WF11: WFI有界等待 mode=1 TW=true *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2099328,15), got Write(1036,2099200,15)") was not empty default-WF11 repeat=0: store 3 expected Write(1036,2099328,15), got Write(1036,2099200,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-WF01: WFI有界等待 mode=0 TW=true *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2097280,15), got Write(1036,2097152,15)") was not empty default-WF01 repeat=0: store 3 expected Write(1036,2097280,15), got Write(1036,2097152,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-WFWAKE: 局部使能唤醒WFI、全局屏蔽阻止陷阱
+[info] - should default-IR1MD: cause=1 M处理 直接
+[info] - should default-IR1MV: cause=1 M处理 向量
+[info] - should default-IR1SD: cause=1 S委托 直接
+[info] - should default-IR1SV: cause=1 S委托 向量
+[info] - should default-IR3MD: cause=3 M处理 直接
+[info] - should default-IR3MV: cause=3 M处理 向量
+[info] - should default-IR5MD: cause=5 M处理 直接
+[info] - should default-IR5MV: cause=5 M处理 向量
+[info] - should default-IR5SD: cause=5 S委托 直接
+[info] - should default-IR5SV: cause=5 S委托 向量
+[info] - should default-IR7MD: cause=7 M处理 直接
+[info] - should default-IR7MV: cause=7 M处理 向量
+[info] - should default-IR9MD: cause=9 M处理 直接
+[info] - should default-IR9MV: cause=9 M处理 向量
+[info] - should default-IR9SD: cause=9 S委托 直接
+[info] - should default-IR9SV: cause=9 S委托 向量
+[info] - should default-IR11MD: cause=11 M处理 直接
+[info] - should default-IR11MV: cause=11 M处理 向量
+[info] - should default-IRREM: pending保持、返回重入、第二次清除
+[info] - should default-IRRES: pending保持、返回重入、第二次清除
+[info] - should default-IRVIEW: M/S共享中断视图、委托在M模式屏蔽及SIP写掩码
+[info] - should default-EN3N: 数据端序 mode=3 MPRV=false
+[info] - should default-EN0N: 数据端序 mode=0 MPRV=false
+[info] - should default-EN0P: 数据端序 mode=0 MPRV=true
+[info] - should default-EN1N: 数据端序 mode=1 MPRV=false
+[info] - should default-EN1P: 数据端序 mode=1 MPRV=true
+[info] - should minimal-EX00: 非页异常 cause=0 与精确副作用
+[info] - should minimal-EX01: 非页异常 cause=1 与精确副作用
+[info] - should minimal-EX02: 非页异常 cause=2 与精确副作用
+[info] - should minimal-EX03: 非页异常 cause=3 与精确副作用
+[info] - should minimal-EX04: 非页异常 cause=4 与精确副作用
+[info] - should minimal-EX05: 非页异常 cause=5 与精确副作用
+[info] - should minimal-EX06: 非页异常 cause=6 与精确副作用
+[info] - should minimal-EX07: 非页异常 cause=7 与精确副作用
+[info] - should minimal-EX08: 非页异常 cause=8 与精确副作用 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty minimal-EX08 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should minimal-EX11: 非页异常 cause=11 与精确副作用
+[info] - should minimal-PR01: 老指令完成、故障rd保留、年轻跳转与存储取消
+[info] - should minimal-PR02: 取消错误路径异常及未采取分支的未对齐目标
+[info] - should minimal-CS01: 六种CSR读改写、rd/rs1抑制与依赖
+[info] - should minimal-CS02: 身份寄存器及固定RV32 I/U/S misa
+[info] - should minimal-CS03: WARL掩码、EPC/TVEC对齐及Bare SATP *** FAILED ***
+[info]   chiseltest.TimeoutException: timeout on Chapter8Harness.clock: IO[Clock] at 1000 idle cycles. You can extend the timeout by calling .setTimeout(<n>) on your clock (setting it to 0 means 'no timeout').
+[info]   at chiseltest.internal.GenericBackend.$anonfun$run$7(GenericBackend.scala:207)
+[info]   at chiseltest.internal.GenericBackend.$anonfun$run$7$adapted(GenericBackend.scala:204)
+[info]   at scala.collection.mutable.HashMap$Node.foreach(HashMap.scala:642)
+[info]   at scala.collection.mutable.HashMap.foreach(HashMap.scala:504)
+[info]   at chiseltest.internal.GenericBackend.run(GenericBackend.scala:204)
+[info]   at chiseltest.internal.Context$.$anonfun$run$1(Testers2.scala:34)
+[info]   at scala.util.DynamicVariable.withValue(DynamicVariable.scala:59)
+[info]   at chiseltest.internal.Context$.run(Testers2.scala:34)
+[info]   at chiseltest.ChiselScalatestTester.chiseltest$ChiselScalatestTester$$runTest(ChiselScalatestTester.scala:103)
+[info]   at chiseltest.ChiselScalatestTester$TestBuilder.apply(ChiselScalatestTester.scala:31)
+[info]   ...
+[info] - should minimal-CS04: 权限/只读/特权指令非法：mode=3 word=0xf1101373
+[info] - should minimal-CS05: 权限/只读/特权指令非法：mode=0 word=0x34002373 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty minimal-CS05 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should minimal-PV01: 权限/只读/特权指令非法：mode=0 word=0x30200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty minimal-PV01 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should minimal-PV02: 权限/只读/特权指令非法：mode=0 word=0x10200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty minimal-PV02 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should minimal-PV03: 权限/只读/特权指令非法：mode=3 word=0x12000073
+[info] - should minimal-CS07: 权限/只读/特权指令非法：mode=3 word=0x10002373
+[info] - should minimal-PV06: 权限/只读/特权指令非法：mode=3 word=0x10200073
+[info] - should minimal-CT01: 64位计数器写入/高低半/禁止增长/固定零HPM槽
+[info] - should minimal-CTD0: mode=0 counteren许可=false *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty minimal-CTD0 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should minimal-CTA0: mode=0 counteren许可=true
+[info] - should minimal-WF30: WFI有界等待 mode=3 TW=false
+[info] - should minimal-WF31: WFI有界等待 mode=3 TW=true
+[info] - should minimal-WF01: WFI有界等待 mode=0 TW=true *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2097280,15), got Write(1036,2097152,15)") was not empty minimal-WF01 repeat=0: store 3 expected Write(1036,2097280,15), got Write(1036,2097152,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should minimal-WFWAKE: 局部使能唤醒WFI、全局屏蔽阻止陷阱
+[info] - should minimal-IR3MD: cause=3 M处理 直接
+[info] - should minimal-IR3MV: cause=3 M处理 向量
+[info] - should minimal-IR7MD: cause=7 M处理 直接
+[info] - should minimal-IR7MV: cause=7 M处理 向量
+[info] - should minimal-IR11MD: cause=11 M处理 直接
+[info] - should minimal-IR11MV: cause=11 M处理 向量
+[info] - should minimal-EN3N: 数据端序 mode=3 MPRV=false
+[info] - should minimal-EN0N: 数据端序 mode=0 MPRV=false
+[info] - should minimal-EN0P: 数据端序 mode=0 MPRV=true
+[info] - should sstc-hpm-EX00: 非页异常 cause=0 与精确副作用
+[info] - should sstc-hpm-EX01: 非页异常 cause=1 与精确副作用
+[info] - should sstc-hpm-EX02: 非页异常 cause=2 与精确副作用
+[info] - should sstc-hpm-EX03: 非页异常 cause=3 与精确副作用
+[info] - should sstc-hpm-EX04: 非页异常 cause=4 与精确副作用
+[info] - should sstc-hpm-EX05: 非页异常 cause=5 与精确副作用
+[info] - should sstc-hpm-EX06: 非页异常 cause=6 与精确副作用
+[info] - should sstc-hpm-EX07: 非页异常 cause=7 与精确副作用
+[info] - should sstc-hpm-EX08: 非页异常 cause=8 与精确副作用 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty sstc-hpm-EX08 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-EX09: 非页异常 cause=9 与精确副作用 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty sstc-hpm-EX09 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-EX11: 非页异常 cause=11 与精确副作用
+[info] - should sstc-hpm-PR01: 老指令完成、故障rd保留、年轻跳转与存储取消
+[info] - should sstc-hpm-PR02: 取消错误路径异常及未采取分支的未对齐目标
+[info] - should sstc-hpm-CS01: 六种CSR读改写、rd/rs1抑制与依赖
+[info] - should sstc-hpm-CS02: 身份寄存器及固定RV32 I/U/S misa
+[info] - should sstc-hpm-CS03: WARL掩码、EPC/TVEC对齐及Bare SATP *** FAILED ***
+[info]   Some("store 8 expected Write(160,2044,15), got Write(160,1985,15)") was not empty sstc-hpm-CS03 repeat=0: store 8 expected Write(160,2044,15), got Write(160,1985,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-CS04: 权限/只读/特权指令非法：mode=3 word=0xf1101373
+[info] - should sstc-hpm-CS05: 权限/只读/特权指令非法：mode=0 word=0x34002373 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty sstc-hpm-CS05 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-PV01: 权限/只读/特权指令非法：mode=0 word=0x30200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty sstc-hpm-PV01 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-PV02: 权限/只读/特权指令非法：mode=0 word=0x10200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty sstc-hpm-PV02 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-PV03: 权限/只读/特权指令非法：mode=3 word=0x12000073
+[info] - should sstc-hpm-CS06: 权限/只读/特权指令非法：mode=1 word=0x34002373 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty sstc-hpm-CS06 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-PV04: 权限/只读/特权指令非法：mode=1 word=0x10200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,4196480,15), got Write(1036,4196352,15)") was not empty sstc-hpm-PV04 repeat=0: store 3 expected Write(1036,4196480,15), got Write(1036,4196352,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-PV05: 权限/只读/特权指令非法：mode=1 word=0x30200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty sstc-hpm-PV05 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-CT01: 64位计数器写入/高低半/禁止增长/固定零HPM槽
+[info] - should sstc-hpm-CTD0: mode=0 counteren许可=false *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty sstc-hpm-CTD0 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-CTA0: mode=0 counteren许可=true
+[info] - should sstc-hpm-CTD1: mode=1 counteren许可=false *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty sstc-hpm-CTD1 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-CTA1: mode=1 counteren许可=true
+[info] - should sstc-hpm-WF30: WFI有界等待 mode=3 TW=false
+[info] - should sstc-hpm-WF31: WFI有界等待 mode=3 TW=true
+[info] - should sstc-hpm-WF10: WFI有界等待 mode=1 TW=false
+[info] - should sstc-hpm-WF11: WFI有界等待 mode=1 TW=true *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2099328,15), got Write(1036,2099200,15)") was not empty sstc-hpm-WF11 repeat=0: store 3 expected Write(1036,2099328,15), got Write(1036,2099200,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-WF01: WFI有界等待 mode=0 TW=true *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2097280,15), got Write(1036,2097152,15)") was not empty sstc-hpm-WF01 repeat=0: store 3 expected Write(1036,2097280,15), got Write(1036,2097152,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-WFWAKE: 局部使能唤醒WFI、全局屏蔽阻止陷阱
+[info] - should sstc-hpm-IR1MD: cause=1 M处理 直接
+[info] - should sstc-hpm-IR1MV: cause=1 M处理 向量
+[info] - should sstc-hpm-IR1SD: cause=1 S委托 直接
+[info] - should sstc-hpm-IR1SV: cause=1 S委托 向量
+[info] - should sstc-hpm-IR3MD: cause=3 M处理 直接
+[info] - should sstc-hpm-IR3MV: cause=3 M处理 向量
+[info] - should sstc-hpm-IR5MD: cause=5 M处理 直接
+[info] - should sstc-hpm-IR5MV: cause=5 M处理 向量
+[info] - should sstc-hpm-IR5SD: cause=5 S委托 直接
+[info] - should sstc-hpm-IR5SV: cause=5 S委托 向量
+[info] - should sstc-hpm-IR7MD: cause=7 M处理 直接
+[info] - should sstc-hpm-IR7MV: cause=7 M处理 向量
+[info] - should sstc-hpm-IR9MD: cause=9 M处理 直接
+[info] - should sstc-hpm-IR9MV: cause=9 M处理 向量
+[info] - should sstc-hpm-IR9SD: cause=9 S委托 直接
+[info] - should sstc-hpm-IR9SV: cause=9 S委托 向量
+[info] - should sstc-hpm-IR11MD: cause=11 M处理 直接
+[info] - should sstc-hpm-IR11MV: cause=11 M处理 向量
+[info] - should sstc-hpm-IRREM: pending保持、返回重入、第二次清除
+[info] - should sstc-hpm-IRRES: pending保持、返回重入、第二次清除
+[info] - should sstc-hpm-IRVIEW: M/S共享中断视图、委托在M模式屏蔽及SIP写掩码
+[info] - should sstc-hpm-EN3N: 数据端序 mode=3 MPRV=false
+[info] - should sstc-hpm-EN0N: 数据端序 mode=0 MPRV=false
+[info] - should sstc-hpm-EN0P: 数据端序 mode=0 MPRV=true
+[info] - should sstc-hpm-EN1N: 数据端序 mode=1 MPRV=false
+[info] - should sstc-hpm-EN1P: 数据端序 mode=1 MPRV=true
+[info] - should sstc-hpm-ST01: 64位Sstc比较、STCE选择/写屏蔽及S访问
+[info] - should sstc-hpm-STPER0: Sstc访问须同时满足STCE和TM *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty sstc-hpm-STPER0 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-STPER1: Sstc访问须同时满足STCE和TM *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty sstc-hpm-STPER1 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-EX00: 非页异常 cause=0 与精确副作用
+[info] - should reset100-EX01: 非页异常 cause=1 与精确副作用
+[info] - should reset100-EX02: 非页异常 cause=2 与精确副作用
+[info] - should reset100-EX03: 非页异常 cause=3 与精确副作用
+[info] - should reset100-EX04: 非页异常 cause=4 与精确副作用
+[info] - should reset100-EX05: 非页异常 cause=5 与精确副作用
+[info] - should reset100-EX06: 非页异常 cause=6 与精确副作用
+[info] - should reset100-EX07: 非页异常 cause=7 与精确副作用
+[info] - should reset100-EX08: 非页异常 cause=8 与精确副作用 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty reset100-EX08 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-EX09: 非页异常 cause=9 与精确副作用 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty reset100-EX09 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-EX11: 非页异常 cause=11 与精确副作用
+[info] - should reset100-PR01: 老指令完成、故障rd保留、年轻跳转与存储取消
+[info] - should reset100-PR02: 取消错误路径异常及未采取分支的未对齐目标
+[info] - should reset100-CS01: 六种CSR读改写、rd/rs1抑制与依赖
+[info] - should reset100-CS02: 身份寄存器及固定RV32 I/U/S misa
+[info] - should reset100-CS03: WARL掩码、EPC/TVEC对齐及Bare SATP *** FAILED ***
+[info]   Some("store 8 expected Write(160,2044,15), got Write(160,1985,15)") was not empty reset100-CS03 repeat=0: store 8 expected Write(160,2044,15), got Write(160,1985,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-CS04: 权限/只读/特权指令非法：mode=3 word=0xf1101373
+[info] - should reset100-CS05: 权限/只读/特权指令非法：mode=0 word=0x34002373 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty reset100-CS05 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-PV01: 权限/只读/特权指令非法：mode=0 word=0x30200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty reset100-PV01 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-PV02: 权限/只读/特权指令非法：mode=0 word=0x10200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty reset100-PV02 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-PV03: 权限/只读/特权指令非法：mode=3 word=0x12000073
+[info] - should reset100-CS06: 权限/只读/特权指令非法：mode=1 word=0x34002373 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty reset100-CS06 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-PV04: 权限/只读/特权指令非法：mode=1 word=0x10200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,4196480,15), got Write(1036,4196352,15)") was not empty reset100-PV04 repeat=0: store 3 expected Write(1036,4196480,15), got Write(1036,4196352,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-PV05: 权限/只读/特权指令非法：mode=1 word=0x30200073 *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty reset100-PV05 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-CT01: 64位计数器写入/高低半/禁止增长/固定零HPM槽
+[info] - should reset100-CTD0: mode=0 counteren许可=false *** FAILED ***
+[info]   Some("store 3 expected Write(1036,128,15), got Write(1036,0,15)") was not empty reset100-CTD0 repeat=0: store 3 expected Write(1036,128,15), got Write(1036,0,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-CTA0: mode=0 counteren许可=true
+[info] - should reset100-CTD1: mode=1 counteren许可=false *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2176,15), got Write(1036,2048,15)") was not empty reset100-CTD1 repeat=0: store 3 expected Write(1036,2176,15), got Write(1036,2048,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-CTA1: mode=1 counteren许可=true
+[info] - should reset100-WF30: WFI有界等待 mode=3 TW=false
+[info] - should reset100-WF31: WFI有界等待 mode=3 TW=true
+[info] - should reset100-WF10: WFI有界等待 mode=1 TW=false
+[info] - should reset100-WF11: WFI有界等待 mode=1 TW=true *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2099328,15), got Write(1036,2099200,15)") was not empty reset100-WF11 repeat=0: store 3 expected Write(1036,2099328,15), got Write(1036,2099200,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-WF01: WFI有界等待 mode=0 TW=true *** FAILED ***
+[info]   Some("store 3 expected Write(1036,2097280,15), got Write(1036,2097152,15)") was not empty reset100-WF01 repeat=0: store 3 expected Write(1036,2097280,15), got Write(1036,2097152,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should reset100-WFWAKE: 局部使能唤醒WFI、全局屏蔽阻止陷阱
+[info] - should reset100-IR1MD: cause=1 M处理 直接
+[info] - should reset100-IR1MV: cause=1 M处理 向量
+[info] - should reset100-IR1SD: cause=1 S委托 直接
+[info] - should reset100-IR1SV: cause=1 S委托 向量
+[info] - should reset100-IR3MD: cause=3 M处理 直接
+[info] - should reset100-IR3MV: cause=3 M处理 向量
+[info] - should reset100-IR5MD: cause=5 M处理 直接
+[info] - should reset100-IR5MV: cause=5 M处理 向量
+[info] - should reset100-IR5SD: cause=5 S委托 直接
+[info] - should reset100-IR5SV: cause=5 S委托 向量
+[info] - should reset100-IR7MD: cause=7 M处理 直接
+[info] - should reset100-IR7MV: cause=7 M处理 向量
+[info] - should reset100-IR9MD: cause=9 M处理 直接
+[info] - should reset100-IR9MV: cause=9 M处理 向量
+[info] - should reset100-IR9SD: cause=9 S委托 直接
+[info] - should reset100-IR9SV: cause=9 S委托 向量
+[info] - should reset100-IR11MD: cause=11 M处理 直接
+[info] - should reset100-IR11MV: cause=11 M处理 向量
+[info] - should reset100-IRREM: pending保持、返回重入、第二次清除
+[info] - should reset100-IRRES: pending保持、返回重入、第二次清除
+[info] - should reset100-IRVIEW: M/S共享中断视图、委托在M模式屏蔽及SIP写掩码
+[info] - should reset100-EN3N: 数据端序 mode=3 MPRV=false
+[info] - should reset100-EN0N: 数据端序 mode=0 MPRV=false
+[info] - should reset100-EN0P: 数据端序 mode=0 MPRV=true
+[info] - should reset100-EN1N: 数据端序 mode=1 MPRV=false
+[info] - should reset100-EN1P: 数据端序 mode=1 MPRV=true
+[info] Run completed in 29 minutes, 28 seconds.
+[info] Total number of tests run: 224
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 176, failed 48, canceled 0, ignored 0, pending 0
+[info] *** 48 TESTS FAILED ***
+[error] Failed tests:
+[error] 	riscvpipeline.Chapter8TestPlanSpec
+[error] (Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 1768 s (29:28), completed Oct 11, 2026, 9:42:11 PM

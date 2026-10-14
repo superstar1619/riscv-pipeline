@@ -1,0 +1,23 @@
+{
+  "key": "minimal-CTA0",
+  "layer": "scala",
+  "repeat": 1,
+  "seed": 1,
+  "cycles": 59,
+  "pass": true,
+  "failure": "",
+  "actual": [
+    {
+      "cycle": 48,
+      "address": "128",
+      "data": "123",
+      "mask": "15"
+    },
+    {
+      "cycle": 50,
+      "address": "512",
+      "data": "90",
+      "mask": "15"
+    }
+  ]
+}

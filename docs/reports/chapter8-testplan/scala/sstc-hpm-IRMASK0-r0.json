@@ -1,0 +1,29 @@
+{
+  "key": "sstc-hpm-IRMASK0",
+  "layer": "scala",
+  "repeat": 0,
+  "seed": 1,
+  "cycles": 68,
+  "pass": true,
+  "failure": "",
+  "actual": [
+    {
+      "cycle": 23,
+      "address": "128",
+      "data": "2",
+      "mask": "15"
+    },
+    {
+      "cycle": 51,
+      "address": "132",
+      "data": "2",
+      "mask": "15"
+    },
+    {
+      "cycle": 59,
+      "address": "512",
+      "data": "90",
+      "mask": "15"
+    }
+  ]
+}

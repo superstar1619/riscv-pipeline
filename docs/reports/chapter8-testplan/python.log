@@ -1,0 +1,12 @@
+test_reject_signature_missing_extra_and_timeout (test_chapter8_checker.Chapter8CheckerNegativeTests.test_reject_signature_missing_extra_and_timeout) ... ok
+test_fail_closed_on_incomplete_or_changed_evidence (test_chapter8_report.Chapter8ReportEvidenceTests.test_fail_closed_on_incomplete_or_changed_evidence) ... ok
+test_reject_stale_sources_and_incomplete_junit (test_chapter8_report.Chapter8ReportEvidenceTests.test_reject_stale_sources_and_incomplete_junit) ... ok
+test_complete_inventory_and_textbook_extra_are_selected (test_validation_sources.SourceInventorySpec.test_complete_inventory_and_textbook_extra_are_selected) ... ok
+test_deleted_environment_header_is_rejected (test_validation_sources.SourceInventorySpec.test_deleted_environment_header_is_rejected) ... ok
+test_deleted_test_is_rejected (test_validation_sources.SourceInventorySpec.test_deleted_test_is_rejected) ... ok
+test_mixed_valid_and_unknown_selection_is_rejected (test_validation_sources.SourceInventorySpec.test_mixed_valid_and_unknown_selection_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.115s
+
+OK

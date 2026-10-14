@@ -1,0 +1,12 @@
+[info] welcome to sbt 1.10.7 (Eclipse Adoptium Java 17.0.20.1)
+[info] loading project definition from /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/project
+[info] loading settings for project riscv-pipeline from build.sbt...
+[info] set current project to riscv-pipeline (in build file:/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/)
+[info] running riscvpipeline.GeneratePrivilegedPipeline 2048 2048 /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/chapter8-testplan/runs/20261014T082624932188Z/rtl/default /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/chapter8-testplan/runs/20261014T082624932188Z/rtl/default/program.hex 0 true true false 0 24
+[success] Total time: 3 s, completed Oct 14, 2026, 4:26:33 PM
+[info] running riscvpipeline.GeneratePrivilegedPipeline 2048 2048 /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/chapter8-testplan/runs/20261014T082624932188Z/rtl/minimal /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/chapter8-testplan/runs/20261014T082624932188Z/rtl/minimal/program.hex 0 false false false 0 24
+[success] Total time: 2 s, completed Oct 14, 2026, 4:26:34 PM
+[info] running riscvpipeline.GeneratePrivilegedPipeline 2048 2048 /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/chapter8-testplan/runs/20261014T082624932188Z/rtl/sstc-hpm /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/chapter8-testplan/runs/20261014T082624932188Z/rtl/sstc-hpm/program.hex 0 true true true 3 24
+[success] Total time: 2 s, completed Oct 14, 2026, 4:26:36 PM
+[info] running riscvpipeline.GeneratePrivilegedPipeline 2048 2048 /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/chapter8-testplan/runs/20261014T082624932188Z/rtl/reset100 /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/chapter8-testplan/runs/20261014T082624932188Z/rtl/reset100/program.hex 256 true true false 0 24
+[success] Total time: 2 s, completed Oct 14, 2026, 4:26:38 PM

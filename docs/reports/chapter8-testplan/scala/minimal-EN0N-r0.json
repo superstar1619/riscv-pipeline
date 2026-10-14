@@ -1,0 +1,41 @@
+{
+  "key": "minimal-EN0N",
+  "layer": "scala",
+  "repeat": 0,
+  "seed": 1,
+  "cycles": 44,
+  "pass": true,
+  "failure": "",
+  "actual": [
+    {
+      "cycle": 5,
+      "address": "0",
+      "data": "287454020",
+      "mask": "15"
+    },
+    {
+      "cycle": 31,
+      "address": "128",
+      "data": "287454020",
+      "mask": "15"
+    },
+    {
+      "cycle": 32,
+      "address": "132",
+      "data": "68",
+      "mask": "15"
+    },
+    {
+      "cycle": 33,
+      "address": "136",
+      "data": "13124",
+      "mask": "15"
+    },
+    {
+      "cycle": 35,
+      "address": "512",
+      "data": "90",
+      "mask": "15"
+    }
+  ]
+}

@@ -88,3 +88,11 @@ make test-rtl SBT=./scripts/sbt-local.sh
 独立叶模块 `Trap/WFI/EndianSwap/CSR/Privileged` 同样提供
 `make test-trap/test-wfi/test-endian-swap/test-csr/test-privileged` 及对应 `generate-*` 目标。
 最终统一检查从 [整机验收](15-acceptance.md) 开始。
+
+## §8.3 TestPlan与本轮证据
+
+[16：TestPlan实施与详尽报告](16-testplan-report.md)对照印刷页360–366和表8.5–8.9，
+提供共享Scala/独立RTL的逐例预期、实际、周期、陷阱签名、配置适用性与检查器负向验证。
+新入口为`test-chapter8-plan`、`test-chapter8-rtl`、`report-chapter8`；
+归档位于[`docs/reports/chapter8-testplan/`](../reports/chapter8-testplan/)。
+历史验收只作背景，§8.3结论均引用本轮重新执行的证据。

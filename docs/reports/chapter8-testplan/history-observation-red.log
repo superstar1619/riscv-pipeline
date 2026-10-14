@@ -1,0 +1,17 @@
+test_reject_signature_missing_extra_and_timeout (test_chapter8_checker.Chapter8CheckerNegativeTests.test_reject_signature_missing_extra_and_timeout) ... 
+  test_reject_signature_missing_extra_and_timeout (test_chapter8_checker.Chapter8CheckerNegativeTests.test_reject_signature_missing_extra_and_timeout) (name='observation-window') ... FAIL
+
+======================================================================
+FAIL: test_reject_signature_missing_extra_and_timeout (test_chapter8_checker.Chapter8CheckerNegativeTests.test_reject_signature_missing_extra_and_timeout) (name='observation-window')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/src/test/python/test_chapter8_checker.py", line 39, in test_reject_signature_missing_extra_and_timeout
+    self.assertEqual(run.returncode, 1, run.stdout + run.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/chapter8-testplan/negative/observation-window.events seed=1 PASS (same-instance reset replay)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.081s
+
+FAILED (failures=1)

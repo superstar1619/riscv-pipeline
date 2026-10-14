@@ -1,0 +1,35 @@
+{
+  "key": "minimal-WFWAKE",
+  "layer": "scala",
+  "repeat": 0,
+  "seed": 1,
+  "cycles": 33,
+  "pass": true,
+  "failure": "",
+  "actual": [
+    {
+      "cycle": 9,
+      "address": "600",
+      "data": "0",
+      "mask": "15"
+    },
+    {
+      "cycle": 21,
+      "address": "128",
+      "data": "42",
+      "mask": "15"
+    },
+    {
+      "cycle": 22,
+      "address": "604",
+      "data": "0",
+      "mask": "15"
+    },
+    {
+      "cycle": 24,
+      "address": "512",
+      "data": "90",
+      "mask": "15"
+    }
+  ]
+}

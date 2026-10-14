@@ -1,0 +1,53 @@
+{
+  "key": "reset100-WF01",
+  "layer": "scala",
+  "repeat": 1,
+  "seed": 1,
+  "cycles": 87,
+  "pass": true,
+  "failure": "",
+  "actual": [
+    {
+      "cycle": 60,
+      "address": "1024",
+      "data": "304",
+      "mask": "15"
+    },
+    {
+      "cycle": 61,
+      "address": "1028",
+      "data": "2",
+      "mask": "15"
+    },
+    {
+      "cycle": 62,
+      "address": "1032",
+      "data": "273678451",
+      "mask": "15"
+    },
+    {
+      "cycle": 63,
+      "address": "1036",
+      "data": "2097152",
+      "mask": "15"
+    },
+    {
+      "cycle": 64,
+      "address": "1040",
+      "data": "0",
+      "mask": "15"
+    },
+    {
+      "cycle": 76,
+      "address": "128",
+      "data": "42",
+      "mask": "15"
+    },
+    {
+      "cycle": 78,
+      "address": "512",
+      "data": "90",
+      "mask": "15"
+    }
+  ]
+}

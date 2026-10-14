@@ -1,0 +1,53 @@
+{
+  "key": "reset100-IRCROSSS",
+  "layer": "scala",
+  "repeat": 0,
+  "seed": 1,
+  "cycles": 92,
+  "pass": true,
+  "failure": "",
+  "actual": [
+    {
+      "cycle": 54,
+      "address": "1024",
+      "data": "340",
+      "mask": "15"
+    },
+    {
+      "cycle": 55,
+      "address": "1028",
+      "data": "2147483649",
+      "mask": "15"
+    },
+    {
+      "cycle": 56,
+      "address": "1032",
+      "data": "0",
+      "mask": "15"
+    },
+    {
+      "cycle": 57,
+      "address": "1036",
+      "data": "0",
+      "mask": "15"
+    },
+    {
+      "cycle": 58,
+      "address": "1040",
+      "data": "2",
+      "mask": "15"
+    },
+    {
+      "cycle": 81,
+      "address": "128",
+      "data": "85",
+      "mask": "15"
+    },
+    {
+      "cycle": 83,
+      "address": "512",
+      "data": "90",
+      "mask": "15"
+    }
+  ]
+}

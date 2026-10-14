@@ -1,0 +1,65 @@
+[0.001s][warning][perf,memops] Cannot use file /tmp/hsperfdata_unlastingstar/59 because it is locked by another process (errno = 11)
+[info] welcome to sbt 1.10.7 (Eclipse Adoptium Java 17.0.20.1)
+[info] loading project definition from /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/project
+[info] loading settings for project riscv-pipeline from build.sbt...
+[info] set current project to riscv-pipeline (in build file:/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/)
+[info] compiling 1 Scala source to /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/scala-2.13/test-classes ...
+[info] done compiling
+[info] Chapter8TestPlanSpec:
+[info] Chapter 8.3 shared architectural test plan
+[info] - should default-EX08: 非页异常 cause=8 与精确副作用
+[info] - should default-CS03: WARL掩码、EPC/TVEC对齐及Bare SATP
+[info] - should default-IR1MD: cause=1 M处理 直接
+[info] - should default-IR1MV: cause=1 M处理 向量
+[info] - should default-IR1SD: cause=1 S委托 直接
+[info] - should default-IR1SV: cause=1 S委托 向量
+[info] - should default-IR3MD: cause=3 M处理 直接
+[info] - should default-IR3MV: cause=3 M处理 向量
+[info] - should default-IR5MD: cause=5 M处理 直接
+[info] - should default-IR5MV: cause=5 M处理 向量
+[info] - should default-IR5SD: cause=5 S委托 直接
+[info] - should default-IR5SV: cause=5 S委托 向量
+[info] - should default-IR7MD: cause=7 M处理 直接
+[info] - should default-IR7MV: cause=7 M处理 向量
+[info] - should default-IR9MD: cause=9 M处理 直接
+[info] - should default-IR9MV: cause=9 M处理 向量
+[info] - should default-IR9SD: cause=9 S委托 直接
+[info] - should default-IR9SV: cause=9 S委托 向量
+[info] - should default-IR11MD: cause=11 M处理 直接
+[info] - should default-IR11MV: cause=11 M处理 向量
+[info] - should default-IRREM: pending保持、返回重入、第二次清除
+[info] - should default-IRRES: pending保持、返回重入、第二次清除
+[info] - should default-IRVIEW: M/S共享中断视图、委托在M模式屏蔽及SIP写掩码
+[info] - should default-IRMASK0: 局部/全局屏蔽时pending保持且不进入陷阱
+[info] - should default-IRMASK1: 局部/全局屏蔽时pending保持且不进入陷阱
+[info] - should default-IRCROSSM: U模式到更高权限中断不依赖其全局使能
+[info] - should default-IRCROSSS: U模式到更高权限中断不依赖其全局使能
+[info] - should default-IRPRIALL: 同时pending的MEI > MSI > MTI > S类优先级
+[info] - should default-IRPRIMT: 同时pending的MEI > MSI > MTI > S类优先级
+[info] - should default-IRPRIT: 同时pending的MEI > MSI > MTI > S类优先级
+[info] - should default-IRPRIS9: S类pending优先级SEI > STI > SSI
+[info] - should default-IRPRIS5: S类pending优先级SEI > STI > SSI *** FAILED ***
+[info]   Some("store 4 expected Write(1040,34,15), got Write(1040,32,15)") was not empty default-IRPRIS5 repeat=0: store 4 expected Write(1040,34,15), got Write(1040,32,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-IRPRIS1: S类pending优先级SEI > STI > SSI *** FAILED ***
+[info]   Some("store 4 expected Write(1040,2,15), got Write(1040,34,15)") was not empty default-IRPRIS1 repeat=0: store 4 expected Write(1040,2,15), got Write(1040,34,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should default-CTRET: 异常不退休、load停顿和WFI只退休一次
+[info] - should sstc-hpm-HPM1: HPM事件1（退休/加载/存储/load-use/存储加载冲突）
+[info] - should sstc-hpm-HPM2: HPM事件2（退休/加载/存储/load-use/存储加载冲突）
+[info] - should sstc-hpm-HPM3: HPM事件3（退休/加载/存储/load-use/存储加载冲突）
+[info] - should sstc-hpm-HPM4: HPM事件4（退休/加载/存储/load-use/存储加载冲突） *** FAILED ***
+[info]   Some("store 2 expected Write(128,2,15), got Write(128,3,15)") was not empty sstc-hpm-HPM4 repeat=0: store 2 expected Write(128,2,15), got Write(128,3,15) (Chapter8TestPlanSpec.scala:55)
+[info] - should sstc-hpm-HPM5: HPM事件5（退休/加载/存储/load-use/存储加载冲突）
+[info] - should sstc-hpm-ST01: 64位Sstc比较、STCE选择/写屏蔽及S访问
+[info] - should sstc-hpm-STIRQ: Sstc时间越过64位比较值、S委托陷阱并撤销pending
+[info] - should sstc-hpm-STPER0: Sstc访问须同时满足STCE和TM
+[info] - should sstc-hpm-STPER1: Sstc访问须同时满足STCE和TM *** FAILED ***
+[info]   Some("store 4 expected Write(1040,0,15), got Write(1040,32,15)") was not empty sstc-hpm-STPER1 repeat=0: store 4 expected Write(1040,0,15), got Write(1040,32,15) (Chapter8TestPlanSpec.scala:55)
+[info] Run completed in 6 minutes, 25 seconds.
+[info] Total number of tests run: 43
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 39, failed 4, canceled 0, ignored 0, pending 0
+[info] *** 4 TESTS FAILED ***
+[error] Failed tests:
+[error] 	riscvpipeline.Chapter8TestPlanSpec
+[error] (Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 388 s (06:28), completed Oct 11, 2026, 9:23:03 PM

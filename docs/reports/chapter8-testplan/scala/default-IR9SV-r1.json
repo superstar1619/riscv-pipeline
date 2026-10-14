@@ -1,0 +1,65 @@
+{
+  "key": "default-IR9SV",
+  "layer": "scala",
+  "repeat": 1,
+  "seed": 1,
+  "cycles": 87,
+  "pass": true,
+  "failure": "",
+  "actual": [
+    {
+      "cycle": 40,
+      "address": "600",
+      "data": "0",
+      "mask": "15"
+    },
+    {
+      "cycle": 60,
+      "address": "1024",
+      "data": "84",
+      "mask": "15"
+    },
+    {
+      "cycle": 61,
+      "address": "1028",
+      "data": "2147483657",
+      "mask": "15"
+    },
+    {
+      "cycle": 62,
+      "address": "1032",
+      "data": "0",
+      "mask": "15"
+    },
+    {
+      "cycle": 63,
+      "address": "1036",
+      "data": "288",
+      "mask": "15"
+    },
+    {
+      "cycle": 64,
+      "address": "1040",
+      "data": "512",
+      "mask": "15"
+    },
+    {
+      "cycle": 66,
+      "address": "604",
+      "data": "0",
+      "mask": "15"
+    },
+    {
+      "cycle": 76,
+      "address": "128",
+      "data": "73",
+      "mask": "15"
+    },
+    {
+      "cycle": 78,
+      "address": "512",
+      "data": "90",
+      "mask": "15"
+    }
+  ]
+}

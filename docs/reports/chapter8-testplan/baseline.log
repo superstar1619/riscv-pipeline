@@ -1,0 +1,382 @@
+[info] welcome to sbt 1.10.7 (Eclipse Adoptium Java 17.0.20.1)
+[info] loading project definition from /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/project
+[info] loading settings for project riscv-pipeline from build.sbt...
+[info] set current project to riscv-pipeline (in build file:/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/)
+[info] Executing in batch mode. For better performance use sbt's shell
+[success] Total time: 0 s, completed Oct 11, 2026, 9:06:00 PM
+[info] CSRAccessSpec:
+[info] CSRAccess
+[info] - should match hand calculated values for all six instructions
+[info] - should suppress RW reads only for rd zero and still write a zero source
+[info] - should use source fields rather than source data to suppress RS and RC writes
+[info] - should permit read only accesses but reject every attempted read only write
+[info] - should enforce the U S M matrix and reject unsupported privilege encodings
+[info] - should check existence and additional permissions even with reads suppressed
+[info] - should return software old values while modifying internal mip and sip state
+[info] - should keep invalid and non CSR instructions inert without an access exception
+[info] - should match a fixed seed reference across all encodings and access conditions
+[info] - should emit exactly the RV32 combinational interface with no state or clock
+[info] PipelineSmokeSpec:
+[info] RV32I five-stage pipeline
+[info] - should fill F D E M before observing the first store
+[info] - should produce exactly the two textbook stores within 80 cycles
+[info] - should resolve forwarded branches and squash both younger stores
+[info] - should forward a loaded value into branch comparison after exactly one stall
+[info] - should link JAL and forwarded JALR using their own PCs and clear target bit zero
+[info] - should flush pending M stores and W writes on reset and retain established state
+[info] CpuAcceptanceSpec:
+[info] Pipeline RV32I acceptance
+[info] - should match all memory events and fixed signatures at vector 0
+[info] - should match all memory events and fixed signatures at vector 256
+[info] PrivDecodeSpec:
+[info] PrivDecode
+[info] - should decode the five exact base privileged words in machine mode
+[info] - should enforce return permissions and apply TSR only to supervisor SRET
+[info] - should gate WFI timeouts by the instruction mode TW and S support
+[info] - should decode all SFENCE register fields and apply TVM only in supervisor mode
+[info] - should reject S operations and S mode when supervisor support is disabled
+[info] - should reject every nonzero rd and reserved rs1 in fixed privileged instructions
+[info] - should classify all funct12 values and reject unsupported SYSTEM extensions
+[info] - should keep non SYSTEM instructions inert and aggregate faults only while valid
+[info] - should route all six CSR encodings to CSRAccess without privileged false positives
+[info] - should match an independent fixed seed reference for encodings and flags
+[info] - should emit the same combinational interface in all supported configurations
+[info] - should reject virtual memory decoding without supervisor support
+[info] ALUSpec:
+[info] ALU
+[info] - should handle wraparound and signed overflow boundaries at 32 bits
+[info] - should match independent arithmetic and both outputs on random 32-bit operands
+[info] - should perform all ten register and nine immediate operations at 32 bits
+[info] - should shift by every amount while ignoring high SrcB bits only for shifts at 32 bits
+[info] - should handle wraparound and signed overflow boundaries at 64 bits
+[info] - should match independent arithmetic and both outputs on random 64-bit operands
+[info] - should perform all ten register and nine immediate operations at 64 bits
+[info] - should shift by every amount while ignoring high SrcB bits only for shifts at 64 bits
+[info] - should match all operand pairs for the supported control cases at 1 bits
+[info] - should match all operand pairs for the supported control cases at 4 bits
+[info] - should match all operand pairs for the supported control cases at 3 bits
+[info] - should match all operand pairs for the supported control cases at 5 bits
+[info] - should elaborate exactly the six combinational book ports at 32 and 64 bits
+[info] - should reject nonpositive operand widths at elaboration
+[info] SwByteMaskSpec:
+[info] SwByteMask
+[info] - should select every naturally aligned store lane at 32 bits
+[info] - should match all function and offset combinations in both orders at 32 bits
+[info] - should clear stale masks and recover without a clock edge at 32 bits
+[info] - should select every naturally aligned store lane at 64 bits
+[info] - should match all function and offset combinations in both orders at 64 bits
+[info] - should clear stale masks and recover without a clock edge at 64 bits
+[info] - should emit exactly three combinational ports at 32 and 64 bits
+[info] - should reject unsupported native widths during elaboration
+[info] CmpSpec:
+[info] Cmp
+[info] - should compare boundary patterns and detect a difference in every bit at 32 bits
+[info] - should distinguish signed and unsigned ordering at hand-checked boundaries at 32 bits
+[info] - should compare equal, random, and one-bit-different operands at 32 bits
+[info] - should compare boundary patterns and detect a difference in every bit at 64 bits
+[info] - should distinguish signed and unsigned ordering at hand-checked boundaries at 64 bits
+[info] - should compare equal, random, and one-bit-different operands at 64 bits
+[info] - should compare all operand pairs at 1 bits
+[info] - should compare all operand pairs at 4 bits
+[info] - should elaborate only the five combinational book ports at 32 and 64 bits
+[info] - should reject nonpositive operand widths at elaboration
+[info] EndianSwapSpec:
+[info] EndianSwap
+[info] - should preserve little-endian words and swap four whole bytes when enabled
+[info] - should move every one-hot bit to the opposite byte without reversing its bit index
+[info] - should update data and selection without a clock edge or remembered previous word
+[info] - should match an independent byte-codec reference for seeded full-width words
+[info] - should restore the input when swapping twice
+[info] - should emit exactly three combinational ports with no clock reset register or latch
+[info] PipelineMemorySpec:
+[info] Synchronous pipeline memories
+[info] - should sample DTIM read addresses at the rising edge
+[info] - should preserve DTIM byte lanes and give writes exclusive use of the address
+[info] - should sample IROM addresses synchronously and hold output through disabled reads
+[info] - should align synchronous instructions with PCD and redirect even when F and D stall
+[info] - should align consecutive signed and unsigned subword loads with masked stores
+[info] WFISpec:
+[info] WFI
+[info] - should release exactly after 1 waiting edges and saturate
+[info] - should release exactly after 3 waiting edges and saturate
+[info] - should release exactly after 8 waiting edges and saturate
+[info] - should clear every cancellation independently and mask stale timeout immediately
+[info] - should retain timeout through its accepted trap until synchronous count clearing
+[info] - should wake immediately for pending and clear the count at the next edge
+[info] - should reset synchronously with priority over an active waiting instruction
+[info] - should start a fresh deadline after a bubble or a completed pending wake
+[info] - should match consecutive wait lengths with random wake cancel and reset events
+[info] - should emit only explicit synchronous clock reset and width-correct waiting ports
+[info] - should reject zero negative and excessively large waiting thresholds
+[info] CSRInterruptSpec:
+[info] CSRInterrupt
+[info] - should reset software state synchronously without hiding asserted hardware pins
+[info] - should apply literal RV32 masks for all legal configurations and STCE values
+[info] - should map hardware inputs to pending bits independently of CSR update gates
+[info] - should OR external SEIP with only the software SEIP bit and never capture pins
+[info] - should restrict supervisor read views to delegation without changing hidden state
+[info] - should merge SIE writes only into delegated supervisor enable fields
+[info] - should write only delegated SSIP through SIP while preserving other software fields
+[info] - should hold software state under invalid stall and flush combinations
+[info] - should prioritize machine writes per state bank while allowing both banks to update
+[info] - should select Sstc STIP with a dynamic write mask and independent other bits
+[info] - should return external SEIP while CSRRS and CSRRC modify only software bits
+[info] - should use real CSR access permissions shared S views and submission gates
+[info] - should ignore all S inputs and writes when supervisor support is disabled
+[info] - should match a per-field model across seeded state and input sequences
+[info] - should generate stable ports and synchronous reset RTL in every legal configuration
+[info] - should reject Sstc without supervisor support during elaboration
+[info] ExtendSpec:
+[info] Extend
+[info] - should extend I/S/B/J/U boundaries and every immediate bit to 32 bits
+[info] - should map or ignore every architectural input bit for I/S/B/J/U at 32 bits
+[info] - should preserve U-format signed boundaries and twelve low zero bits at 32 bits
+[info] - should return zero for unsupported selectors 5/6/7 at 32 bits
+[info] - should match independent decoding of 1000 random instructions at 32 bits
+[info] - should extend I/S/B/J/U boundaries and every immediate bit to 64 bits
+[info] - should map or ignore every architectural input bit for I/S/B/J/U at 64 bits
+[info] - should preserve U-format signed boundaries and twelve low zero bits at 64 bits
+[info] - should return zero for unsupported selectors 5/6/7 at 64 bits
+[info] - should match independent decoding of 1000 random instructions at 64 bits
+[info] - should elaborate exactly the three combinational book ports at 32 bits
+[info] - should elaborate exactly the three combinational book ports at 64 bits
+[info] - should reject output widths below 32 at elaboration
+[info] TrapSpec:
+[info] Trap
+[info] - should report every exception and mode-specific ECALL with zero idle cause
+[info] - should select all exception pairs in the architectural priority order
+[info] - should apply local enable masks and keep pending independent of execution gates
+[info] - should enforce U S M global enables and delegation for each interrupt
+[info] - should prioritize M target interrupts then S target interrupts before exceptions
+[info] - should delay interrupts at commit and WFI boundaries while preserving exceptions
+[info] - should delegate only actual traps from U or S and never downgrade M mode
+[info] - should match a fixed seed event reference across both configurations
+[info] - should emit the exact clockless interface without state in both configurations
+[info] PrivilegedSpec:
+[info] Privileged
+[info] - should commit real CSR old values and redirect only successful writes
+[info] - should take ECALL and restore old MPP at the same edge as the status stack
+[info] - should delegate U ECALL to S and return through the real supervisor EPC
+[info] - should select a vectored M interrupt and respect pending local and global enables
+[info] - should wake WFI on a local pending interrupt before accepting it at the successor
+[info] - should resolve a TW timeout into an illegal trap without a feedback loop
+[info] - should suppress canceled redirects and reset mode and counters synchronously
+[info] - should retain M trap priority over return and work with S support disabled
+[info] CpuConfigSpec:
+[info] CpuConfig
+[info] - should use the book defaults and accept supported structural settings
+[info] - should reject unsupported widths and invalid memory, address, or file settings
+[info] PipelineHazardSpec:
+[info] Pipeline dependencies
+[info] - should stall once each for store-load and load-use while holding F and D
+[info] - should prefer M over W for register operands and forward the result to store data
+[info] - should forward W to E for register operands and forward the result to store data
+[info] - should bypass W to D for register operands and forward the result to store data
+[info] - should exclude x0 from forwarding and preserve architectural zero
+[info] - should ignore unused immediate and U-type source fields and loads into x0
+[info] - should gate forwarding by valid writes and let redirects override either stall cause
+[info] SubwordReadSpec:
+[info] SubwordRead
+[info] - should demonstrate fixed loads and generate a waveform at 32 bits
+[info] - should extend zero and both sides of every sign boundary at 32 bits
+[info] - should reject every illegal load code at every offset at 32 bits
+[info] - should use only the relevant offset bits for wider loads at 32 bits
+[info] - should isolate every selected subword from neighboring bytes at 32 bits
+[info] - should update word offset and function without a clock edge at 32 bits
+[info] - should match a seeded byte reference for all codes and offsets at 32 bits
+[info] - should demonstrate fixed loads and generate a waveform at 64 bits
+[info] - should extend zero and both sides of every sign boundary at 64 bits
+[info] - should reject every illegal load code at every offset at 64 bits
+[info] - should use only the relevant offset bits for wider loads at 64 bits
+[info] - should isolate every selected subword from neighboring bytes at 64 bits
+[info] - should update word offset and function without a clock edge at 64 bits
+[info] - should match a seeded byte reference for all codes and offsets at 64 bits
+[info] - should emit only four combinational ports at 32 and 64 bits
+[info] - should reject unsupported data widths during elaboration
+[info] RegFileSpec:
+[info] RegFile
+[info] - should keep x0 zero after reset and read every register pair combinationally at 32 bits
+[info] - should sample writes at rising edges and reset only x0 with priority over writes at 32 bits
+[info] - should match a sequential reference model across 300 cycles at 32 bits
+[info] - should preserve every nonzero register across reset pulses and suppress every reset-time write at 32 bits
+[info] - should keep x0 zero after reset and read every register pair combinationally at 64 bits
+[info] - should sample writes at rising edges and reset only x0 with priority over writes at 64 bits
+[info] - should match a sequential reference model across 300 cycles at 64 bits
+[info] - should preserve every nonzero register across reset pulses and suppress every reset-time write at 64 bits
+[info] - should support 16 registers with 8-bit data
+[info] - should support 2 registers with 1-bit data
+[info] - should elaborate an N-entry register bank with direct indices and an explicit synchronous reset
+[info] - should reject invalid data widths and register counts at elaboration
+[info] ControllerSpec:
+[info] Controller
+[info] - should match independent legality and controls for all opcode funct3 funct7 combinations
+[info] - should select all six branch conditions for every function field and all eight flag combinations
+[info] - should distinguish immediate data from reserved shift and unsupported extension encodings
+[info] - should drive all nineteen ALU operations and six address-generation categories
+[info] - should elaborate exactly sixteen combinational ports with full function and comparison inputs
+[info] CSRSupervisorSpec:
+[info] CSRSupervisor
+[info] - should reset every owned register synchronously without gating forwarded writes
+[info] - should decode all addresses independently of privilege and extension permissions
+[info] - should check M S U reserved modes TVM and both Sstc permissions without write loops
+[info] - should forward shared S read values and use software-only SIP modification values
+[info] - should preserve full scratch and tval data and format software EPC and cause
+[info] - should legalize every STVEC mode with direct and vectored alignment
+[info] - should atomically record U and S traps before any software or forwarded write
+[info] - should reject downward or reserved raw S trap events without falling into writes
+[info] - should format all 64 trap cause encodings
+[info] - should hold all software and trap state for invalid stall and flush combinations
+[info] - should mask user counter access controls by the configured HPM count
+[info] - should keep unsupported environment fields zero and allow FIOM only with VM
+[info] - should implement Bare SATP as an existing zero CSR when VM is disabled
+[info] - should mask Sv32 ASID low bits retain PPN and canonicalize Bare writes
+[info] - should let M access compare halves without STCE or TM while protecting S access
+[info] - should compare all 64 bits unsigned and expose raw pending regardless of gates
+[info] - should ignore every event and input when supervisor support is absent
+[info] - should connect five real modules with shared views controls and trap isolation
+[info] - should match a seeded per-field model across five configurations
+[info] - should generate stable 38-port synchronous RTL including a disabled S configuration
+[info] - should reject inconsistent VM Sstc ASID and HPM parameters
+[info] ShifterSpec:
+[info] Shifter
+[info] - should shift boundary patterns by every amount in all four control modes at 32 bits
+[info] - should preserve zero shifts and handle maximum amounts and sign extension at 32 bits
+[info] - should match an independent model for 1000 seeded random inputs at 32 bits
+[info] - should shift boundary patterns by every amount in all four control modes at 64 bits
+[info] - should preserve zero shifts and handle maximum amounts and sign extension at 64 bits
+[info] - should match an independent model for 1000 seeded random inputs at 64 bits
+[info] - should shift every operand and amount in all modes at 2 bits
+[info] - should shift every operand and amount in all modes at 4 bits
+[info] - should elaborate exactly five combinational ports at 32 and 64 bits
+[info] - should reject widths that are not powers of two greater than or equal to two
+[info] CSRStatusSpec:
+[info] CSRStatus
+[info] - should reset synchronously and override stalls flushes and all simultaneous updates
+[info] - should apply fixed literal writable masks in all six supported configurations
+[info] - should share sstatus fields while protecting machine fields and the high half
+[info] - should retain old MPP on reserved or unsupported software encodings
+[info] - should save machine trap state and preserve the supervisor stack
+[info] - should save supervisor trap state without modifying the machine stack
+[info] - should restore MIE from old MPIE and clear MPRV only when MRET leaves machine mode
+[info] - should restore SIE from old SPIE and clear SPP and MPRV on SRET
+[info] - should prioritize traps and returns over software and order the three writes
+[info] - should hold every state bit for invalid stalled or flushed updates
+[info] - should hold on unsupported trap or return requests without applying lower writes
+[info] - should select endian state combinationally for mode MPRV and page table walks
+[info] - should exercise CSR read modify write and return authorization with prior modules
+[info] - should match a field based seeded sequential reference across all configurations
+[info] - should emit explicit clock reset and stable RV32 ports for all configurations
+[info] - should reject VM configuration without supervisor support
+[info] SubwordWriteSpec:
+[info] SubwordWrite
+[info] - should demonstrate fixed store copies and generate a waveform at 32 bits
+[info] - should reject every illegal full Funct3 at 32 bits
+[info] - should ignore all bits above the selected subword at 32 bits
+[info] - should update data and function without a clock edge at 32 bits
+[info] - should match a fixed-seed byte reference for every Funct3 at 32 bits
+[info] - should demonstrate fixed store copies and generate a waveform at 64 bits
+[info] - should reject every illegal full Funct3 at 64 bits
+[info] - should ignore all bits above the selected subword at 64 bits
+[info] - should update data and function without a clock edge at 64 bits
+[info] - should match a fixed-seed byte reference for every Funct3 at 64 bits
+[info] - should emit only three combinational ports at 32 and 64 bits
+[info] - should reject unsupported data widths during elaboration
+[info] PrivModeSpec:
+[info] PrivMode
+[info] - should reset synchronously to M with priority over stalled return requests
+[info] - should hold the current mode with no event despite delegate and status changes
+[info] - should return from M to each supported MPP and reject unsupported encodings
+[info] - should take delegated traps from U or S and retain M for all M traps
+[info] - should permit SRET in M regardless of TSR and in S only when TSR is clear
+[info] - should preserve raw MRET priority even when its source or MPP is illegal
+[info] - should hold registered state for every invalid stall and flush combination
+[info] - should retain a pending proposal through stalls and commit it once on release
+[info] - should match every raw event status and reachable current-mode combination
+[info] - should connect real status and decode for U S M trap and return sequences
+[info] - should consume old SPP before real status clears it on a horizontal S trap return
+[info] - should agree with real TSR checks for SRET in M and S and suppress faulted returns
+[info] - should keep status and mode atomic under gates reset and trap over return priority
+[info] - should connect real U M status while S support is disabled
+[info] - should match a seeded model across both S configurations without illegal modes
+[info] - should generate stable 14-port synchronous two-bit RTL in both S configurations
+[info] CSRMachineSpec:
+[info] CSRMachine
+[info] - should reset synchronously without gating forwarded writes with reset
+[info] - should decode all known machine addresses and reject unrelated banks
+[info] - should report fixed RV32 I U S capabilities and local identity values
+[info] - should forward old status and interrupts with a software-only MIP modify value
+[info] - should emit only the selected allowed leaf write strobe
+[info] - should preserve full scratch and tval data but align EPC and restrict cause format
+[info] - should legalize all TVEC mode encodings and enforce direct or vectored alignment
+[info] - should atomically record machine traps and prevent simultaneous software updates
+[info] - should map every six-bit trap cause to the RV32 interrupt flag and five-bit cause
+[info] - should hold all software and trap state under invalid stall and flush gates
+[info] - should mask delegation by supported supervisor and virtual memory exceptions
+[info] - should mask counter access and inhibit fields without allowing TM inhibition
+[info] - should update environment halves independently and zero unsupported feature fields
+[info] - should connect real access status interrupts and machine delegation
+[info] - should match a seeded per-field model across representative configurations
+[info] - should generate stable 34-port synchronous RV32 RTL across configurations
+[info] - should reject inconsistent modes and out-of-range configuration parameters
+[info] CSRSpec:
+[info] CSR
+[info] - should execute six instructions across machine supervisor and counter groups
+[info] - should reject missing readonly and privilege accesses independently of traps
+[info] - should share CSR views and avoid capturing hardware pending in software
+[info] - should cancel every software group for either trap destination
+[info] - should record exact EPC interrupt cause and cause-dependent tval in both modes
+[info] - should select real WARL vectors and return EPC without owning current mode
+[info] - should hold committed state for invalid stall flush and synchronous reset
+[info] - should wire counter permissions inhibit retirement HPM events and time
+[info] - should route STCE bit63 comparator and Sstc permissions through real leaves
+[info] - should honor big endian configuration MPRV and status return stacks
+[info] - should remove supervisor views while retaining UM counter permission and hart ID
+[info] - should validate all shared configuration bounds without weakening the public type
+[info] - should generate stable explicit synchronous ports in representative configurations
+[info] Chapter8AcceptanceSpec:
+[info] Chapter 8 real privileged pipeline acceptance
+[info] - should execute all six CSR RMW forms with late rd and forwarded rs dependencies
+[info] - should preserve old W and cancel faulting rd, younger store and redirect
+[info] - should record illegal CSR, breakpoint, integer and fence encodings
+[info] - should trap U/S CSR privilege reads/writes and return through real MRET
+[info] - should execute M/U/S ECALL with delegation and nested MRET/SRET PC restoration
+[info] - should assign taken branch/JAL/JALR misalignment to source EPC and target tval
+[info] - should discard wrong-path faults and ignore the target of a not-taken branch
+[info] - should trap load/store alignment and bounds without corrupting a wrapped RAM alias
+[info] - should fault out-of-window fetch at nonzero reset without executing alias
+[info] - should deliver direct and vectored M interrupts, acknowledge pending and MRET once
+[info] - should delegate external S interrupts and restore S PC and SIE with SRET
+[info] - should set software SSIP, reenter after MRET/SRET and clear pending in the handler
+[info] - should retire FENCE/FENCE.I once and refetch younger operations in program order
+[info] - should hold WFI in M, consume old W once, retain young forwarding and wake locally
+[info] - should retire a pending-woken WFI before interrupting its successor and returning
+[info] - should bound legal S waits and report restricted S TW/U WFI timeout precisely
+[info] - should execute endian word/byte/half and MPRV while preserving instruction fetch
+[info] CSRCountersSpec:
+[info] CSRCounters
+[info] - should synchronously reset owned state without resetting external time
+[info] - should recognize 155 addresses and reject mtime holes and extension addresses
+[info] - should check every address against modes and independent permission bits
+[info] - should count cycles through bubbles stalls flushes traps and denied access
+[info] - should count retirement candidates once only when valid and allowed to commit
+[info] - should carry from bit31 and wrap at bit63 for cycle instret and active HPM
+[info] - should apply inhibit by counter index without affecting time or software writes
+[info] - should give low and high writes priority over all 64 bits of concurrent increment
+[info] - should continue updating other counters when one counter is written
+[info] - should block software writes without stopping independent events
+[info] - should protect all state from U S reserved modes aliases and unknown CSR writes
+[info] - should read both halves of the same machine and user shadow value before the edge
+[info] - should expose coherent external time halves while all counters are inhibited
+[info] - should select every event including bit31 while event zero never increments
+[info] - should legalize selectors to zero and use the old selector on writes
+[info] - should keep inactive HPM slots zero and ignore legal machine writes
+[info] - should connect CSRAccess and real control registers for permissions and RMW
+[info] - should match a seeded independent model across S and HPM boundary configurations
+[info] - should generate stable 80-port synchronous RTL for zero and maximum HPM
+[info] - should reject HPM counts outside the architectural 0 to 29 range
+[info] Run completed in 2 minutes, 17 seconds.
+[info] Total number of tests run: 314
+[info] Suites: completed 28, aborted 0
+[info] Tests: succeeded 314, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[success] Total time: 138 s (02:18), completed Oct 11, 2026, 9:08:18 PM

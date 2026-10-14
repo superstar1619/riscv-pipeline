@@ -1,0 +1,41 @@
+{
+  "key": "reset100-CTCARRY",
+  "layer": "scala",
+  "repeat": 0,
+  "seed": 1,
+  "cycles": 102,
+  "pass": true,
+  "failure": "",
+  "actual": [
+    {
+      "cycle": 58,
+      "address": "128",
+      "data": "4",
+      "mask": "15"
+    },
+    {
+      "cycle": 62,
+      "address": "132",
+      "data": "1",
+      "mask": "15"
+    },
+    {
+      "cycle": 88,
+      "address": "136",
+      "data": "1",
+      "mask": "15"
+    },
+    {
+      "cycle": 91,
+      "address": "140",
+      "data": "8",
+      "mask": "15"
+    },
+    {
+      "cycle": 93,
+      "address": "512",
+      "data": "90",
+      "mask": "15"
+    }
+  ]
+}

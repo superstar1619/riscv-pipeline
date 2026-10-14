@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite 
+errors="0" failures="0" hostname="cvw" name="riscvpipeline.privileged.PrivilegedSpec" tests="8" time="6.347" timestamp="2026-10-14T16:27:47">
+  <properties>
+    <property name="jline.esc.timeout" value="0"/>
+    <property
+    name="sbt.ivy.home" value="/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/.cache/chisel/ivy"/>
+    <property
+    name="jna.platform.library.path" value="/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:/usr/lib64:/lib64:/usr/lib:/lib:/usr/lib/x86_64-linux-gnu/libfakeroot"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="java.vm.version" value="17.0.20.1+1"/>
+    <property
+    name="sun.boot.library.path" value="/home/unlastingstar/cvw-experiment/.tools/chisel/jdk/lib"/>
+    <property
+    name="sbt.global.base" value="/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/.cache/chisel/global"/>
+    <property name="java.vm.vendor" value="Eclipse Adoptium"/>
+    <property name="java.vendor.url" value="https://adoptium.net/"/>
+    <property name="path.separator" value=":"/>
+    <property name="jna.loaded" value="true"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="user.country" value="US"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="jna.nosys" value="true"/>
+    <property
+    name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property
+    name="user.dir" value="/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="java.runtime.version" value="17.0.20.1+1"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="sbt.server.autostart" value="false"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="line.separator" value=" "/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="log4j.ignoreTCL" value="true"/>
+    <property name="os.name" value="Linux"/>
+    <property name="sbt.log.noformat" value="true"/>
+    <property name="sun.jnu.encoding" value="ANSI_X3.4-1968"/>
+    <property
+    name="jnidispatch.path" value="/home/unlastingstar/.cache/JNA/temp/jna5890885746985380937.tmp"/>
+    <property
+    name="java.library.path" value="/home/unlastingstar/riscv/lib:/home/unlastingstar/riscv/lib64:/home/unlastingstar/riscv/lib:/home/unlastingstar/riscv/lib64:/home/unlastingstar/riscv/riscv64-unknown-elf/lib:/home/unlastingstar/riscv/lib/x86_64-linux-gnu/:/home/unlastingstar/riscv/riscv64-unknown-elf/lib:/home/unlastingstar/riscv/lib/x86_64-linux-gnu/:/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="java.class.version" value="61.0"/>
+    <property
+    name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="sbt.ipcsocket.tmpdir" value="/tmp/.sbt259b1db1/ipcsocket"/>
+    <property
+    name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="os.version" value="7.0.0-38-generic"/>
+    <property name="sbt.server.forcestart" value="true"/>
+    <property name="user.home" value="/home/unlastingstar"/>
+    <property name="swoval.tmpdir" value="/tmp/.sbt259b1db1/swoval"/>
+    <property name="user.timezone" value="Asia/Shanghai"/>
+    <property name="sbt.override.build.repos" value="true"/>
+    <property name="file.encoding" value="ANSI_X3.4-1968"/>
+    <property name="java.specification.version" value="17"/>
+    <property
+    name="sbt.repository.config" value="/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/../../.tools/chisel/repositories"/>
+    <property name="user.name" value="unlastingstar"/>
+    <property
+    name="java.class.path" value="/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/../../.tools/chisel/sbt-launch-1.10.7.jar"/>
+    <property name="jline.shutdownhook" value="false"/>
+    <property name="java.vm.specification.version" value="17"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property
+    name="sun.java.command" value="/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/../../.tools/chisel/sbt-launch-1.10.7.jar set Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, &quot;-u&quot;, &quot;target/chapter8-testplan/runs/20261014T082624932188Z/junit&quot;) compile test"/>
+    <property
+    name="java.home" value="/home/unlastingstar/cvw-experiment/.tools/chisel/jdk"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="java.version" value="17.0.20.1"/>
+    <property name="native.encoding" value="ANSI_X3.4-1968"/>
+    <property name="java.vendor" value="Eclipse Adoptium"/>
+    <property name="java.specification.maintenance.version" value="1"/>
+    <property name="file.separator" value="/"/>
+    <property name="java.version.date" value="2026-08-18"/>
+    <property
+    name="java.vendor.url.bug" value="https://github.com/adoptium/adoptium-support/issues"/>
+    <property name="sbt.supershell" value="false"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="java.vendor.version" value="Temurin-17.0.20.1+1"/>
+    <property
+    name="sbt.boot.directory" value="/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/.cache/chisel/boot"/>
+  </properties>
+  <testcase 
+  name="Privileged should commit real CSR old values and redirect only successful writes" classname="riscvpipeline.privileged.PrivilegedSpec" time="1.018">
+</testcase>
+  <testcase 
+  name="Privileged should take ECALL and restore old MPP at the same edge as the status stack" classname="riscvpipeline.privileged.PrivilegedSpec" time="0.87">
+</testcase>
+  <testcase 
+  name="Privileged should delegate U ECALL to S and return through the real supervisor EPC" classname="riscvpipeline.privileged.PrivilegedSpec" time="0.871">
+</testcase>
+  <testcase 
+  name="Privileged should select a vectored M interrupt and respect pending local and global enables" classname="riscvpipeline.privileged.PrivilegedSpec" time="0.635">
+</testcase>
+  <testcase 
+  name="Privileged should wake WFI on a local pending interrupt before accepting it at the successor" classname="riscvpipeline.privileged.PrivilegedSpec" time="0.636">
+</testcase>
+  <testcase 
+  name="Privileged should resolve a TW timeout into an illegal trap without a feedback loop" classname="riscvpipeline.privileged.PrivilegedSpec" time="0.844">
+</testcase>
+  <testcase 
+  name="Privileged should suppress canceled redirects and reset mode and counters synchronously" classname="riscvpipeline.privileged.PrivilegedSpec" time="0.934">
+</testcase>
+  <testcase 
+  name="Privileged should retain M trap priority over return and work with S support disabled" classname="riscvpipeline.privileged.PrivilegedSpec" time="0.532">
+</testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

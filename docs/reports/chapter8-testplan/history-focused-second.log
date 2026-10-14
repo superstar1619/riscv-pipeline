@@ -1,0 +1,18 @@
+Picked up JAVA_TOOL_OPTIONS: -XX:ActiveProcessorCount=4 -Xmx3g
+[info] welcome to sbt 1.10.7 (Eclipse Adoptium Java 17.0.20.1)
+[info] loading project definition from /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/project
+[info] loading settings for project riscv-pipeline from build.sbt...
+[info] set current project to riscv-pipeline (in build file:/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/)
+[info] compiling 1 Scala source to /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/scala-2.13/test-classes ...
+[info] done compiling
+[info] Chapter8TestPlanSpec:
+[info] Chapter 8.3 shared architectural test plan
+[info] - should sstc-hpm-HPM4: HPM事件4（退休/加载/存储/load-use/存储加载冲突）
+[info] - should sstc-hpm-STPER1: Sstc访问须同时满足STCE和TM
+[info] - should minimal-CS03: WARL掩码、EPC/TVEC对齐及Bare SATP
+[info] Run completed in 15 seconds, 135 milliseconds.
+[info] Total number of tests run: 3
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 3, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[success] Total time: 19 s, completed Oct 11, 2026, 9:24:52 PM

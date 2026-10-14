@@ -1,0 +1,53 @@
+{
+  "key": "sstc-hpm-IRVIEW",
+  "layer": "scala",
+  "repeat": 0,
+  "seed": 1,
+  "cycles": 67,
+  "pass": true,
+  "failure": "",
+  "actual": [
+    {
+      "cycle": 23,
+      "address": "128",
+      "data": "546",
+      "mask": "15"
+    },
+    {
+      "cycle": 26,
+      "address": "132",
+      "data": "546",
+      "mask": "15"
+    },
+    {
+      "cycle": 35,
+      "address": "136",
+      "data": "2186",
+      "mask": "15"
+    },
+    {
+      "cycle": 38,
+      "address": "140",
+      "data": "2",
+      "mask": "15"
+    },
+    {
+      "cycle": 47,
+      "address": "144",
+      "data": "544",
+      "mask": "15"
+    },
+    {
+      "cycle": 50,
+      "address": "148",
+      "data": "544",
+      "mask": "15"
+    },
+    {
+      "cycle": 58,
+      "address": "512",
+      "data": "90",
+      "mask": "15"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "key": "reset100-EX07",
+  "layer": "scala",
+  "repeat": 1,
+  "seed": 1,
+  "cycles": 52,
+  "pass": true,
+  "failure": "",
+  "actual": [
+    {
+      "cycle": 24,
+      "address": "1024",
+      "data": "292",
+      "mask": "15"
+    },
+    {
+      "cycle": 25,
+      "address": "1028",
+      "data": "7",
+      "mask": "15"
+    },
+    {
+      "cycle": 26,
+      "address": "1032",
+      "data": "8192",
+      "mask": "15"
+    },
+    {
+      "cycle": 27,
+      "address": "1036",
+      "data": "6144",
+      "mask": "15"
+    },
+    {
+      "cycle": 28,
+      "address": "1040",
+      "data": "0",
+      "mask": "15"
+    },
+    {
+      "cycle": 40,
+      "address": "128",
+      "data": "68",
+      "mask": "15"
+    },
+    {
+      "cycle": 41,
+      "address": "132",
+      "data": "119",
+      "mask": "15"
+    },
+    {
+      "cycle": 43,
+      "address": "512",
+      "data": "90",
+      "mask": "15"
+    }
+  ]
+}

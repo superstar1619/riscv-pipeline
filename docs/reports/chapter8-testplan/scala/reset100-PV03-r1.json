@@ -1,0 +1,53 @@
+{
+  "key": "reset100-PV03",
+  "layer": "scala",
+  "repeat": 1,
+  "seed": 1,
+  "cycles": 47,
+  "pass": true,
+  "failure": "",
+  "actual": [
+    {
+      "cycle": 21,
+      "address": "1024",
+      "data": "280",
+      "mask": "15"
+    },
+    {
+      "cycle": 22,
+      "address": "1028",
+      "data": "2",
+      "mask": "15"
+    },
+    {
+      "cycle": 23,
+      "address": "1032",
+      "data": "301990003",
+      "mask": "15"
+    },
+    {
+      "cycle": 24,
+      "address": "1036",
+      "data": "6144",
+      "mask": "15"
+    },
+    {
+      "cycle": 25,
+      "address": "1040",
+      "data": "0",
+      "mask": "15"
+    },
+    {
+      "cycle": 36,
+      "address": "128",
+      "data": "119",
+      "mask": "15"
+    },
+    {
+      "cycle": 38,
+      "address": "512",
+      "data": "90",
+      "mask": "15"
+    }
+  ]
+}

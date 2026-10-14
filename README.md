@@ -116,3 +116,18 @@ CoreMark 使用 2000 字节、10 次迭代，检查上游 CRC 并报告仿真周
 `make build-acceptance` 仍可生成验收镜像和历史 trace，需要 RISC-V GNU binutils，
 默认前缀 `riscv64-unknown-elf-`，可用 `RISCV_TOOL_PREFIX` 指定。
 # riscv-pipeline
+
+## 第八章 §8.3 TestPlan
+
+教材表8.5–8.9的现有核心适用能力由共享真实指令用例、Scala回归和独立生产RTL驱动验证。
+中文逐用例报告及原始证据见[§8.3详尽报告](docs/chapter8/16-testplan-report.md)。
+
+```sh
+make test-chapter8-plan SBT=./scripts/sbt-local.sh
+make test-chapter8-rtl SBT=./scripts/sbt-local.sh
+make report-chapter8 SBT=./scripts/sbt-local.sh
+```
+
+四组配置统一使用2048字IROM/DTIM与24拍WFI阈值；独立RTL每例执行种子1、17、2026，
+每种子在同一实例复位重跑，完成后观察8拍。运行产物位于`target/chapter8-testplan/`，
+完整报告入口还执行全量Scala与原第七章RTL回归并归档签名、日志和SHA-256清单。

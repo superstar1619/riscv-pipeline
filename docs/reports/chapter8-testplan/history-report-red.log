@@ -1,0 +1,15 @@
+test_fail_closed_on_incomplete_or_changed_evidence (test_chapter8_report.Chapter8ReportEvidenceTests.test_fail_closed_on_incomplete_or_changed_evidence) ... FAIL
+
+======================================================================
+FAIL: test_fail_closed_on_incomplete_or_changed_evidence (test_chapter8_report.Chapter8ReportEvidenceTests.test_fail_closed_on_incomplete_or_changed_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/src/test/python/test_chapter8_report.py", line 10, in test_fail_closed_on_incomplete_or_changed_evidence
+    self.assertTrue(PATH.exists(), 'chapter8 report evidence validator is missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : chapter8 report evidence validator is missing
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)

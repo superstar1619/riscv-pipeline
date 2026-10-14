@@ -1,0 +1,15 @@
+[info] welcome to sbt 1.10.7 (Eclipse Adoptium Java 17.0.20.1)
+[info] loading project definition from /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/project
+[info] loading settings for project riscv-pipeline from build.sbt...
+[info] set current project to riscv-pipeline (in build file:/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/)
+[info] compiling 2 Scala sources to /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/scala-2.13/test-classes ...
+[error] /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/src/test/scala/riscvpipeline/Chapter8TestPlanSpec.scala:11:16: incompatible type in overriding
+[error] override def newInstance: org.scalatest.Suite with org.scalatest.ParallelTestExecution (defined in trait ParallelTestExecution);
+[error]  found   : org.scalatest.Suite
+[error]  required: org.scalatest.Suite with org.scalatest.ParallelTestExecution
+[error]   override def newInstance: org.scalatest.Suite = new Chapter8TestPlanSpec
+[error]                ^
+[error] one error found
+[error] (Test / compileIncremental) Compilation failed
+[error] Total time: 3 s, completed Oct 11, 2026, 9:19:47 PM
+

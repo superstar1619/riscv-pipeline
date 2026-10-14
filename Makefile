@@ -270,3 +270,23 @@ generate-privileged-cpu:
 
 test-chapter8:
 	$(SBT) 'testOnly riscvpipeline.Chapter8AcceptanceSpec'
+
+CHAPTER8_OUTPUT = $$(python3 scripts/report-chapter8.py --path)
+CHAPTER8_JAVA_OPTS ?= -XX:ActiveProcessorCount=4 -Xmx3g
+.PHONY: test-chapter8-plan test-chapter8-rtl report-chapter8
+# Shared Scala fixtures live in Test scope; the exporter emits independent expectations.
+test-chapter8-plan:
+	mkdir -p target/chapter8-testplan
+	JAVA_TOOL_OPTIONS="$(JAVA_TOOL_OPTIONS) $(CHAPTER8_JAVA_OPTS)" $(SBT) 'Test / runMain riscvpipeline.ExportChapter8TestPlan' 'testOnly riscvpipeline.Chapter8TestPlanSpec' > "$(CHAPTER8_OUTPUT)/scala.log" 2>&1 || { tail -80 "$(CHAPTER8_OUTPUT)/scala.log"; exit 1; }
+
+test-chapter8-rtl:
+	SBT="$(SBT)" VERILATOR="$(VERILATOR)" python3 scripts/test-chapter8-rtl.py
+
+# Requires fresh tests and archives the evidence from this invocation.
+report-chapter8:
+	python3 scripts/report-chapter8.py --begin
+	$(MAKE) test-chapter8-rtl SBT="$(SBT)" VERILATOR="$(VERILATOR)"
+	env -u CHAPTER8_CASE_FILTER JAVA_TOOL_OPTIONS="$(JAVA_TOOL_OPTIONS) $(CHAPTER8_JAVA_OPTS)" $(SBT) "set Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, \"-u\", \"$(CHAPTER8_OUTPUT)/junit\")" compile test > "$(CHAPTER8_OUTPUT)/regression.log" 2>&1 || { tail -80 "$(CHAPTER8_OUTPUT)/regression.log"; exit 1; }
+	$(MAKE) test-rtl SBT="$(SBT)" > "$(CHAPTER8_OUTPUT)/chapter7-rtl.log" 2>&1 || { tail -80 "$(CHAPTER8_OUTPUT)/chapter7-rtl.log"; exit 1; }
+	python3 -m unittest discover -s src/test/python -v > "$(CHAPTER8_OUTPUT)/python.log" 2>&1 || { cat "$(CHAPTER8_OUTPUT)/python.log"; exit 1; }
+	python3 scripts/report-chapter8.py

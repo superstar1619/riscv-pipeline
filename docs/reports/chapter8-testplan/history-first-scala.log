@@ -1,0 +1,50 @@
+[info] welcome to sbt 1.10.7 (Eclipse Adoptium Java 17.0.20.1)
+[info] loading project definition from /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/project
+[info] loading settings for project riscv-pipeline from build.sbt...
+[info] set current project to riscv-pipeline (in build file:/home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/)
+[info] compiling 2 Scala sources to /home/unlastingstar/cvw-experiment/pipeline/riscv-pipeline/target/scala-2.13/test-classes ...
+[info] done compiling
+[success] Total time: 4 s, completed Oct 11, 2026, 9:11:45 PM
+[info] running riscvpipeline.ExportChapter8TestPlan 
+[error] java.lang.IllegalArgumentException: requirement failed
+[error] 	at scala.Predef$.require(Predef.scala:324)
+[error] 	at riscvpipeline.Chapter8Programs$Program.org(Chapter8AcceptanceSpec.scala:108)
+[error] 	at riscvpipeline.Chapter8TestPlanCases$.$anonfun$cases$25(Chapter8TestPlanCases.scala:274)
+[error] 	at riscvpipeline.Chapter8TestPlanCases$.$anonfun$cases$25$adapted(Chapter8TestPlanCases.scala:261)
+[error] 	at scala.collection.immutable.List.foreach(List.scala:334)
+[error] 	at riscvpipeline.Chapter8TestPlanCases$.$anonfun$cases$24(Chapter8TestPlanCases.scala:261)
+[error] 	at riscvpipeline.Chapter8TestPlanCases$.$anonfun$cases$24$adapted(Chapter8TestPlanCases.scala:260)
+[error] 	at scala.collection.immutable.List.foreach(List.scala:334)
+[error] 	at riscvpipeline.Chapter8TestPlanCases$.$anonfun$cases$23(Chapter8TestPlanCases.scala:260)
+[error] 	at scala.runtime.java8.JFunction1$mcVI$sp.apply(JFunction1$mcVI$sp.scala:18)
+[error] 	at scala.collection.IterableOnceOps.foreach(IterableOnce.scala:619)
+[error] 	at scala.collection.IterableOnceOps.foreach$(IterableOnce.scala:617)
+[error] 	at scala.collection.AbstractIterable.foreach(Iterable.scala:935)
+[error] 	at scala.collection.IterableOps$WithFilter.foreach(Iterable.scala:905)
+[error] 	at riscvpipeline.Chapter8TestPlanCases$.cases(Chapter8TestPlanCases.scala:259)
+[error] 	at riscvpipeline.Chapter8TestPlanCases$.$anonfun$all$1(Chapter8TestPlanCases.scala:366)
+[error] 	at scala.collection.immutable.List.flatMap(List.scala:294)
+[error] 	at scala.collection.immutable.List.flatMap(List.scala:79)
+[error] 	at riscvpipeline.Chapter8TestPlanCases$.all$lzycompute(Chapter8TestPlanCases.scala:366)
+[error] 	at riscvpipeline.Chapter8TestPlanCases$.all(Chapter8TestPlanCases.scala:366)
+[error] 	at riscvpipeline.ExportChapter8TestPlan$.delayedEndpoint$riscvpipeline$ExportChapter8TestPlan$1(Chapter8TestPlanCases.scala:377)
+[error] 	at riscvpipeline.ExportChapter8TestPlan$delayedInit$body.apply(Chapter8TestPlanCases.scala:375)
+[error] 	at scala.Function0.apply$mcV$sp(Function0.scala:42)
+[error] 	at scala.Function0.apply$mcV$sp$(Function0.scala:42)
+[error] 	at scala.runtime.AbstractFunction0.apply$mcV$sp(AbstractFunction0.scala:17)
+[error] 	at scala.App.$anonfun$main$1(App.scala:98)
+[error] 	at scala.App.$anonfun$main$1$adapted(App.scala:98)
+[error] 	at scala.collection.IterableOnceOps.foreach(IterableOnce.scala:619)
+[error] 	at scala.collection.IterableOnceOps.foreach$(IterableOnce.scala:617)
+[error] 	at scala.collection.AbstractIterable.foreach(Iterable.scala:935)
+[error] 	at scala.App.main(App.scala:98)
+[error] 	at scala.App.main$(App.scala:96)
+[error] 	at riscvpipeline.ExportChapter8TestPlan$.main(Chapter8TestPlanCases.scala:375)
+[error] 	at riscvpipeline.ExportChapter8TestPlan.main(Chapter8TestPlanCases.scala)
+[error] 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+[error] 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+[error] 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+[error] 	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+[error] stack trace is suppressed; run 'last Test / runMain' for the full output
+[error] (Test / runMain) java.lang.IllegalArgumentException: requirement failed
+[error] Total time: 0 s, completed Oct 11, 2026, 9:11:45 PM
