@@ -120,6 +120,22 @@ class BusIFUSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
     }
   }
 
+  it should "cancel actual redirected HTRANS while keeping raw address stall independent" in {
+    test(new BusIFUHarness(false, None)) { d =>
+      boot(d)
+      d.io.BusFlushF.poke(false.B)
+      d.io.RedirectM.poke(true.B)
+      d.io.RedirectPCM.poke("h80000020".U)
+      d.io.ahb.HTRANS.expect(0.U)
+      d.io.BusStallF.expect(true.B)
+      d.clock.step()
+      d.io.RedirectM.poke(false.B)
+      d.io.ahb.HADDR.expect("h80000020".U)
+      d.io.ahb.HTRANS.expect(2.U)
+      d.io.BusStallF.expect(true.B)
+    }
+  }
+
   it should "drain an accepted old fetch after a redirect and discard its stale response" in {
     test(new BusIFUHarness(false, None)) { d =>
       boot(d)

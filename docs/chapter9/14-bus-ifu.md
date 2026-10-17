@@ -33,3 +33,14 @@ Mem3 等到 D 可接收时，指令与保存的 BusPC 在同一消费沿进入 D
 
 范围：没有缓存、burst、atomic 或 AHB ERROR；全局停顿、精确异常和旧路径回归由
 整机验收继续检查。取指复用已注明 CVW 出处与许可证的 AHBInterface/BusFSM。
+
+整机集成修正：直接把受实际 Redirect/FlushD 影响的 BusFSM BusStall 输出接到全局
+停顿，会形成 StallM→实际 Redirect→Flush→BusStall→StallM 的组合环。
+BusStallF 改由已寄存 Data committed 与未接受 Adr 的原始请求、BusFlushF 产生；
+请求取消仍作用于 HTRANS，实际 Redirect 不再反向改变全局等待。原始 M 级取消意图
+经 BusFlushF 独立解除 Adr 等待。新增回归验证 BusFlushF=0、实际 Redirect=1 时
+HTRANS=IDLE 而原始 Adr 等待保持。reset 仍只复位状态，不增加组合请求或停顿门控。
+
+集成修正验证：BusIFUSpec 7/7 与 BusPipelineSpec 3/3 联合通过（共 10/10），证据为
+`target/chapter9/modules/bus-pipeline/green.log`；纯总线、IROM 两配置重新生成并 lint
+通过，无 RTL 警告。新增回归覆盖上述取消与原始等待的区别。

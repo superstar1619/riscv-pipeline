@@ -51,7 +51,9 @@ final class BusIFU(val config: CpuConfig) extends RawModule {
   bus.io.HRDATA := io.ahb.HRDATA
   bus.io.ByteMask := 0.U(4.W)
   bus.io.WriteData := 0.U(INSTRUCTION_WIDTH.W)
-  io.BusStallF := bus.io.BusStall
+  // 停顿只由已寄存 Data 状态和原始 Adr 意图产生，不依赖实际 Redirect/FlushD。
+  // 实际重定向仍可取消 HTRANS；M 候选取消由 BusFlushF 独立解除原始 Adr 等待。
+  io.BusStallF := bus.io.BusCommitted || (!BusPending && BusFetchF && !io.BusFlushF)
   io.BusCommittedF := bus.io.BusCommitted
   io.ahb.HADDR := PCF.pad(34)
   io.ahb.HWDATA := bus.io.HWDATA
