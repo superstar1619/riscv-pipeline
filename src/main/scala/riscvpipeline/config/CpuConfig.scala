@@ -22,7 +22,8 @@ final case class CpuConfig(
   resetVector: BigInt = CpuConfig.DEFAULT_RESET_VECTOR,
   instructionInitFile: Option[String] = None,
   privilegedSupported: Boolean = false,
-  privileged: PrivilegedConfig = PrivilegedConfig()
+  privileged: PrivilegedConfig = PrivilegedConfig(),
+  bus: Option[BusConfig] = None
 ) {
   require(xlen == XLEN, "The first CPU implementation supports only XLEN=32")
 

@@ -55,6 +55,11 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
   lsu.clk := clk
   lsu.reset := reset
   lsu.io.SuppressM := TrapM || StallM
+  lsu.io.StallM := StallM
+  lsu.io.BusFlushM := false.B
+  lsu.io.ahb.HREADY := true.B
+  lsu.io.ahb.HRDATA := 0.U
+  lsu.io.ahb.HRESP := false.B
   lsu.io.BigEndianM := BigEndianM
   lsu.io.MemReadE := ieu.io.MemRWE(MEM_READ_BIT)
   lsu.io.Funct3E := ieu.io.Funct3E
