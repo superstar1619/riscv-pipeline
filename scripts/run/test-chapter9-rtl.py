@@ -14,7 +14,7 @@ if not sys.pycache_prefix:
     sys.pycache_prefix = str(Path(__file__).resolve().parents[2] / 'target/cache/python')
 os.environ['PYTHONPYCACHEPREFIX'] = sys.pycache_prefix
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'lib'))
-from cvw_common import ROOT, Collector, dump, save_results, reproduction, manifest
+from cvw_common import ROOT, Collector, dump, save_results, reproduction, manifest, process_exit_results
 
 CASES = ('memory-switch','apb-subword','privilege-endian','interrupt-precise')
 
@@ -47,12 +47,58 @@ def coverage_points(events):
             if ins & 0x7f == 3 and (ins>>12)&7 in (0,1,4,5): points.add('memory.subword')
             if ins & 0x7f == 3 and e.get('rd') == 28 and e.get('data')==0x44332211: points.add('endian.big')
         elif e['kind']=='store' and e['address']==0x800: points.add('memory.local-dtim')
+    wait_cycles=sorted({e['cycle'] for e in events if e['kind']=='sample' and e['bus_wait']})
+    longest=run=0;previous=None
+    for cycle in wait_cycles:
+        run=run+1 if previous is not None and cycle==previous+1 else 1
+        longest=max(longest,run);previous=cycle
+    for bound in (1,2):
+        if longest>=bound: points.add(f'bus.wait.length{bound}')
+    if not wait_cycles and any(e['kind']=='bus' and e['event'] in (1,2,3) for e in events): points.add('bus.zero-wait')
     return points
+
+def configured_oracle(base,ram_latency):
+    oracle=copy.deepcopy(base);oracle['ramLatency']=ram_latency
+    required=oracle.get('requiredCoverage',[])
+    if 'bus.wait' in required:
+        if ram_latency==0: oracle['requiredCoverage']=['bus.zero-wait' if b=='bus.wait' else b for b in required]
+        else: oracle['requiredCoverage']=required+[f'bus.wait.length{ram_latency}']
+    return oracle
+
+def check_irq_causality(oracle,events):
+    expected=sum(bool(e['interrupt']) for e in oracle.get('expectedTraps',[]))
+    transitions=[e for e in events if e['kind']=='irq']
+    if not expected:
+        if transitions: raise ValueError('unexpected IRQ pin transitions')
+        return
+    if expected!=1: raise ValueError('unsupported IRQ schedule cardinality')
+    high=False; rise=None; accepted=None; rises=0; falls=0
+    for event in events:
+        if event['kind']=='irq':
+            if event['asserted']:
+                rises+=1
+                if high or accepted is not None or rises!=1: raise ValueError('extra/late IRQ rise')
+                if not (event['committed_m'] or event['committed_f']): raise ValueError('IRQ rise lacks actual committed phase')
+                high=True;rise=event['cycle']
+            else:
+                falls+=1
+                if not high or accepted is None or not event.get('afterAcceptedTrapEdge',False):
+                    raise ValueError('IRQ fall before accepted trap edge')
+                high=False
+        elif event['kind']=='trap' and event['interrupt']:
+            if not high or rise is None or event['cycle']<=rise or not event['mswint']:
+                raise ValueError('interrupt accepted before actual high pin')
+            if event['committed_m'] or event['committed_f']:
+                raise ValueError('interrupt accepted during committed transaction')
+            if accepted is not None: raise ValueError('duplicate interrupt acceptance')
+            accepted=event['cycle']
+    if rises!=1 or falls!=1 or accepted is None or high: raise ValueError('missing IRQ rise/acceptance/fall')
 
 def check_trace(oracle, events):
     """Strict ordered stores + actual retired LW, never infer reads from shadow RAM."""
     try:
         if not events: raise ValueError('empty trace')
+        if sum(e['kind']=='end' for e in events)!=1: raise ValueError('missing/duplicate reset-end event')
         cycles=[e['cycle'] for e in events]
         if cycles != sorted(cycles): raise ValueError('trace cycle order')
         stores=[e for e in events if e['kind']=='store']
@@ -79,18 +125,42 @@ def check_trace(oracle, events):
             traps=[{k:e[k] for k in ('cause','interrupt','pc') if k in want} for e,want in zip([e for e in events if e['kind']=='trap'],oracle['expectedTraps'])]
             if len([e for e in events if e['kind']=='trap'])!=len(oracle['expectedTraps']) or traps!=oracle['expectedTraps']:
                 raise ValueError('ordered trap events differ')
+        check_irq_causality(oracle,events)
         points=coverage_points(events)
         missing=set(oracle.get('requiredCoverage',[]))-points
         if missing: raise ValueError('missing dynamic coverage: '+', '.join(sorted(missing)))
         # Count all physical writes separately; it must match the accepted CPU store stream.
         if oracle.get('requirePhysical',False):
-            physical=[[e['address'],e['data'],e['mask']] for e in events if e['kind']=='bus' and e['event'] in (3,5)]
-            external=[e for e in actual if e[0]>=0x10000000]
-            if physical!=external: raise ValueError('physical bus writes differ from architectural stores')
+            physical=[e for e in events if e['kind']=='bus' and e['event'] in (3,5)]
+            expected_physical=list(oracle['physicalStores'])
+            # Indexed readback/length/completion are ordinary little-endian word stores.
+            for address,data,mask in expected[len(oracle['stores']):]:
+                expected_physical.append(dict(address=address,mask=mask,bytes=list(data.to_bytes(4,'little'))))
+            if len(physical)!=len(expected_physical): raise ValueError('missing/extra physical bus writes')
+            for index,(want,got) in enumerate(zip(expected_physical,physical)):
+                if want['address']!=got['address'] or want['mask']!=got['mask']:
+                    raise ValueError(f'physical bus address/mask mismatch {index}')
+                for lane,byte in enumerate(want['bytes']):
+                    if byte is not None and ((got['data']>>(lane*8))&255)!=byte:
+                        raise ValueError(f'physical bus byte mismatch {index} lane{lane}')
         return dict(**{'pass':True},failure='',cycles=events[-1]['cycle'],coverage=sorted(points),
                     words=[e['data'] for e in loads],stores=actual)
     except (ValueError,KeyError,TypeError,IndexError) as exc:
         return dict(**{'pass':False},failure=str(exc),coverage=[])
+
+def read_trace(path):
+    events=[]
+    try:
+        for line_number,line in enumerate(Path(path).read_text().splitlines(),1):
+            if not line.strip(): continue
+            try:
+                event=json.loads(line)
+                if not isinstance(event,dict) or event.get('repeat') not in (0,1) or not isinstance(event.get('cycle'),int) or event.get('kind') not in ('commit','trap','bus','store','sample','irq','end'):
+                    raise ValueError('malformed event metadata')
+                events.append(event)
+            except (ValueError,TypeError) as exc: return events,f'trace line {line_number}: {exc}'
+        return events,''
+    except OSError as exc: return events,str(exc)
 
 def load_module(path,name):
     spec=importlib.util.spec_from_file_location(name,path)
@@ -121,6 +191,30 @@ def negative_checks(oracle,events,directory):
     passed=all(c['passed'] for c in checks)
     dump(directory/'results.json',dict(passed=passed,checks=checks))
     return passed
+
+def negative_irq_checks(oracle,events,directory):
+    directory=Path(directory);directory.mkdir(parents=True,exist_ok=False)
+    if not check_trace(oracle,events)['pass']:
+        dump(directory/'results.json',dict(passed=False,checks=[],reason='IRQ baseline is not a passing actual trace'));return False
+    variants={}
+    def changed(name,action):
+        bad=copy.deepcopy(events);action(bad);variants[name]=sorted(bad,key=lambda e:e['cycle'])
+    def rise(rows): return next(e for e in rows if e['kind']=='irq' and e['asserted'])
+    def fall(rows): return next(e for e in rows if e['kind']=='irq' and not e['asserted'])
+    def trap(rows): return next(e for e in rows if e['kind']=='trap' and e['interrupt'])
+    changed('trap-before-rise',lambda rows:trap(rows).update(cycle=max(0,rise(rows)['cycle']-1)))
+    changed('rise-after-trap',lambda rows:rise(rows).update(cycle=trap(rows)['cycle']+1))
+    changed('missing-rise',lambda rows:rows.remove(rise(rows)))
+    changed('missing-fall',lambda rows:rows.remove(fall(rows)))
+    changed('premature-fall',lambda rows:fall(rows).update(cycle=max(0,trap(rows)['cycle']-1)))
+    changed('fall-before-edge',lambda rows:fall(rows).update(afterAcceptedTrapEdge=False))
+    changed('trap-pin-low',lambda rows:trap(rows).update(mswint=False))
+    changed('trap-committed',lambda rows:trap(rows).update(committed_m=1))
+    checks=[]
+    for name,bad in variants.items():
+        checked=check_trace(oracle,bad);dump(directory/(name+'.json'),dict(events=bad,check=checked))
+        checks.append(dict(name=name,passed=not checked['pass'],reason=checked['failure']))
+    passed=all(c['passed'] for c in checks);dump(directory/'results.json',dict(passed=passed,checks=checks));return passed
 
 def spike_reference(output, program, collector):
     """Relocate instruction-only RV32I ELF around Spike's immutable reset ROM.
@@ -193,11 +287,15 @@ def compare_spike(reference,events):
 
 def run(output, cases=CASES, seeds=(1,17,2026), build_only=False):
     output=Path(output).resolve(); output.mkdir(parents=True,exist_ok=False)
+    os.environ.setdefault('CCACHE_DIR',str(ROOT/'target/cache/ccache'))
     collector=Collector(output)
     owned=[*sorted((ROOT/'programs/chapter9').glob('*')),
            ROOT/'scripts/build/build-chapter9.py',ROOT/'scripts/run/test-chapter9-rtl.py',
            ROOT/'scripts/report/report-chapter9.py',ROOT/'src/test/cpp/chapter9_rtl.cpp',
-           ROOT/'src/test/python/test_chapter9_platform.py']
+           *sorted((ROOT/'src/test/python').glob('test_chapter9*.py')),ROOT/'build.sbt',
+           ROOT/'scripts/lib/cvw_common.py',ROOT/'scripts/lib/commit_diff.py',ROOT/'scripts/lib/report_catalog.py',
+           *sorted((ROOT/'src/main/scala').rglob('*.scala')),
+           *sorted((ROOT/'src/test/scala').rglob('*.scala'))]
     hashes={}
     for source in owned:
         if source.is_file():
@@ -210,6 +308,7 @@ def run(output, cases=CASES, seeds=(1,17,2026), build_only=False):
     results=[]
     references={p['mode']+'/'+p['id']:spike_reference(output,p,collector) for p in programs if p['status']=='built'}
     dump(output/'spike-references.json',references)
+    collector.command('metadata/python',[sys.executable,'--version'])
     collector.command('metadata/verilator',[os.environ.get('VERILATOR','verilator'),'--version'])
     collector.command('metadata/git-head',['git','rev-parse','HEAD'])
     collector.command('metadata/git-status',['git','status','--short'])
@@ -231,7 +330,7 @@ def run(output, cases=CASES, seeds=(1,17,2026), build_only=False):
                     rtl=work/'Chapter9Observer.v'
                     record=collector.command(f'rtl/{mode}-ram{latency}/{p["id"]}/compile',
                         [os.environ.get('VERILATOR','verilator'),'-Wall','-Wno-DECLFILENAME','-Wno-UNUSEDSIGNAL',
-                         '--coverage-line','--coverage-toggle','--cc','--exe','--build','-j','2','--top-module','Chapter9Observer','--prefix','VChapter9',
+                         '--assert','--coverage-line','--coverage-toggle','--cc','--exe','--build','-j','2','--top-module','Chapter9Observer','--prefix','VChapter9',
                          '--x-initial','unique','--x-assign','unique','--Mdir',work/'build','-CFLAGS','-std=c++17',
                          rtl,ROOT/'src/test/cpp/chapter9_rtl.cpp'])
                     if record['exit']: error='Verilator compilation failed'
@@ -242,32 +341,47 @@ def run(output, cases=CASES, seeds=(1,17,2026), build_only=False):
                         run_env=dict(os.environ,COVERAGE_OUTPUT=str(work/f'coverage-s{seed}.dat'))
                         record=collector.command(f'rtl/{mode}-ram{latency}/{p["id"]}/seed{seed}',
                             [work/'build/VChapter9',str(seed),str(p['cycleLimit']),trace,'1' if p['id']=='interrupt-precise' else '0'],cwd=work,timeout=180,env=run_env)
-                    events=[json.loads(l) for l in trace.read_text().splitlines()] if trace.exists() else []
+                    events,trace_error=read_trace(trace) if not error else ([],error)
                     for repeat in (0,1):
                         row=next(dict(r) for r in matrix if r['mode']==mode and r['ramLatency']==latency and r['name']==p['id'] and r['seed']==seed and r['repeat']==repeat)
                         oracle=json.loads(Path(p['oracle']).read_text()) if p.get('oracle') else {}
+                        oracle=configured_oracle(oracle,latency)
                         oracle['requirePhysical']=True
                         actual=[e for e in events if e['repeat']==repeat]
                         checked=check_trace(oracle,actual) if not error else {'pass':False,'failure':error}
-                        if record and record['exit'] and checked['pass']:
-                            checked.update({'pass':False,'failure':f'simulator exit {record["exit"]} contradicts passing trace'})
+                        if trace_error:
+                            checked.update({'pass':False,'failure':'trace parse: '+trace_error})
                         differential=compare_spike(references.get(mode+'/'+p['id'],{}),actual) if mode=='bus-only' and p['id']=='memory-switch' and not error else None
                         if differential is not None and not differential['passed']:
                             checked.update({'pass':False,'failure':'Spike: '+differential['reason']})
                         dump(work/f'actual-s{seed}-r{repeat}.json',dict(events=actual,check=checked,differential=differential))
                         if checked['pass'] and p['id']=='memory-switch' and mode=='bus-only' and not (output/'negative-checks').exists():
                             negative_checks(oracle,actual,output/'negative-checks')
-                        row.update(status='pass' if checked['pass'] else 'not_executed' if error.startswith('build-only:') else 'build_platform_error' if error else 'cpu_failure',
+                            changed=copy.deepcopy(actual)
+                            transient=next(e for e in changed if e['kind']=='commit' and e['rd'] and e['pc']!=oracle['readbackPC'])
+                            transient['data']^=1
+                            dump(output/'negative-spike.json',dict(events=changed,signatureCheck=check_trace(oracle,changed),
+                                differential=compare_spike(references[mode+'/'+p['id']],changed)))
+                        if checked['pass'] and p['id']=='interrupt-precise' and mode=='bus-only' and not (output/'negative-irq').exists():
+                            negative_irq_checks(oracle,actual,output/'negative-irq')
+                        timed_out=record and (record['exit']==124 or (actual and actual[-1]['cycle']>=p['cycleLimit']))
+                        row.update(status='pass' if checked['pass'] else 'not_executed' if error.startswith('build-only:') else 'timeout' if timed_out else 'build_platform_error' if error or trace_error else 'cpu_failure',
                                    reason=checked['failure'],trace=str(trace),evidence=str(work/f'actual-s{seed}-r{repeat}.json'),
                                    exit=record['exit'] if record else None,
                                    reproduce=reproduction([sys.executable,ROOT/'scripts/run/test-chapter9-rtl.py']))
                         results.append(row)
+                    if record:
+                        results[-2:]=process_exit_results(results[-2:],record['exit'])
                 save_results(output,results)
     dump(output/'summary.json',dict(passed=all(r['status']=='pass' for r in results),runs=len(results),
                                    statuses={s:sum(r['status']==s for r in results) for s in sorted({r['status'] for r in results})}))
     if not build_only:
         collect_code_coverage(output,results,collector)
-    collector.command('python-platform',[sys.executable,'-m','unittest','discover','-s','src/test/python','-p','test_chapter9_platform.py','-v'])
+    collector.command('python-platform',[sys.executable,'-m','unittest','discover','-s','src/test/python','-p','test_chapter9*.py','-v'])
+    current_paths=set(owned)|set((ROOT/'src/main/scala').rglob('*.scala'))|set((ROOT/'src/test/scala').rglob('*.scala'))|set((ROOT/'src/test/python').glob('test_chapter9*.py'))
+    current={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in current_paths if p.is_file()}
+    dump(output/'source-after.json',current)
+    dump(output/'source-stability.json',dict(passed=current==hashes,changed=sorted(k for k in set(current)|set(hashes) if current.get(k)!=hashes.get(k))))
     accepted=load_module(ROOT/'scripts/report/report-chapter9.py','chapter9_report').report(output)
     manifest(output)
     return accepted

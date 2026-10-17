@@ -27,8 +27,12 @@ START
     li t0, 0x80000100
     li t1, 0x02a00593 /* addi a1,zero,42 */
     sw t1, 0(t0)
-    li t1, 0x00008067 /* jalr zero,ra,0 */
+    li t1, 0x0002ae03 /* lw t3,0(t0): data request during RAM fetch */
     sw t1, 4(t0)
+    li t1, 0x00058593 /* addi a1,a1,0 */
+    sw t1, 8(t0)
+    li t1, 0x00008067 /* jalr zero,ra,0 */
+    sw t1, 12(t0)
     fence.i
     jalr ra, t0, 0
     EMIT a1

@@ -27,7 +27,7 @@ def oracle_words(case, mixed, symbols=None):
     if case == 'apb-subword':
         return [0x11223344, 0x1122aa44, 0xbbccaa44, 3]
     if case == 'privilege-endian':
-        return [0x44332211, 11, 0, 0x99]
+        return [0x44332211, 0xddccbbaa, 11, 0, 0x99]
     if case == 'interrupt-precise':
         return [0x80000003, (symbols or {}).get('irq_resume', 0), 0, 0x99]
     raise ValueError(f'unknown case {case}')
@@ -41,23 +41,40 @@ def expected_stores(case, mixed, symbols=None):
     if case == 'memory-switch':
         store(0x80004000, 0x807f00ff)
         for value in words[:6]: emit(value)
-        store(0x80004001, 0x80808080, 2); emit(words[6])
-        store(0x80004002, 0x12341234, 12); emit(words[7])
-        store(0x80000100, 0x02a00593); store(0x80000104, 0x00008067)
+        store(0x80004001, 0x80, 2); emit(words[6])
+        store(0x80004002, 0x1234, 12); emit(words[7])
+        store(0x80000100, 0x02a00593); store(0x80000104, 0x0002ae03)
+        store(0x80000108, 0x00058593); store(0x8000010c, 0x00008067)
         for value in words[8:10]: emit(value)
         if mixed: store(0x800, 0x55aa33cc); emit(words[10])
     elif case == 'apb-subword':
         for (a,d,m), value in zip([(0x10000000,0x11223344,15),
-                                  (0x10000001,0xaaaaaaaa,2),
-                                  (0x10000002,0xbbccbbcc,12)], words):
+                                  (0x10000001,0xaa,2),
+                                  (0x10000002,0xbbcc,12)], words):
             store(a,d,m); emit(value)
         emit(words[3])
     elif case == 'privilege-endian':
-        store(0x80004000, 0x11223344)
+        store(0x80004000, 0x11223344); store(0x80004004, 0xaabbccdd)
         for value in words: emit(value)
     elif case == 'interrupt-precise':
         store(0x80004000, 0x2468ace0); store(0x8000fe00, 1)
         for value in words: emit(value)
+    return result
+
+def physical_stores(case,mixed,symbols=None):
+    # Architectural raw source values become byte lanes only at the LSU boundary.
+    # Endian is independently fixed by the program CSR sequence, not read from DUT.
+    result=[]
+    for address,data,mask in expected_stores(case,mixed,symbols):
+        if address<0x10000000: continue # local DTIM never issues AHB
+        active=[lane for lane in range(4) if mask>>lane&1]
+        width=len(active)
+        raw=data.to_bytes(4,'little')[:width]
+        if case=='privilege-endian' and address==0x80004004:
+            raw=raw[::-1]
+        lanes=[None]*4
+        for lane,value in zip(active,raw): lanes[lane]=value
+        result.append(dict(address=address,mask=mask,bytes=lanes))
     return result
 
 def hex_image(raw):
@@ -106,6 +123,7 @@ def build(directory, cases=CASES):
                 oracle = dict(origin='explicit hand-derived RV32 instruction and device semantics',
                               words=oracle_words(case,mixed,syms), stores=expected_stores(case,mixed,syms),
                               readbackPC=syms['readback_load'], requiredCoverage=coverage,
+                              physicalStores=physical_stores(case,mixed,syms),
                               symbols=syms, completionObservationCycles=8, expectedTraps=([dict(cause=11,interrupt=False)] if case=='privilege-endian' else [dict(cause=3,interrupt=True,pc=syms['irq_resume'])] if case=='interrupt-precise' else []))
                 dump(work/'oracle.json', oracle)
                 (work/'reference.signature').write_text(''.join(f'{w:08x}\n' for w in oracle['words']))

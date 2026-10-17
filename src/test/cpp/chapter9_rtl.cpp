@@ -69,7 +69,10 @@ int main(int argc, char** argv) {
                     prefix("trap");
                     out << ",\"pc\":" << uint32_t(dut->trap_pc32)
                         << ",\"cause\":" << unsigned(dut->trap_cause6)
-                        << ",\"interrupt\":" << (dut->trap_interrupt ? "true":"false") << "}\n";
+                        << ",\"interrupt\":" << (dut->trap_interrupt ? "true":"false")
+                        << ",\"committed_m\":" << unsigned(dut->committed_m)
+                        << ",\"committed_f\":" << unsigned(dut->committed_f)
+                        << ",\"mswint\":" << (dut->interrupts_MSwInt ? "true":"false") << "}\n";
                 }
                 if (dut->event_valid) {
                     prefix("bus");

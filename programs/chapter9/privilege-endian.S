@@ -9,12 +9,16 @@ START
     li t1, 0x20
     csrw mstatush, t1
     lw t3, 0(t0)
+    li t1, 0xaabbccdd
+    sw t1, 4(t0)
     csrw mstatush, zero
+    EMIT t3
+    lw t3, 4(t0)
     EMIT t3
     ecall
     li t3, 0x99
     EMIT t3
-    FINISH 4
+    FINISH 5
 .balign 4
 trap_handler:
     csrr t3, mcause
