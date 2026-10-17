@@ -246,6 +246,8 @@ help:
 	@echo 'test-pipeline        流水线测试；test-chapter8 特权测试；test-rtl 生产 RTL 验收'
 	@echo 'report-chapter8      第八章详细报告；report-chapter7-8-cvw 联合报告'
 	@echo 'test-bus-fsm         第九章首模块测试；generate-bus-fsm 生成 RTL，BUS_FSM_READ_ONLY=true 为 IFU'
+	@echo 'test-chapter9        第九章模块/流水线/SoC Scala 测试；test-chapter9-rtl 执行完整 144 项矩阵'
+	@echo 'generate-bus-soc    生成第九章 SoC；report-chapter9 读取 CHAPTER9_RUN_DIR 的实测证据'
 	@echo 'clean               删除全部 target/，包括缓存、镜像、波形和原始验证证据；保留手写文档与单周期源码快照'
 
 .PHONY: generate-trap test-trap
@@ -338,3 +340,31 @@ test-diff:
 
 report-verification:
 	CVW_ROOT="$(CVW_ROOT)" SBT="$(SBT)" VERILATOR="$(VERILATOR)" python3 scripts/run/verify.py --archive
+
+# Chapter 9: single-transfer AHB, optional local IROM/DTIM, APB experiment registers.
+CHAPTER9_TARGET_DIR ?= target/generated/chapter9-soc
+CHAPTER9_IMAGE ?= -
+CHAPTER9_MODE ?= bus
+CHAPTER9_RAM_LATENCY ?= 0
+CHAPTER9_APB_LATENCY ?= 1
+CHAPTER9_RUN_DIR ?=
+.PHONY: test-chapter9 test-chapter9-rtl build-chapter9 generate-bus-pipeline \
+  generate-bus-soc report-chapter9
+test-chapter9:
+	$(SBT) 'testOnly riscvpipeline.ebu.* riscvpipeline.uncore.* riscvpipeline.ifu.BusIFUSpec riscvpipeline.lsu.BusLSUSpec riscvpipeline.BusHazardControlSpec riscvpipeline.BusPipelineSpec riscvpipeline.RiscvPipelineSoCSpec'
+
+generate-bus-pipeline:
+	$(SBT) 'runMain riscvpipeline.generators.GenerateBusPipeline'
+
+generate-bus-soc:
+	$(SBT) "runMain riscvpipeline.generators.GenerateRiscvPipelineSoC $(CHAPTER9_TARGET_DIR) $(CHAPTER9_IMAGE) $(CHAPTER9_MODE) $(CHAPTER9_RAM_LATENCY) $(CHAPTER9_APB_LATENCY)"
+
+build-chapter9:
+	python3 scripts/build/build-chapter9.py
+
+test-chapter9-rtl:
+	SBT="$(SBT)" VERILATOR="$(VERILATOR)" python3 scripts/run/test-chapter9-rtl.py
+
+report-chapter9:
+	@test -n "$(CHAPTER9_RUN_DIR)" || { echo '请指定 CHAPTER9_RUN_DIR=target/chapter9-testplan/runs/<运行目录>'; exit 2; }
+	python3 scripts/report/report-chapter9.py "$(CHAPTER9_RUN_DIR)"

@@ -19,23 +19,23 @@ Edition 1》§9.4–9.5，印刷页 410–426（PDF 页码加 35）；代码对�
 下列每行均为独立提交检查点。勾选表示实现和验证完成，最后统一由用户检查。
 
 - [x] 1. BusFSM：三态、等待、取消、提交边界、IFU/LSU 两种配置；已验证。
-- [ ] 2. AHBInterface：读缓存、写数据与掩码时序。
-- [ ] 3. ControllerInput：保存、恢复及 ready 屏蔽。
-- [ ] 4. EBUFSMArb：LSU 优先仲裁及等待保持。
-- [ ] 5. EBU：并发请求、IFU 重放和响应归属。
-- [ ] 6. AdrDec：范围、类型和宽度检查。
-- [ ] 7. AdrDecs：区域选择及无命中。
-- [ ] 8. RAMAHB：同步 RAM、掩码、等待及读写冲突。
-- [ ] 9. ROMAHB：镜像和等待，默认无额外等待。
-- [ ] 10. AHBAPBBridge：Setup/Access、写数据对齐及等待。
-- [ ] 11. APBRegisterBank：实验寄存器和重复副作用检测。
-- [ ] 12. Uncore：延迟片选、响应复用及设备切换。
-- [ ] 13. LSU：TIM/总线、端序、故障和跨停顿保持。
-- [ ] 14. IFU：取指路由、PC/指令对齐及取消。
-- [ ] 15. BusHazardControl：停顿、取消意图及提交边界。
-- [ ] 16. BusPipeline：流水线和特权单元协同。
-- [ ] 17. RiscvPipelineSoC：整机连接及程序运行。
-- [ ] 最后：第九章适用 Test Plan、独立 RTL 验证和第七、八章回归。
+- [x] 2. AHBInterface：读缓存、写数据与掩码时序。
+- [x] 3. ControllerInput：保存、恢复及 ready 屏蔽。
+- [x] 4. EBUFSMArb：LSU 优先仲裁及等待保持。
+- [x] 5. EBU：并发请求、IFU 重放和响应归属。
+- [x] 6. AdrDec：范围、类型和宽度检查。
+- [x] 7. AdrDecs：区域选择及无命中。
+- [x] 8. RAMAHB：同步 RAM、掩码、等待及读写冲突。
+- [x] 9. ROMAHB：镜像和等待，默认无额外等待。
+- [x] 10. AHBAPBBridge：Setup/Access、写数据对齐及等待。
+- [x] 11. APBRegisterBank：实验寄存器和重复副作用检测。
+- [x] 12. Uncore：延迟片选、响应复用及设备切换。
+- [x] 13. LSU：TIM/总线、端序、故障和跨停顿保持。
+- [x] 14. IFU：取指路由、PC/指令对齐及取消。
+- [x] 15. BusHazardControl：停顿、取消意图及提交边界。
+- [x] 16. BusPipeline：流水线和特权单元协同。
+- [x] 17. RiscvPipelineSoC：整机连接及程序运行。
+- [x] 最后：第九章适用 Test Plan、独立 RTL 验证和第七、八章回归。
 
 ## 已确定的接口与集成决策
 
@@ -66,3 +66,7 @@ M 级取消使用独立于总 StallM 的原始意图，避免组合反馈；E �
 首轮仅实现 BusFSM。选择在现有干净目录建立功能分支，便于用户在当前路径检查；
 没有创建额外 worktree。运行完成记录及用户检查状态见 [第九章导航](../README.md)。
 2026-10-17 用户要求继续直到结束、每次做完后 git commit、最后再检查；本次按新授权推进。
+
+最终验收：独立 RTL144/144通过（运行20261017T012308175224Z），全量Scala688/688，
+APB修复后关联18/18，Python105/105；第七章RTL12/12次调用通过。
+所有实现检查点已单独提交；结果和未覆盖原始RV64GC项目见[完整实验报告](../20-lab-report.md)。

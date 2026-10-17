@@ -164,9 +164,10 @@ verilator --lint-only --top-module BusFSM target/generated/bus-fsm-lsu/BusFSM.v
 verilator --lint-only --top-module BusFSM target/generated/bus-fsm-ifu/BusFSM.v
 ```
 
-本轮没有缺失工具或参考资料。BusFSM 尚未被 CPU 使用，未执行完整项目回归或独立
+本模块首轮验收没有缺失工具或参考资料。当时 BusFSM 尚未被 CPU 使用，未执行完整项目回归或独立
 Verilator 行为仿真；本轮的 RTL 验证是生成、接口/同步复位检查和 lint。第九章整机验收
 以及第七、八章回归按计划在集成后进行。
 教材 §9.4 的 RV64GC、浮点 fadd_b11-01 和缓存突发项依照用户选择继续标为未覆盖。
 
-首轮曾按要求暂停；2026-10-17 用户取消中间等待，下一模块为 AHBInterface。
+首轮曾按要求暂停；2026-10-17 用户取消中间等待。后续整机接入和最终验证见
+[第九章实验报告](20-lab-report.md)。

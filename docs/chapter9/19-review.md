@@ -53,7 +53,7 @@ PYTHONPYCACHEPREFIX=target/cache/python \
 python3 -m unittest discover -s src/test/python -v
 ```
 
-最终 **96/96 通过，退出0**，完整日志为 `target/chapter9/regression/python.log`。
+该检查点 **96/96 通过，退出0**，完整日志为 `target/chapter9/regression/python.log`。
 本次未修改生产源文件、测试源文件、共享进度或报告脚本。
 
 
@@ -82,3 +82,7 @@ Verilator 编译并运行 book、expanded、acceptance、acceptance-expanded。
 完整 PADDR(31,2) 寄存器字译码；修正后银行/Uncore/SoC 定向18/18通过，三个生成和
 三个 lint通过。此前“未发现已确认缺陷”只描述当时的审阅发现，不表示后续整机验证无需运行。
 后续完整 RTL 矩阵以平台最终新运行结果为准。
+
+最终平台/报告补强后，全Python重新运行105/105通过（其中第九章22项），
+新日志为`target/chapter9/regression/python-final.log`；未改写前述96项历史检查点。
+最终独立RTL144/144通过与来源核验见[完整实验报告](20-lab-report.md)。

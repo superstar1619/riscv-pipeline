@@ -4,8 +4,8 @@
 `PrivilegedPipeline` 增加 CSR、精确异常、中断委托、U/S/M 模式、xRET、WFI、计数器和数据大小端。
 目前不包含乘除法、MMU/PMP、浮点、缓存及 CLINT/PLIC 本体。
 
-第九章总线实验已完成首个独立 [BusFSM 模块](docs/chapter9/01-bus-fsm.md)，
-尚未连接整机；按[模块检查进度](docs/chapter9/README.md)逐个验证、提交，最后统一检查。
+第九章总线实验已接入 AHB/APB SoC；[第九章实验报告](docs/chapter9/20-lab-report.md)记录实现、
+逐模块提交、整机测试矩阵与教材原始 Test Plan 的覆盖边界。
 
 ## 环境与快速开始
 

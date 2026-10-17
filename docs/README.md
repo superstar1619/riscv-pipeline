@@ -27,7 +27,7 @@
 | §8.1–8.2，336–359 页 | [CSR 与特权详解](textbook/chapter8-csr-privileged-guide.md) | CSR、U/S/M、陷阱、xRET 和 WFI | 第八章对应模块测试 |
 | §8.3，360 页起 | [第八章验收方法](chapter8/15-acceptance.md)、[报告入口](reports/README.md#chapter8-testplan) | 特权用例、配置矩阵、有序事件和负向检查 | `make report-chapter8`、`make report-chapter7-8-cvw` |
 | §8.4，364–380 页 | [特权实现](chapter8/README.md)、[流水线集成](chapter8/14-pipeline.md) | CSR/Privileged、精确陷阱、端序及冒险门控 | `make test-chapter8`、统一回归 |
-| §9.5.1，414–415 页 | [BusFSM](chapter9/01-bus-fsm.md) | 首个总线叶模块，尚未连接整机 | `make test-bus-fsm`，逐模块等待检查 |
+| §9.4–9.5，410–426 页 | [第九章总线实验](chapter9/20-lab-report.md) | AHB/EBU、Uncore、APB、IFU/LSU 与 SoC | `make test-chapter9`、`make test-chapter9-rtl`；[模块报告导航](chapter9/README.md) |
 
 ## 文档分区
 
