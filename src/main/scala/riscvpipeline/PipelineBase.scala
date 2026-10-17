@@ -39,6 +39,10 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
   ifu.io.StallF := ieu.io.StallF
   ifu.io.StallD := ieu.io.StallD
   ifu.io.FlushD := ieu.io.FlushD
+  ifu.io.BusFlushF := false.B
+  ifu.io.ahb.HREADY := true.B
+  ifu.io.ahb.HRDATA := 0.U
+  ifu.io.ahb.HRESP := false.B
   ieu.clk := clk
   ieu.reset := reset
   ieu.io.InstrD := ifu.io.InstrD
