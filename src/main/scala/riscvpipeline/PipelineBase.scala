@@ -4,6 +4,9 @@ import chisel3._
 import riscvpipeline.config.CpuConfig
 import riscvpipeline.control.ControlEncoding._
 import riscvpipeline.isa.Architecture.XLEN
+import riscvpipeline.isa.InstructionDecode
+import riscvpipeline.ebu.{AHBMasterIO, EBU}
+import riscvpipeline.hazard.BusHazardControl
 import riscvpipeline.ifu.IFU
 import riscvpipeline.ieu.IEU
 import riscvpipeline.lsu.LSU
@@ -31,6 +34,15 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
   val StallM = WireDefault(false.B)
   val CSRResultM = WireDefault(0.U(XLEN.W))
   val BigEndianM = WireDefault(false.B)
+  val WFIStallM = WireDefault(false.B)
+  val RedirectIntentM = WireDefault(false.B)
+  val ExternalBus = config.bus.map { _ =>
+    val external = Wire(new AHBMasterIO)
+    external.HREADY := true.B
+    external.HRDATA := 0.U
+    external.HRESP := false.B
+    external
+  }
 
   ifu.io.RedirectM := RedirectM
   ifu.io.RedirectPCM := RedirectPCM
@@ -80,8 +92,8 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
     p.io.StallW := StallM
     // 自身Trap/Ret重定向只杀年轻流水槽，不取消当前事件。
     p.io.FlushM := false.B
-    p.io.CommittedM := false.B
-    p.io.CommittedF := false.B
+    p.io.CommittedM := (if (config.bus.nonEmpty) lsu.io.BusCommittedM else false.B)
+    p.io.CommittedF := (if (config.bus.nonEmpty) ifu.io.BusCommittedF else false.B)
     p.io.wfiW := ieu.io.wfiW
     val InstrRetiredM = ieu.io.ValidM && !TrapM && !StallM
     p.io.InstrRetiredM := InstrRetiredM
@@ -116,9 +128,61 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
     RedirectM := p.io.RedirectM
     RedirectPCM := p.io.RedirectPCM
     TrapM := p.io.TrapM
-    StallM := p.io.WFIStallM
+    WFIStallM := p.io.WFIStallM
+    // 候选不依赖最终 StallM，先取消未接受取指，再提交 M 级重定向。
+    RedirectIntentM := ieu.io.ValidM && (p.io.TrapM || p.io.RetM ||
+      p.io.CSRWriteM || (InstructionDecode.isFence(ieu.io.InstrM) &&
+        !p.io.IllegalInstrFaultM))
     CSRResultM := p.io.CSRResultM
     BigEndianM := p.io.BigEndianM
+  }
+
+  StallM := WFIStallM
+  val ebu = config.bus.map { _ =>
+    val master = Module(new EBU)
+    master.clk := clk
+    master.reset := reset
+    master.io.IFUHTRANS := ifu.io.ahb.HTRANS
+    master.io.IFUHSIZE := ifu.io.ahb.HSIZE
+    master.io.IFUHBURST := ifu.io.ahb.HBURST
+    master.io.IFUHADDR := ifu.io.ahb.HADDR
+    master.io.LSUHTRANS := lsu.io.ahb.HTRANS
+    master.io.LSUHWRITE := lsu.io.ahb.HWRITE
+    master.io.LSUHSIZE := lsu.io.ahb.HSIZE
+    master.io.LSUHBURST := lsu.io.ahb.HBURST
+    master.io.LSUHADDR := lsu.io.ahb.HADDR
+    master.io.LSUHWDATA := lsu.io.ahb.HWDATA
+    master.io.LSUHWSTRB := lsu.io.ahb.HWSTRB
+    ifu.io.ahb.HREADY := master.io.IFUHREADY
+    ifu.io.ahb.HRDATA := master.io.IFUHRDATA
+    lsu.io.ahb.HREADY := master.io.LSUHREADY
+    lsu.io.ahb.HRDATA := master.io.LSUHRDATA
+    val external = ExternalBus.get
+    master.io.HREADY := external.HREADY
+    master.io.HRDATA := external.HRDATA
+    master.io.HRESP := external.HRESP
+    external.HADDR := master.io.HADDR
+    external.HWDATA := master.io.HWDATA
+    external.HWSTRB := master.io.HWSTRB
+    external.HWRITE := master.io.HWRITE
+    external.HSIZE := master.io.HSIZE
+    external.HBURST := master.io.HBURST
+    external.HPROT := master.io.HPROT
+    external.HTRANS := master.io.HTRANS
+    external.HMASTLOCK := master.io.HMASTLOCK
+
+    val hazard = Module(new BusHazardControl)
+    hazard.io.IFUStallF := ifu.io.BusStallF
+    hazard.io.LSUStallM := lsu.io.BusStallM
+    hazard.io.CommittedF := ifu.io.BusCommittedF
+    hazard.io.CommittedM := lsu.io.BusCommittedM
+    hazard.io.TrapM := TrapM
+    hazard.io.RedirectIntentM := RedirectIntentM
+    hazard.io.WFIStallM := WFIStallM
+    StallM := hazard.io.StallM
+    ifu.io.BusFlushF := hazard.io.FlushBusF
+    lsu.io.BusFlushM := hazard.io.FlushBusM
+    master
   }
 
   io.WriteData := ieu.io.WriteDataM
