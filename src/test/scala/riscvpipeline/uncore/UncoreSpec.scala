@@ -28,8 +28,9 @@ class UncoreSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
     d.io.ahb.HRDATA.expect(0.U); d.io.ahb.HRESP.expect(false.B)
   }
   private def transfer(d: UncoreHarness, address: BigInt, write: Boolean = false,
-    data: BigInt = 0, mask: Int = 15): (BigInt, Int) = {
+    data: BigInt = 0, mask: Int = 15, size: Int = 2): (BigInt, Int) = {
     d.io.ahb.HREADY.expect(true.B)
+    d.io.ahb.HSIZE.poke(size.U)
     d.io.ahb.HADDR.poke(address.U); d.io.ahb.HWRITE.poke(write.B)
     d.io.ahb.HTRANS.poke(2.U); d.clock.step()
     d.io.ahb.HTRANS.poke(0.U); d.io.ahb.HWDATA.poke(data.U)
@@ -68,6 +69,21 @@ class UncoreSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
         val none = transfer(d, BigInt("30000000", 16))
         assert(none == ((BigInt(0), 0)))
         d.io.ahb.HRESP.expect(false.B)
+      }
+    }
+  }
+  for (latency <- 0 to 2) {
+    it should s"route real APB byte and halfword addresses with $latency extra waits" in {
+      val c = BusConfig(ramBytes = 64, apbBytes = 8192, apbLatency = latency)
+      test(new UncoreHarness(c)) { d =>
+        boot(d)
+        transfer(d, c.apbBase, true, BigInt("11223344", 16))
+        transfer(d, c.apbBase + 1, true, BigInt("aaaaaaaa", 16), 2, 0)
+        assert(transfer(d, c.apbBase)._1 == BigInt("1122aa44", 16))
+        transfer(d, c.apbBase + 2, true, BigInt("bbccbbcc", 16), 12, 1)
+        assert(transfer(d, c.apbBase)._1 == BigInt("bbccaa44", 16))
+        assert(transfer(d, c.apbBase + 4)._1 == 3)
+        assert(transfer(d, c.apbBase + 4097, size = 0)._1 == 0)
       }
     }
   }

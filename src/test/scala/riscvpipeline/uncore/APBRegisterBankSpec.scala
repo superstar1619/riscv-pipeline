@@ -58,6 +58,28 @@ class APBRegisterBankSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
       }
     }
   }
+  for (latency <- 0 to 2) {
+    it should s"select a register word for byte and halfword addresses with $latency waits" in {
+      test(new BankHarness(latency)) { d =>
+        boot(d)
+        setup(d, 0, true, BigInt("11223344", 16)); finish(d, latency)
+        setup(d, 1, true, BigInt("aaaaaaaa", 16), 2); finish(d, latency)
+        setup(d, 0, false); waitReady(d, latency)
+        d.io.apb.PRDATA.expect("h1122aa44".U); d.clock.step()
+        setup(d, 2, true, BigInt("bbccbbcc", 16), 12); finish(d, latency)
+        for (address <- 0 to 3) {
+          setup(d, address, false); waitReady(d, latency)
+          d.io.apb.PRDATA.expect("hbbccaa44".U); d.clock.step()
+        }
+        setup(d, 4, false); waitReady(d, latency)
+        d.io.apb.PRDATA.expect(3.U); d.clock.step()
+        setup(d, 5, false); waitReady(d, latency)
+        d.io.apb.PRDATA.expect(3.U); d.clock.step()
+        setup(d, 4097, false); waitReady(d, latency)
+        d.io.apb.PRDATA.expect(0.U)
+      }
+    }
+  }
   it should "avoid Setup side effects and repeated completion effects in a held Access" in {
     test(new BankHarness(2)) { d =>
       boot(d)

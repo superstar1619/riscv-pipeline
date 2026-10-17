@@ -72,3 +72,13 @@ Verilator 编译并运行 book、expanded、acceptance、acceptance-expanded。
 完整日志为 `target/chapter9/regression/chapter7-rtl.log`，计数汇总为
 `target/chapter9/regression/chapter7-rtl-summary.json`，构建明细在既有 `target/rtl-test`。
 此结果证明旧 bus=None 生产路径的指定 RTL 验收未回退；不扩大为完整第八章 RTL 矩阵已通过。
+
+
+## 审阅后真实子字缺陷补记
+
+后续 CPU 真实 APB SB/SH 程序发现寄存器精确字节地址译码缺陷；本次早先只读审阅没有
+检出该问题，原带掩码单元测试也未使用 PADDR=1/2。缺陷与修复证据详见
+[11 APBRegisterBank](11-apb-register-bank.md)。已按 TDD 先复现6项新增失败，再改为
+完整 PADDR(31,2) 寄存器字译码；修正后银行/Uncore/SoC 定向18/18通过，三个生成和
+三个 lint通过。此前“未发现已确认缺陷”只描述当时的审阅发现，不表示后续整机验证无需运行。
+后续完整 RTL 矩阵以平台最终新运行结果为准。

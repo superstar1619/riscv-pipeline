@@ -23,9 +23,11 @@ final class APBRegisterBank(extraLatency: Int = 0) extends RawModule {
   val Completed = withClockAndReset(clk, reset) { RegInit(false.B) }
   val Access = io.apb.PSEL && io.apb.PENABLE
   val Complete = Access && io.apb.PREADY && !Completed
+  // 寄存器按32位字译码，低两位仅由 PSTRB 选择字节；上位偏移完整保留。
+  val RegisterIndex = io.apb.PADDR(31, 2)
   io.apb.PREADY := Wait === 0.U
-  io.apb.PRDATA := Mux(io.apb.PADDR === 0.U, Scratch,
-    Mux(io.apb.PADDR === 4.U, WriteCompletions, 0.U(32.W)))
+  io.apb.PRDATA := Mux(RegisterIndex === 0.U, Scratch,
+    Mux(RegisterIndex === 1.U, WriteCompletions, 0.U(32.W)))
 
   when(!io.apb.PSEL || !io.apb.PENABLE) {
     Completed := false.B
@@ -37,7 +39,6 @@ final class APBRegisterBank(extraLatency: Int = 0) extends RawModule {
     Completed := true.B
     when(io.apb.PWRITE) {
       WriteCompletions := WriteCompletions + 1.U
-
     }
   }
   val UpdatedBytes = Wire(Vec(4, UInt(8.W)))
@@ -45,7 +46,7 @@ final class APBRegisterBank(extraLatency: Int = 0) extends RawModule {
     UpdatedBytes(lane) := Mux(io.apb.PSTRB(lane),
       io.apb.PWDATA(8 * lane + 7, 8 * lane), Scratch(8 * lane + 7, 8 * lane))
   }
-  when(Complete && io.apb.PWRITE && io.apb.PADDR === 0.U) {
+  when(Complete && io.apb.PWRITE && RegisterIndex === 0.U) {
     Scratch := UpdatedBytes.asUInt
   }
 }
