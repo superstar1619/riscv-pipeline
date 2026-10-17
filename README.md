@@ -4,6 +4,9 @@
 `PrivilegedPipeline` 增加 CSR、精确异常、中断委托、U/S/M 模式、xRET、WFI、计数器和数据大小端。
 目前不包含乘除法、MMU/PMP、浮点、缓存及 CLINT/PLIC 本体。
 
+第九章总线实验已完成首个独立 [BusFSM 模块](docs/chapter9/01-bus-fsm.md)，
+尚未连接整机；按[模块检查进度](docs/chapter9/README.md)逐个验证、提交，最后统一检查。
+
 ## 环境与快速开始
 
 工具版本：JDK 17、sbt 1.10.7、Scala 2.13.14、Chisel 3.6.1、chiseltest 0.6.2。

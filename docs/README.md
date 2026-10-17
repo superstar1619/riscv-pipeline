@@ -8,6 +8,7 @@
 - 运行与新增测试：[验证入口和能力边界](development/chapter7-8-verification-update.md)、[验证指导](development/verification-guide.md)。
 - 理解 CPU 演进：[第七章导航](chapter7/README.md)，先读单周期最终接口，再读流水线时序。
 - 理解 CSR、异常和中断：[教材阅读导引](textbook/README.md)、[第八章模块导航](chapter8/README.md)。
+- 第九章总线实验：[模块导航与检查进度](chapter9/README.md)、[BusFSM 首模块报告](chapter9/01-bus-fsm.md)。
 - 编写代码：[Chisel 编码规范](development/chisel-coding-standard.md)、[架构常量与字段对照](reference/constants/README.md)。
 - 查看本次测试：[报告导航](reports/README.md)。历史通过结论只对应正文标明的版本和运行。
 
@@ -26,6 +27,7 @@
 | §8.1–8.2，336–359 页 | [CSR 与特权详解](textbook/chapter8-csr-privileged-guide.md) | CSR、U/S/M、陷阱、xRET 和 WFI | 第八章对应模块测试 |
 | §8.3，360 页起 | [第八章验收方法](chapter8/15-acceptance.md)、[报告入口](reports/README.md#chapter8-testplan) | 特权用例、配置矩阵、有序事件和负向检查 | `make report-chapter8`、`make report-chapter7-8-cvw` |
 | §8.4，364–380 页 | [特权实现](chapter8/README.md)、[流水线集成](chapter8/14-pipeline.md) | CSR/Privileged、精确陷阱、端序及冒险门控 | `make test-chapter8`、统一回归 |
+| §9.5.1，414–415 页 | [BusFSM](chapter9/01-bus-fsm.md) | 首个总线叶模块，尚未连接整机 | `make test-bus-fsm`，逐模块等待检查 |
 
 ## 文档分区
 
@@ -36,6 +38,7 @@
 | [reference](reference/README.md) | 编码、CSR 地址、状态字段和配置对照 |
 | [chapter7](chapter7/README.md) | 单周期基线与流水线设计、手写历史实施/验收记录 |
 | [chapter8](chapter8/README.md) | 特权模块接口、集成、手写核验记录及历史计划 |
+| [chapter9](chapter9/README.md) | 总线接口模块实验、中文报告及用户检查进度 |
 | [reports](reports/README.md) | 固定导航，只链接 target 中的生成报告 |
 
 ## 历史记录和清理

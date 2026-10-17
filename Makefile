@@ -58,6 +58,8 @@ TRAP_TARGET_DIR ?= target/generated/trap
 TRAP_SUPERVISOR_SUPPORTED ?= true
 WFI_TARGET_DIR ?= target/generated/wfi
 WFI_TIMEOUT_CYCLES ?= 65536
+BUS_FSM_TARGET_DIR ?= target/generated/bus-fsm
+BUS_FSM_READ_ONLY ?= false
 ENDIAN_SWAP_TARGET_DIR ?= target/generated/endian-swap
 CSR_TARGET_DIR ?= target/generated/csr
 CSR_SUPERVISOR_SUPPORTED ?= true
@@ -82,6 +84,7 @@ VALIDATION_RTL_DIR ?= target/generated/validation
 .PHONY: generate-csr-supervisor test-csr-supervisor
 .PHONY: generate-csr-counters test-csr-counters
 .PHONY: generate-priv-mode test-priv-mode
+.PHONY: generate-bus-fsm test-bus-fsm
 .PHONY: build-validation generate-validation test-validation test-arch test-coremark test-validation-builder
 
 test-validation-builder:
@@ -110,6 +113,12 @@ generate-acceptance: build-acceptance
 
 test-acceptance:
 	$(SBT) 'testOnly riscvpipeline.CpuAcceptanceSpec riscvpipeline.PipelineSmokeSpec'
+
+generate-bus-fsm:
+	$(SBT) "runMain riscvpipeline.generators.GenerateBusFSM $(BUS_FSM_TARGET_DIR) $(BUS_FSM_READ_ONLY)"
+
+test-bus-fsm:
+	$(SBT) 'testOnly riscvpipeline.ebu.BusFSMSpec'
 
 generate:
 	$(SBT) "runMain riscvpipeline.generators.GenerateExtend $(WIDTH) $(TARGET_DIR)"
@@ -236,6 +245,7 @@ help:
 	@echo 'generate-cpu         生成 RV32I RTL；generate-privileged-cpu 生成特权 RTL'
 	@echo 'test-pipeline        流水线测试；test-chapter8 特权测试；test-rtl 生产 RTL 验收'
 	@echo 'report-chapter8      第八章详细报告；report-chapter7-8-cvw 联合报告'
+	@echo 'test-bus-fsm         第九章首模块测试；generate-bus-fsm 生成 RTL，BUS_FSM_READ_ONLY=true 为 IFU'
 	@echo 'clean               删除全部 target/，包括缓存、镜像、波形和原始验证证据；保留手写文档与单周期源码快照'
 
 .PHONY: generate-trap test-trap
