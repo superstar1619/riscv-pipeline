@@ -31,7 +31,7 @@ flowchart LR
   DTIM[DTIM 可选] <--> LSU
   IFU --> IA[只读 AHBInterface]
   LSU --> DA[读写 AHBInterface]
-  IA --> EBU[EBU 仲裁与响应归属]
+  IA --> EBU[EBU 仲裁与响应分发]
   DA --> EBU
   EBU --> U[Uncore 延迟片选复用]
   U --> ROM[Boot ROM]
@@ -42,7 +42,11 @@ flowchart LR
 
 BusFSM 采用 Adr、Data、Mem3 三态。Data 完成沿独立保存响应，Mem3 在其他模块等待时
 保持数据而不重发。只读 IFU 的 Mem3 清除 committed，LSU 的 Mem3 继续保护已接受的
-访存。EBU 给予 LSU 优先级，保存并重放冲突 IFU 请求，通过寄存的响应归属分发 ready。
+访存。EBU 给予 LSU 优先级，保存并重放冲突 IFU 请求；两处 ControllerInput 直接接收
+外部 HREADY，再由仲裁器的 IFUDisable、LSUDisable 屏蔽各方 ready，防止捕获另一方
+数据相位的响应。2026-10-20 精简时删除了初版额外添加的 DataOwner、IFUPending、
+LSUPending 及相关门控，保留原仲裁器的保护时序；本次验证另见
+[EBU 精简验证报告](21-ebu-simplification.md)。
 
 RAM 使用原生 SyncReadMem 的单物理端口 masked readWrite，同步读响应到达后旁路并保持。
 地址相位紧接写完成的读插入结构等待。Uncore 在 HREADY 时保存片选，用数据相位片选
@@ -81,7 +85,11 @@ UART、CLINT、PLIC 等完整外设。
 见 [整机 Test Plan](18-testplan.md)。检查器还修改真实通过 trace，验证其能拒绝错误、缺失、
 重复、迟到写入以及缺失或错误 LW。
 
-## 运行结果
+## 2026-10-17 运行结果
+
+本节保留初版整机验收的历史结果。2026-10-20 的 EBU 精简及其新验证证据另见
+[EBU 精简验证报告](21-ebu-simplification.md)：定向91/91、完整 Scala694/694、
+Python105/105、整机 RTL144/144 均通过，不以本节旧运行替代本次验证。
 
 APB 问题修复前，全项目 Scala `compile test` 通过：48个套件、688/688项，零失败、零跳过，
 其中第九章定向测试85项；第八章完整284个程序用例各复位运行两次，共568次执行。
@@ -107,7 +115,7 @@ SoC 4/4，共18/18通过；三层 RTL 重新生成和 lint 通过。该变更未
 
 最终完整矩阵 **144/144通过**，原始运行与报告位于
 [`20261017T012308175224Z`](../../target/chapter9-testplan/runs/20261017T012308175224Z/report.md)。
-报告器独立重验后退出0：没有缺失或重复记录，没有证据核验错误；最终源码与归档快照完全一致。
+报告器独立重验后退出0：没有缺失或重复记录，没有证据核验错误；该次验收源码与归档快照完全一致。
 最终平台代码提交为 `60bde52`，独立报告负例测试提交为 `45b0d32`；所有运行文件的
 SHA256SUMS 另经完整复核，退出0。
 
