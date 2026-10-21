@@ -55,10 +55,19 @@ AHBAPBBridge IO 为 `ahb: AHBSlaveIO` 和 `apb: APBMasterIO`。
 HWDATA/HWSTRB；真实 AHBInterface 的 WriteBuffer/MaskBuffer 承担这一职责。
 桥的读响应为 `HRDATA = PSEL ? PRDATA : 0`，没有完成读数据保持寄存器；Idle 返回零。
 读完成后的值由上游 AHBInterface 的 FetchBuffer 保存，后续写不触发读捕获。
-当前契约已通过工作树第九章97项及独立索引快照144条整机记录验证，源码边界与证据
+桥精简时已通过工作树第九章97项及独立索引快照144条整机记录验证，源码边界与历史证据
 见 [AHB/APB 桥精简验证报告](23-ahb-apb-simplification.md)。
 APBRegisterBank(extraLatency:Int=0) 的 io.apb 为 Flipped(APBMasterIO)，
 offset0 为 scratch 可按字节写，offset4 为只读写完成次数；其他寄存器读零、写忽略。
+`Access = PSEL && PENABLE`，`Complete = Access && PREADY`，无 Completed 保持位。
+Setup及PREADY为低的等待拍没有副作用；每个完成的写Access均计数，包括零掩码、只读
+及未定义寄存器地址写。合法master完成后下一拍必须使PENABLE=0，进入Idle或Setup，
+PSEL可保持有效以开始下一笔；外设不再额外防护完成后持续Access的行为。
+可变等待、字译码、字节掩码及同步复位不变，本轮验证状态见
+[APB 完成条件精简验证报告](24-apb-completion-simplification.md)：工作树第九章100/100、
+数字状态机索引快照关联24/24已通过，RTL及整机证据分别记录。
+该快照整机矩阵144/144、独立报告及源码/SHA256SUMS核验均通过；原有8份用户文件
+字节完全保留，见报告24的最终证据。
 Uncore(config:BusConfig) 的 io.ahb 为 Flipped(AHBMasterIO)，内部连接上述三个设备。
 响应选择必须用仅在 HREADY 上升沿更新的延迟 HSEL，复位选 None 防死锁。
 

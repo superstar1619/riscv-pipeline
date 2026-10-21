@@ -22,7 +22,8 @@ class APBRegisterBankSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
     data: BigInt = 0, strobe: Int = 15): Unit = {
     d.io.apb.PSEL.poke(true.B); d.io.apb.PENABLE.poke(false.B)
     d.io.apb.PADDR.poke(address.U); d.io.apb.PWRITE.poke(write.B)
-    d.io.apb.PWDATA.poke(data.U); d.io.apb.PSTRB.poke(strobe.U)
+    d.io.apb.PWDATA.poke(data.U)
+    d.io.apb.PSTRB.poke((if (write) strobe else 0).U)
     d.clock.step(); d.io.apb.PENABLE.poke(true.B)
   }
   private def waitReady(d: BankHarness, latency: Int): Unit = {
@@ -80,17 +81,68 @@ class APBRegisterBankSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
       }
     }
   }
-  it should "avoid Setup side effects and repeated completion effects in a held Access" in {
-    test(new BankHarness(2)) { d =>
-      boot(d)
-      setup(d, 0, true, 99)
-      d.io.apb.PRDATA.expect(0.U)
-      d.clock.step(2); d.io.apb.PRDATA.expect(0.U)
-      d.clock.step(); d.io.apb.PRDATA.expect(99.U)
-      d.clock.step(5)
-      setup(d, 4, false); waitReady(d, 2); d.io.apb.PRDATA.expect(1.U)
-      d.reset.poke(true.B); d.io.apb.PRDATA.expect(1.U)
-      d.clock.step(); d.io.apb.PRDATA.expect(0.U)
+  for (latency <- Seq(0, 1, 2, 255)) {
+    it should s"count legal writes once and reset synchronously with $latency waits" in {
+      test(new BankHarness(latency)) { d =>
+        boot(d)
+        val fullValue = BigInt("11223344", 16)
+        val maskedValue = BigInt("11bb33dd", 16)
+
+        def transfer(address: Int, write: Boolean, before: BigInt, after: BigInt,
+          data: BigInt = 0, strobe: Int = 15): Unit = {
+          // PSEL 可连续保持；每笔完成后都必须先回到新的 Setup。
+          d.io.apb.PSEL.poke(true.B)
+          d.io.apb.PENABLE.poke(false.B)
+          d.io.apb.PADDR.poke(address.U)
+          d.io.apb.PWRITE.poke(write.B)
+          d.io.apb.PWDATA.poke(data.U)
+          d.io.apb.PSTRB.poke((if (write) strobe else 0).U)
+          d.io.apb.PRDATA.expect(before.U)
+          d.clock.step()
+          d.io.apb.PRDATA.expect(before.U) // Setup 不产生写副作用。
+          d.io.apb.PENABLE.poke(true.B)
+          for (_ <- 0 until latency) {
+            d.io.apb.PREADY.expect(false.B)
+            d.io.apb.PRDATA.expect(before.U)
+            d.clock.step()
+            d.io.apb.PRDATA.expect(before.U)
+          }
+          d.io.apb.PREADY.expect(true.B)
+          d.io.apb.PRDATA.expect(before.U)
+          d.clock.step() // 唯一的完成沿；下一拍立即离开 Access。
+          d.io.apb.PENABLE.poke(false.B)
+          d.io.apb.PRDATA.expect(after.U)
+        }
+
+        transfer(0, write = true, before = 0, after = fullValue, data = fullValue)
+        transfer(0, write = true, before = fullValue, after = maskedValue,
+          data = BigInt("aabbccdd", 16), strobe = 5)
+        transfer(4, write = false, before = 2, after = 2)
+        transfer(4, write = false, before = 2, after = 2) // 读不增加写计数。
+        transfer(0, write = false, before = maskedValue, after = maskedValue)
+
+        d.io.apb.PSEL.poke(false.B)
+        d.io.apb.PENABLE.poke(false.B)
+        d.io.apb.PWRITE.poke(true.B)
+        d.io.apb.PWDATA.poke("hffffffff".U)
+        d.io.apb.PSTRB.poke(15.U)
+        for (_ <- 0 until 8) {
+          d.clock.step()
+          d.io.apb.PRDATA.expect(maskedValue.U)
+        }
+        d.io.apb.PADDR.poke(4.U)
+        d.io.apb.PRDATA.expect(2.U) // Idle 的无效写载荷不得重复写或计数。
+
+        d.reset.poke(true.B)
+        d.io.apb.PRDATA.expect(2.U)
+        d.io.apb.PADDR.poke(0.U)
+        d.io.apb.PRDATA.expect(maskedValue.U)
+        d.clock.step()
+        d.io.apb.PRDATA.expect(0.U)
+        d.io.apb.PADDR.poke(4.U)
+        d.io.apb.PRDATA.expect(0.U)
+        d.reset.poke(false.B)
+      }
     }
   }
 }

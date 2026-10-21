@@ -56,7 +56,8 @@ DTIM、IROM、ROMAHB 的读端口 CE 固定为1。逻辑响应有效条件、写
 返回响应；无命中返回 ready=1、data=0。AHB/APB 桥保证 Setup→Access，保存地址和
 写方向；写数据和掩码由上游 AHBInterface 保持并直接送往 APB。桥在 PSEL 有效时返回
 PRDATA，Idle 返回零；读完成后的值由上游 FetchBuffer 保存。APB 计数器每个完成的
-写 Access 加一，便于识别重复副作用。
+写 Access 加一，便于识别重复副作用。APB 完成条件直接为 `PSEL && PENABLE && PREADY`，
+合法master完成后下一拍将PENABLE拉低，进入Idle或下一笔Setup；外设没有额外Completed位。
 
 总线等待冻结 F/D/E/M，较老 W 级写回一次后排空。M 级使用原始异常、返回、CSR 写或
 fence 候选取消未接受取指；实际重定向在停顿释放后提交。集成时发现并消除了实际
@@ -90,7 +91,26 @@ UART、CLINT、PLIC 等完整外设。
 见 [整机 Test Plan](18-testplan.md)。检查器还修改真实通过 trace，验证其能拒绝错误、缺失、
 重复、迟到写入以及缺失或错误 LW。
 
-## 2026-10-21 AHB/APB 桥精简
+## 2026-10-21 APB 完成条件精简
+
+本次删除 APBRegisterBank 的 Completed 位及其赋值，完成条件直接为
+`Access && PREADY`；保留Wait、PREADY、地址译码、字节掩码、完成写计数和同步复位，
+没有增加组合复位门控。合法APB master在完成后下一拍令PENABLE=0，可退出选择或
+保留PSEL进入下一笔Setup。此前“完成后持续Access也不重复写”的额外保证随之取消。
+
+本轮保留原有全部8份用户未提交文件的字节，不修改桥；当前工作树的原有ChiselEnum
+与HEAD数字状态机快照分开验证。用等待0/1/2/255的合法协议用例替换原持续Access
+检查，APBRegisterBank现为10项。新合法用例在删除Completed前关联24/24通过，
+删除后工作树第九章100/100、数字状态机索引快照关联24/24通过，均退出0；合法行为
+未产生功能RED。等待2的独立RTL生成和严格lint均退出0，功能寄存器仅保留scratch、
+写计数与Wait。数字状态机快照的整机矩阵
+[`20261021T123201630886Z`](../../target/chapter9-testplan/runs/20261021T123201630886Z/report.md)
+144/144通过，无缺失或重复，无证据核验错误；独立报告与SHA256SUMS核验均退出0。
+176份运行源码的前后清单、归档、快照及暂存索引一致，原有8份用户文件字节完全未变。
+完整结果见 [APB 完成条件精简验证报告](24-apb-completion-simplification.md)。
+下文桥精简、存储器CE及EBU的历史运行不代替本轮证据。
+
+## 2026-10-21 AHB/APB 桥精简（历史运行）
 
 本次保留桥、Idle/Setup/Access 三态、地址与写方向寄存器，删除桥内32位写数据、
 4位掩码和32位完成读响应寄存器。PWDATA/PSTRB 直接取 HWDATA/HWSTRB，HRDATA

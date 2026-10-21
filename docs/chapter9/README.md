@@ -26,6 +26,17 @@ RAMAHB 的存储器端口及 DTIM、IROM、ROMAHB 的读端口 CE 固定为1；�
 整机矩阵144/144通过，独立报告、176份运行源码及SHA256SUMS核验均通过；证据与原有
 ChiselEnum改动保留边界见 [AHB/APB 桥精简验证报告](23-ahb-apb-simplification.md)。
 
+随后按已确认计划删除 APBRegisterBank 的 Completed 位，完成条件直接使用
+`Access && PREADY`，保留可变等待、译码、掩码、计数和同步复位。合法master完成后
+下一拍令PENABLE=0，进入Idle或下一笔Setup；持续Access防重复不再属于外设契约。
+本轮等待0/1/2/255的合法协议用例在删除前关联24/24通过；删除后工作树第九章
+100/100、数字状态机快照关联24/24通过，等待2的快照RTL生成和严格lint均退出0。
+数字状态机快照的
+[`20261021T123201630886Z`](../../target/chapter9-testplan/runs/20261021T123201630886Z/report.md)
+整机矩阵144/144通过，独立报告、176份运行源码及SHA256SUMS核验均通过，原有8份
+用户文件字节未变。证据见 [APB 完成条件精简验证报告](24-apb-completion-simplification.md)。以上桥和存储器结果
+均为其各自历史运行。
+
 新增总线模块只使用同步寄存器复位，没有增加请求与 `!reset` 的组合门控。
 2026-10-20 删除 EBU 冗余的 owner/pending 寄存器后，重新完成
 第九章定向91/91、完整 Scala 回归694/694、Python105/105和独立 RTL 整机矩阵144/144，
@@ -45,7 +56,7 @@ ChiselEnum改动保留边界见 [AHB/APB 桥精简验证报告](23-ahb-apb-simpl
 |[08 RAMAHB](08-ram-ahb.md)|初版6/6；CE调整后8/8|fc64563|
 |[09 ROMAHB](09-rom-ahb.md)|3/3；CE调整后已重验|f61a8fc|
 |[10 AHBAPBBridge](10-ahb-apb-bridge.md)|精简后7/7；证据见报告23|初版fc9fbc2|
-|[11 APBRegisterBank](11-apb-register-bank.md)|7/7|0163047、e5fcccd|
+|[11 APBRegisterBank](11-apb-register-bank.md)|完成条件精简后10/10；见报告24|初版0163047、e5fcccd|
 |[12 Uncore](12-uncore.md)|7/7|6f38f78、e5fcccd|
 |[13 BusLSU](13-bus-lsu.md)|5/5|601c896|
 |[14 BusIFU](14-bus-ifu.md)|7/7|ab91842、787dc64|
@@ -57,6 +68,9 @@ ChiselEnum改动保留边界见 [AHB/APB 桥精简验证报告](23-ahb-apb-simpl
 本轮新增2项 RAMAHB 行为回归后，第九章定向用例为93项，最终运行结果见
 [存储器 CE 常开验证报告](22-ram-ce.md)。93项为存储器 CE 调整时的用例数，桥精简新增
 4项后，第九章定向用例97/97通过，统计与源码边界见 [桥精简报告](23-ahb-apb-simplification.md)。
+本轮APB完成条件精简将一个持续Access用例替换为四个合法协议用例，第九章现为
+100项，工作树100/100通过；证据另记于 [报告24](24-apb-completion-simplification.md)，
+不将97项历史运行记为本轮结果。
 [整机 Test Plan](18-testplan.md)说明程序预期与144条必要记录；
 [独立审阅和旧路径回归](19-review.md)记录代码复核、Python检查和第七章RTL结果。
 
@@ -72,4 +86,5 @@ make generate-bus-soc SBT=./scripts/sbt-local.sh
 源码哈希保存在 `target/chapter9-testplan/runs/`，不覆盖旧运行。本轮存储器 CE 调整的
 定向验证与工作区边界证据另存于 `target/ram-ce-always-on/20261021/`。
 AHB/APB 桥精简证据另存于 `target/ahb-apb-simplification/20261021/`。
+APB 完成条件精简证据另存于 `target/apb-completion-simplification/20261021/`。
 `make clean` 会删除这些运行产物；长期文档与源码保留。
