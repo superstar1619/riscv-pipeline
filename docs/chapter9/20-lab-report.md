@@ -49,6 +49,9 @@ LSUPending 及相关门控，保留原仲裁器的保护时序；本次验证另
 [EBU 精简验证报告](21-ebu-simplification.md)。
 
 RAM 使用原生 SyncReadMem 的单物理端口 masked readWrite，同步读响应到达后旁路并保持。
+2026-10-21 检查当前全部四个 SyncReadMem 实现，将 RAMAHB 的端口 CE 和
+DTIM、IROM、ROMAHB 的读端口 CE 固定为1。逻辑响应有效条件、写使能与字节掩码
+保持原有契约；具体语义和本轮证据见 [存储器 CE 常开验证报告](22-ram-ce.md)。
 地址相位紧接写完成的读插入结构等待。Uncore 在 HREADY 时保存片选，用数据相位片选
 返回响应；无命中返回 ready=1、data=0。AHB/APB 桥保证 Setup→Access，并在外设等待时
 保持全部请求字段。APB 计数器每个完成的写 Access 加一，便于识别重复副作用。
@@ -85,6 +88,23 @@ UART、CLINT、PLIC 等完整外设。
 见 [整机 Test Plan](18-testplan.md)。检查器还修改真实通过 trace，验证其能拒绝错误、缺失、
 重复、迟到写入以及缺失或错误 LW。
 
+## 2026-10-21 存储器 CE 调整验证
+
+RAMAHB、DTIM、IROM 和 ROMAHB 的物理读活动不再由逻辑读请求关闭；RAMAHB 在
+复位时仅抑制写模式，RAM 内容继续保留。`ReadIssued` 和响应选择继续限定有效输出：
+RAMAHB、ROMAHB 与 IROM 保持最近一次有效读响应，DTIM 在无有效读响应时输出零。
+IROM 的公开 `io.en` 保留逻辑响应语义，物理读端口 CE 固定为1。
+
+新增完成沿复位与空闲总线字段污染两项 RAMAHB 行为回归，修改前 8 项 RAMAHB 与
+5 项 PipelineMemory 测试均通过。仅调整 RAMAHB/DTIM 的阶段完成关联 Scala147/147
+和三种独立 RTL 生成/lint；随后按用户要求扩展检查与修改 ROM。扩展范围的关联
+Scala147/147、23个套件通过，五种 RTL 生成及严格 lint 均退出0、无警告。两个 ROM
+的严格 lint 使用完整初始化镜像，原未初始化配置的 UNDRIVEN 失败记录保留。
+最终整机矩阵144/144通过，独立报告重验、源码和 SHA256SUMS 核验均通过。
+最终结果、源码快照与
+复现命令统一记录于 [存储器 CE 常开验证报告](22-ram-ce.md)。2026-10-20 的完整
+Scala694/694 属于 EBU 精简历史运行，本次未据此声明全项目回归通过。
+
 ## 2026-10-17 运行结果
 
 本节保留初版整机验收的历史结果。2026-10-20 的 EBU 精简及其新验证证据另见
@@ -107,7 +127,7 @@ APB 问题修复前，全项目 Scala `compile test` 通过：48个套件、688/
 修复提交 `e5fcccd` 后，所有关联路径重新验证：APBRegisterBank 7/7、Uncore 7/7、
 SoC 4/4，共18/18通过；三层 RTL 重新生成和 lint 通过。该变更未改动其余流水线或特权
 逻辑，先前完整回归保留，并以这些关联测试和新的完整 RTL 矩阵验证最终实现。
-当前第九章定向用例总数为91。
+该轮第九章定向用例总数为91。
 
 平台复核还补齐 IRQ 上升、接受、下降的因果检查，解析错误和平台测试退出码门禁，
 以及报告对原始轨迹和来源快照的重验。编译缓存改到工作区 `target/cache/ccache`，

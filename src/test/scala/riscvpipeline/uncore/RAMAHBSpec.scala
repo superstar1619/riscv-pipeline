@@ -87,4 +87,36 @@ class RAMAHBSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
       d.clock.step(); d.io.HREADYOUT.expect(true.B)
     }
   }
+  it should "discard a pending write when reset coincides with its completion edge" in {
+    test(new RAMAHBHarness(0)) { d =>
+      idle(d); d.reset.poke(true.B); d.clock.step(); d.reset.poke(false.B)
+      address(d, 0, true)
+      d.io.HWDATA.poke("h11223344".U); d.io.HWSTRB.poke(15.U)
+      d.clock.step()
+      address(d, 0, true)
+      d.io.HWDATA.poke("haabbccdd".U); d.io.HWSTRB.poke(15.U)
+      d.WriteEnable.expect(true.B)
+      d.reset.poke(true.B); d.clock.step(); d.reset.poke(false.B)
+      idle(d); address(d, 0, false)
+      complete(d, 0); d.io.HRDATA.expect("h11223344".U)
+    }
+  }
+  it should "hold the last read response while an idle address selects another word" in {
+    test(new RAMAHBHarness(0)) { d =>
+      idle(d); d.reset.poke(true.B); d.clock.step(); d.reset.poke(false.B)
+      address(d, 0, true)
+      d.io.HWDATA.poke("h11223344".U); d.io.HWSTRB.poke(15.U)
+      d.clock.step()
+      address(d, 4, true)
+      d.io.HWDATA.poke("h55667788".U); d.io.HWSTRB.poke(15.U)
+      d.clock.step()
+      address(d, 0, false)
+      complete(d, 0); d.io.HRDATA.expect("h11223344".U)
+      idle(d); d.io.HADDR.poke("h80000004".U)
+      d.io.HWRITE.poke(true.B); d.io.HWDATA.poke("haabbccdd".U); d.io.HWSTRB.poke(15.U)
+      for (_ <- 0 until 4) { d.clock.step(); d.io.HRDATA.expect("h11223344".U) }
+      address(d, 4, false)
+      complete(d, 0); d.io.HRDATA.expect("h55667788".U)
+    }
+  }
 }

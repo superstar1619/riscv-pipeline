@@ -9,7 +9,7 @@ import riscvpipeline.ebu.AHBSlaveIO
 // Copyright (C) 2021-23 Harvey Mudd College & Oklahoma State University
 // SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
 /** 原生同步读 BootROM，镜像为每行一个 32 位十六进制字；不随复位重载。
-  * extraLatency 仅增加数据相位等待；最后一次有效读在等待及空闲期间保持。
+  * 物理 CE 常开；extraLatency 仅增加数据相位等待，有效响应在等待及空闲期间保持。
   * 写以 OKAY 完成并忽略，未初始化内容不作保证。
   */
 final class ROMAHB(
@@ -30,7 +30,7 @@ final class ROMAHB(
   val ReadEnable = Accept && !io.HWRITE
   val ROM = withClock(clk) { SyncReadMem(sizeBytes / 4, UInt(32.W)) }
   initFile.foreach(path => loadMemoryFromFileInline(ROM, path))
-  val ReadData = ROM.read(WordIndex, ReadEnable, clk)
+  val ReadData = ROM.read(WordIndex, true.B, clk)
   val ReadIssued = withClockAndReset(clk, reset) { RegNext(ReadEnable, false.B) }
   val HeldData = withClockAndReset(clk, reset) { RegInit(0.U(32.W)) }
   when(ReadIssued) { HeldData := ReadData }

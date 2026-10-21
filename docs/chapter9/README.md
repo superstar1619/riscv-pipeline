@@ -10,8 +10,15 @@
 ## 当前进度
 
 17个模块检查点均已完成实现、定向测试、RTL 生成和 lint，分别提交到
-`chapter9-bus-interface`。新增总线模块只使用同步寄存器复位，没有增加请求与
-`!reset` 的组合门控。2026-10-20 删除 EBU 冗余的 owner/pending 寄存器后，重新完成
+`chapter9-bus-interface`。2026-10-21 按要求检查全部四个 SyncReadMem 实现，将
+RAMAHB 的存储器端口及 DTIM、IROM、ROMAHB 的读端口 CE 固定为1；写使能、字节
+掩码与逻辑响应有效条件保持原有契约。扩展至两个 ROM 后，关联 Scala147/147、
+23个套件及五种独立 RTL 生成/严格 lint 均通过；ROM lint 使用完整初始化镜像。
+最终整机矩阵144/144及独立报告、源码与 SHA256SUMS 核验均通过，证据见
+[存储器 CE 常开验证报告](22-ram-ce.md)。
+
+新增总线模块只使用同步寄存器复位，没有增加请求与 `!reset` 的组合门控。
+2026-10-20 删除 EBU 冗余的 owner/pending 寄存器后，重新完成
 第九章定向91/91、完整 Scala 回归694/694、Python105/105和独立 RTL 整机矩阵144/144，
 均通过；源码快照、原始证据和校验结果见 [EBU 精简验证报告](21-ebu-simplification.md)。
 初版实现与历史运行见完整实验报告。
@@ -26,8 +33,8 @@
 |[05 EBU](05-ebu.md)|9/9|c9346ba|
 |[06 AdrDec](06-adr-dec.md)|2/2|54efb91|
 |[07 AdrDecs](07-adr-decs.md)|1/1|7c48404|
-|[08 RAMAHB](08-ram-ahb.md)|6/6|fc64563|
-|[09 ROMAHB](09-rom-ahb.md)|3/3|f61a8fc|
+|[08 RAMAHB](08-ram-ahb.md)|初版6/6；CE调整后8/8|fc64563|
+|[09 ROMAHB](09-rom-ahb.md)|3/3；CE调整后已重验|f61a8fc|
 |[10 AHBAPBBridge](10-ahb-apb-bridge.md)|3/3|fc9fbc2|
 |[11 APBRegisterBank](11-apb-register-bank.md)|7/7|0163047、e5fcccd|
 |[12 Uncore](12-uncore.md)|7/7|6f38f78、e5fcccd|
@@ -37,7 +44,9 @@
 |[16 BusPipeline](16-bus-pipeline.md)|3/3|3690399|
 |[17 RiscvPipelineSoC](17-soc.md)|4/4，两次复位|66f0190|
 
-定向用例合计91项（含独立 RTL 暴露 APB 子字地址问题后新增的6项回归）。[整机 Test Plan](18-testplan.md)说明程序预期与144条必要记录；
+2026-10-20 定向用例合计91项（含独立 RTL 暴露 APB 子字地址问题后新增的6项回归）。
+本轮新增2项 RAMAHB 行为回归后，第九章定向用例为93项，最终运行结果见
+[存储器 CE 常开验证报告](22-ram-ce.md)。[整机 Test Plan](18-testplan.md)说明程序预期与144条必要记录；
 [独立审阅和旧路径回归](19-review.md)记录代码复核、Python检查和第七章RTL结果。
 
 ```bash
@@ -49,5 +58,6 @@ make generate-bus-soc SBT=./scripts/sbt-local.sh
 ## 目录约定
 
 本目录保存手写设计、模块实验说明与检查进度。自动报告、原始日志、RTL、波形和
-源码哈希保存在 `target/chapter9-testplan/runs/`，不覆盖旧运行。
+源码哈希保存在 `target/chapter9-testplan/runs/`，不覆盖旧运行。本轮存储器 CE 调整的
+定向验证与工作区边界证据另存于 `target/ram-ce-always-on/20261021/`。
 `make clean` 会删除这些运行产物；长期文档与源码保留。

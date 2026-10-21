@@ -37,7 +37,8 @@ final class DTIM(
   val WordIndex = io.Adr(indexWidth + byteOffsetWidth - 1, byteOffsetWidth)
   val RAM = withClock(clk) { SyncReadMem(depth, Vec(byteCount, UInt(BYTE_WIDTH.W))) }
   val ReadEnable = io.MemRead && !io.MemWrite
-  val ReadBytes = RAM.read(WordIndex, ReadEnable, clk)
+  // 物理读端口常开；请求有效位只控制对外响应。
+  val ReadBytes = RAM.read(WordIndex, true.B, clk)
   val ReadIssued = withClock(clk) { RegNext(ReadEnable) }
   io.ReadDataWord := Mux(ReadIssued, ReadBytes.asUInt, 0.U(dataWidth.W))
 

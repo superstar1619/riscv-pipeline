@@ -41,13 +41,11 @@ final class RAMAHB(
   val RAM = withClock(clk) { SyncReadMem(sizeBytes / 4, Vec(4, UInt(8.W))) }
   val WriteBytes = Wire(Vec(4, UInt(8.W)))
   for (lane <- 0 until 4) { WriteBytes(lane) := io.HWDATA(8 * lane + 7, 8 * lane) }
-  val ReadBytes = WireDefault(VecInit(Seq.fill(4)(0.U(8.W))))
-  // 一个原生 masked readWrite 端口；复位优先抑制存储器时序副作用。
-  when(reset) {
-  }.otherwise {
-    ReadBytes := RAM.readWrite(PortAddress, WriteBytes, io.HWSTRB.asBools,
-      ReadEnable || WriteEnable, WriteEnable, clk)
-  }
+  // CE 常开；复位只抑制物理写，响应有效性仍由 ReadIssued 控制。
+  val PortWrite = WireDefault(WriteEnable)
+  when(reset) { PortWrite := false.B }
+  val ReadBytes = RAM.readWrite(PortAddress, WriteBytes, io.HWSTRB.asBools,
+    true.B, PortWrite, clk)
   val ReadIssued = withClockAndReset(clk, reset) { RegNext(ReadEnable, false.B) }
   val HeldData = withClockAndReset(clk, reset) { RegInit(0.U(32.W)) }
   when(ReadIssued) { HeldData := ReadBytes.asUInt }
