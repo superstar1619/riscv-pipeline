@@ -53,8 +53,10 @@ RAM 使用原生 SyncReadMem 的单物理端口 masked readWrite，同步读响�
 DTIM、IROM、ROMAHB 的读端口 CE 固定为1。逻辑响应有效条件、写使能与字节掩码
 保持原有契约；具体语义和本轮证据见 [存储器 CE 常开验证报告](22-ram-ce.md)。
 地址相位紧接写完成的读插入结构等待。Uncore 在 HREADY 时保存片选，用数据相位片选
-返回响应；无命中返回 ready=1、data=0。AHB/APB 桥保证 Setup→Access，并在外设等待时
-保持全部请求字段。APB 计数器每个完成的写 Access 加一，便于识别重复副作用。
+返回响应；无命中返回 ready=1、data=0。AHB/APB 桥保证 Setup→Access，保存地址和
+写方向；写数据和掩码由上游 AHBInterface 保持并直接送往 APB。桥在 PSEL 有效时返回
+PRDATA，Idle 返回零；读完成后的值由上游 FetchBuffer 保存。APB 计数器每个完成的
+写 Access 加一，便于识别重复副作用。
 
 总线等待冻结 F/D/E/M，较老 W 级写回一次后排空。M 级使用原始异常、返回、CSR 写或
 fence 候选取消未接受取指；实际重定向在停顿释放后提交。集成时发现并消除了实际
@@ -87,6 +89,24 @@ UART、CLINT、PLIC 等完整外设。
 大小端读写、ECALL/MRET 和 committed 总线期间到来的机器软件中断。具体预期与复现命令
 见 [整机 Test Plan](18-testplan.md)。检查器还修改真实通过 trace，验证其能拒绝错误、缺失、
 重复、迟到写入以及缺失或错误 LW。
+
+## 2026-10-21 AHB/APB 桥精简
+
+本次保留桥、Idle/Setup/Access 三态、地址与写方向寄存器，删除桥内32位写数据、
+4位掩码和32位完成读响应寄存器。PWDATA/PSTRB 直接取 HWDATA/HWSTRB，HRDATA
+按 PSEL 选择 PRDATA 或零，与 CVW 的直接数据相位连接和单外设响应选择一致。
+未增加组合复位门控，也未据此声称综合面积或性能改善。
+
+修改前桥、APBRegisterBank、Uncore 基线17/17通过。新验证同时区分保留用户原有
+ChiselEnum 改动的工作树，以及仅含本次精简的最终提交索引快照；两者的源码哈希与
+测试证据分别记录。新契约对旧桥的7项用例中5项因 Idle 返回旧 HRDATA 而失败；
+精简后的工作树第九章97/97、最终索引快照关联21/21通过，快照桥 RTL 生成及严格
+lint 均退出0。最终数字状态机快照的整机矩阵
+[`20261021T064053783979Z`](../../target/chapter9-testplan/runs/20261021T064053783979Z/report.md)
+144/144通过，无缺失或重复，无证据核验错误；独立报告和SHA256SUMS检查均退出0。
+176份运行源码与归档、快照和暂存索引完全一致；七份非桥原有文件字节未变，桥保留
+原有ChiselEnum并叠加本次精简。完整证据与边界见 [AHB/APB 桥精简验证报告](23-ahb-apb-simplification.md)。
+下文存储器 CE、EBU 及初版结果均为各自历史运行。
 
 ## 2026-10-21 存储器 CE 调整验证
 

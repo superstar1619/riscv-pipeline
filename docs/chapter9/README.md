@@ -17,6 +17,15 @@ RAMAHB 的存储器端口及 DTIM、IROM、ROMAHB 的读端口 CE 固定为1；�
 最终整机矩阵144/144及独立报告、源码与 SHA256SUMS 核验均通过，证据见
 [存储器 CE 常开验证报告](22-ram-ce.md)。
 
+同日 AHB/APB 桥精简保留三态、地址和写方向，移除桥内写载荷及完成读响应缓存。
+写载荷由真实 AHBInterface 保持并直接送往 APB，读完成结果由上游 FetchBuffer 保存；
+桥 Idle 时 HRDATA 返回零。本轮基线17/17通过，后续验证按工作树与最终提交索引快照
+分别记录：工作树第九章97/97、索引快照关联21/21通过，快照桥 RTL 生成及严格 lint
+均退出0。索引快照的
+[`20261021T064053783979Z`](../../target/chapter9-testplan/runs/20261021T064053783979Z/report.md)
+整机矩阵144/144通过，独立报告、176份运行源码及SHA256SUMS核验均通过；证据与原有
+ChiselEnum改动保留边界见 [AHB/APB 桥精简验证报告](23-ahb-apb-simplification.md)。
+
 新增总线模块只使用同步寄存器复位，没有增加请求与 `!reset` 的组合门控。
 2026-10-20 删除 EBU 冗余的 owner/pending 寄存器后，重新完成
 第九章定向91/91、完整 Scala 回归694/694、Python105/105和独立 RTL 整机矩阵144/144，
@@ -35,7 +44,7 @@ RAMAHB 的存储器端口及 DTIM、IROM、ROMAHB 的读端口 CE 固定为1；�
 |[07 AdrDecs](07-adr-decs.md)|1/1|7c48404|
 |[08 RAMAHB](08-ram-ahb.md)|初版6/6；CE调整后8/8|fc64563|
 |[09 ROMAHB](09-rom-ahb.md)|3/3；CE调整后已重验|f61a8fc|
-|[10 AHBAPBBridge](10-ahb-apb-bridge.md)|3/3|fc9fbc2|
+|[10 AHBAPBBridge](10-ahb-apb-bridge.md)|精简后7/7；证据见报告23|初版fc9fbc2|
 |[11 APBRegisterBank](11-apb-register-bank.md)|7/7|0163047、e5fcccd|
 |[12 Uncore](12-uncore.md)|7/7|6f38f78、e5fcccd|
 |[13 BusLSU](13-bus-lsu.md)|5/5|601c896|
@@ -46,7 +55,9 @@ RAMAHB 的存储器端口及 DTIM、IROM、ROMAHB 的读端口 CE 固定为1；�
 
 2026-10-20 定向用例合计91项（含独立 RTL 暴露 APB 子字地址问题后新增的6项回归）。
 本轮新增2项 RAMAHB 行为回归后，第九章定向用例为93项，最终运行结果见
-[存储器 CE 常开验证报告](22-ram-ce.md)。[整机 Test Plan](18-testplan.md)说明程序预期与144条必要记录；
+[存储器 CE 常开验证报告](22-ram-ce.md)。93项为存储器 CE 调整时的用例数，桥精简新增
+4项后，第九章定向用例97/97通过，统计与源码边界见 [桥精简报告](23-ahb-apb-simplification.md)。
+[整机 Test Plan](18-testplan.md)说明程序预期与144条必要记录；
 [独立审阅和旧路径回归](19-review.md)记录代码复核、Python检查和第七章RTL结果。
 
 ```bash
@@ -60,4 +71,5 @@ make generate-bus-soc SBT=./scripts/sbt-local.sh
 本目录保存手写设计、模块实验说明与检查进度。自动报告、原始日志、RTL、波形和
 源码哈希保存在 `target/chapter9-testplan/runs/`，不覆盖旧运行。本轮存储器 CE 调整的
 定向验证与工作区边界证据另存于 `target/ram-ce-always-on/20261021/`。
+AHB/APB 桥精简证据另存于 `target/ahb-apb-simplification/20261021/`。
 `make clean` 会删除这些运行产物；长期文档与源码保留。

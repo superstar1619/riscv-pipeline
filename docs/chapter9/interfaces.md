@@ -50,6 +50,13 @@ extraLatency:Int=0) 使用 `val io=IO(new AHBSlaveIO)`，原生同步读，RAM �
 RAM 单端口写后读要插入必要等待；可变等待期间保持响应；写副作用只在完成沿一次。
 
 AHBAPBBridge IO 为 `ahb: AHBSlaveIO` 和 `apb: APBMasterIO`。
+桥保留 Idle/Setup/Access 状态以及接受后的地址和写方向；写数据相位直接连接
+`PWDATA=HWDATA`、`PSTRB=HWSTRB`。AHB master 必须在 HREADY 等待期间保持
+HWDATA/HWSTRB；真实 AHBInterface 的 WriteBuffer/MaskBuffer 承担这一职责。
+桥的读响应为 `HRDATA = PSEL ? PRDATA : 0`，没有完成读数据保持寄存器；Idle 返回零。
+读完成后的值由上游 AHBInterface 的 FetchBuffer 保存，后续写不触发读捕获。
+当前契约已通过工作树第九章97项及独立索引快照144条整机记录验证，源码边界与证据
+见 [AHB/APB 桥精简验证报告](23-ahb-apb-simplification.md)。
 APBRegisterBank(extraLatency:Int=0) 的 io.apb 为 Flipped(APBMasterIO)，
 offset0 为 scratch 可按字节写，offset4 为只读写完成次数；其他寄存器读零、写忽略。
 Uncore(config:BusConfig) 的 io.ahb 为 Flipped(AHBMasterIO)，内部连接上述三个设备。
