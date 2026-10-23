@@ -26,6 +26,17 @@ final class HazardIO extends Bundle {
   val RegWriteW = Input(Bool())
   val ValidW = Input(Bool())
   val PCSrcE = Input(Bool())
+  val IFUStallF = Input(Bool())
+  val LSUStallM = Input(Bool())
+  val CommittedF = Input(Bool())
+  val CommittedM = Input(Bool())
+  val TrapM = Input(Bool())
+  val RedirectIntentM = Input(Bool())
+  val RedirectM = Input(Bool())
+  val WFIStallM = Input(Bool())
+  val StallM = Output(Bool())
+  val FlushBusF = Output(Bool())
+  val FlushBusM = Output(Bool())
   val ForwardAE = Output(UInt(FORWARD_WIDTH.W))
   val ForwardBE = Output(UInt(FORWARD_WIDTH.W))
   val LoadStallD = Output(Bool())
@@ -36,7 +47,7 @@ final class HazardIO extends Bundle {
   val FlushE = Output(Bool())
 }
 
-/** 教材 §7.2.2/图 7.19 的独立组合冒险单元，参考 CVW 的前递和冲刷优先级。
+/** 教材 §7.2.2/图 7.19、§9.5.5 的统一组合冒险单元，无状态或流水级。
   * load-use 与共享 DTIM 地址冲突停顿 F/D、冲刷 E；E 级重定向优先于停顿。
   * load 的 M 级结果尚未进入写回前递路径，必须等待 W；x0 从不前递或造成依赖。
   */
@@ -63,8 +74,16 @@ final class Hazard extends RawModule {
   io.StoreStallD := io.ValidD && io.ValidE &&
     io.MemRWE(MEM_WRITE_BIT) && io.MemRWD(MEM_READ_BIT)
   val StructuralStallD = io.LoadStallD || io.StoreStallD
-  io.StallD := StructuralStallD && !io.PCSrcE
+  // Cancellation uses raw intent, never the StallM-qualified RedirectM.
+  // Accepted requests retain ownership until completion; W drains independently.
+  val CancelF = io.RedirectIntentM && !io.CommittedF
+  val CancelM = io.TrapM && !io.CommittedM
+  io.FlushBusF := CancelF
+  io.FlushBusM := CancelM
+  io.StallM := io.WFIStallM || (io.IFUStallF && !CancelF) ||
+    (io.LSUStallM && !CancelM)
+  io.StallD := (StructuralStallD && !io.PCSrcE) || io.StallM
   io.StallF := io.StallD
-  io.FlushD := io.PCSrcE
+  io.FlushD := io.PCSrcE || io.RedirectM
   io.FlushE := io.PCSrcE || StructuralStallD
 }

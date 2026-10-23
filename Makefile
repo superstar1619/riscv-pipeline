@@ -169,7 +169,7 @@ generate-cpu:
 	$(SBT) "runMain riscvpipeline.generators.GenerateRiscvPipeline $(IMEM_DEPTH) $(DMEM_DEPTH) $(CPU_TARGET_DIR) $(INSTRUCTION_INIT_FILE) $(RESET_VECTOR)"
 
 test-pipeline:
-	$(SBT) 'testOnly riscvpipeline.PipelineHazardSpec riscvpipeline.PipelineMemorySpec riscvpipeline.PipelineSmokeSpec'
+	$(SBT) 'testOnly riscvpipeline.PipelineHazardSpec riscvpipeline.PipelineMemorySpec riscvpipeline.PipelineSmokeSpec riscvpipeline.PipelineHpmSpec'
 
 generate-csr-access:
 	$(SBT) "runMain riscvpipeline.generators.GenerateCSRAccess $(CSR_ACCESS_TARGET_DIR)"
@@ -351,7 +351,7 @@ CHAPTER9_RUN_DIR ?=
 .PHONY: test-chapter9 test-chapter9-rtl build-chapter9 generate-bus-pipeline \
   generate-bus-soc report-chapter9
 test-chapter9:
-	$(SBT) 'testOnly riscvpipeline.ebu.* riscvpipeline.uncore.* riscvpipeline.ifu.BusIFUSpec riscvpipeline.lsu.BusLSUSpec riscvpipeline.BusHazardControlSpec riscvpipeline.BusPipelineSpec riscvpipeline.RiscvPipelineSoCSpec'
+	$(SBT) 'testOnly riscvpipeline.ebu.* riscvpipeline.uncore.* riscvpipeline.ifu.BusIFUSpec riscvpipeline.lsu.BusLSUSpec riscvpipeline.PipelineHazardSpec riscvpipeline.PipelineHpmSpec riscvpipeline.BusPipelineSpec riscvpipeline.RiscvPipelineSoCSpec'
 
 generate-bus-pipeline:
 	$(SBT) 'runMain riscvpipeline.generators.GenerateBusPipeline'
@@ -368,3 +368,8 @@ test-chapter9-rtl:
 report-chapter9:
 	@test -n "$(CHAPTER9_RUN_DIR)" || { echo '请指定 CHAPTER9_RUN_DIR=target/chapter9-testplan/runs/<运行目录>'; exit 2; }
 	python3 scripts/report/report-chapter9.py "$(CHAPTER9_RUN_DIR)"
+
+HAZARD_TARGET_DIR ?= target/generated/hazard
+.PHONY: generate-hazard
+generate-hazard:
+	$(SBT) "runMain riscvpipeline.generators.GenerateHazard $(HAZARD_TARGET_DIR)"

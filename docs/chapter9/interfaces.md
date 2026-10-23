@@ -75,7 +75,13 @@ Uncore(config:BusConfig) 的 io.ahb 为 Flipped(AHBMasterIO)，内部连接上�
 
 LSU 新增 io.StallM、io.BusFlushM 输入、io.BusStallM/io.BusCommittedM 输出及 io.ahb。
 IFU 新增 io.BusFlushF 输入、io.BusStallF/io.BusCommittedF 输出及 io.ahb。
-默认无总线时，PipelineBase 将新输入安全接常量，保持原路径。
+PipelineBase 只实例化一个顶层 Hazard；其输入除 IEU 源/目的寄存器、有效位、
+写回资格、源使用、访存控制和 `PCSrcE` 外，还包含
+`IFUStallF/LSUStallM/CommittedF/CommittedM/TrapM/WFIStallM/RedirectIntentM/RedirectM`。
+输出 `ForwardAE/BE`、`LoadStallD/StoreStallD`、最终 `StallF/D/M`、`FlushD/E`、
+`FlushBusF/M`。无总线时四个总线状态输入绑零，WFI 等待仍有效。
+IEU 接收前递选择、`FlushE` 和原 `StallM/FlushM`，不再拥有内部 Hazard。
+完整组合公式见 [统一冒险控制](15-bus-hazard.md)，CPU/SoC 对外端口不变。
 
 总线等待仍使用当前 StallM 排空 W 的语义；不能反向用总 StallM 抑制 BusRW。
 IFU Mem3 committed=0，LSU Mem3 committed=1；同步响应和元数据跨其他方的停顿保持。

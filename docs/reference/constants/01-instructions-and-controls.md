@@ -236,4 +236,4 @@ B/J 公式已经补 bit 0 的零，Datapath 不再乘 2；U 已补低 12 位零�
 [Hazard.scala](../../../src/main/scala/riscvpipeline/hazard/Hazard.scala) 对 A/B 源独立选择：有效 E 指令且源非 x0 时，优先 `FORWARD_M=2`，其次 `FORWARD_W=1`，否则 `FORWARD_NONE=0`。M 候选要求有效、写寄存器、目标非 x0，并且 `!ResultSrcM`；load 和 CSR 的晚结果不能直接用 M 的 IEUResult 前递。W 候选要求有效、写寄存器及目标非 x0。
 
 这些选择同时服务 ALU、分支比较、JALR 基址及 store 写数据。M/W 都匹配时 M 更年轻，因此优先；D 级还有独立 W→D 旁路。没有定义前递编码 `11`，Datapath 的默认选择为原始寄存器值。
-IEU 用实际源使用信号判定依赖：R/store/branch 使用 rs2，普通立即数不使用 rs2；CSR 立即数不使用 rs1 寄存器。load 或 CSR 晚结果匹配 D 级真实源时停顿；共享 DTIM 的 store→load 冲突也停顿。E 级重定向优先于这两类停顿，冲刷 D/E。以上都是本地流水线策略，不是指令编码或 CSR 位域。
+IEU 输出实际源使用信号，由 PipelineBase 中唯一的顶层 Hazard 判定依赖：R/store/branch 使用 rs2，普通立即数不使用 rs2；CSR 立即数不使用 rs1 寄存器。load 或 CSR 晚结果匹配 D 级真实源时停顿；共享 DTIM 的 store→load 冲突也停顿。E 级重定向优先于这两类停顿，冲刷 D/E。以上都是本地流水线策略，不是指令编码或 CSR 位域。

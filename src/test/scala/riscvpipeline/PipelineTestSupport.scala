@@ -21,9 +21,9 @@ private[riscvpipeline] class PipelineHarness(config: CpuConfig) extends Module {
   val ValidE = expose(dut.ieu.dp.io.ValidE)
   val ValidM = expose(dut.ieu.dp.io.ValidM)
   val ValidW = expose(dut.ieu.dp.io.ValidW)
-  val StallD = expose(dut.ieu.io.StallD)
-  val LoadStallD = expose(dut.ieu.hazard.io.LoadStallD)
-  val StoreStallD = expose(dut.ieu.hazard.io.StoreStallD)
+  val StallD = expose(dut.hazard.io.StallD)
+  val LoadStallD = expose(dut.hazard.io.LoadStallD)
+  val StoreStallD = expose(dut.hazard.io.StoreStallD)
   val Register9 = expose(dut.ieu.dp.rf.Registers(9))
 }
 

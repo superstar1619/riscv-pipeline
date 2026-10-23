@@ -6,7 +6,7 @@ import riscvpipeline.control.ControlEncoding._
 import riscvpipeline.isa.Architecture.XLEN
 import riscvpipeline.isa.InstructionDecode
 import riscvpipeline.ebu.{AHBMasterIO, EBU}
-import riscvpipeline.hazard.BusHazardControl
+import riscvpipeline.hazard.Hazard
 import riscvpipeline.ifu.IFU
 import riscvpipeline.ieu.IEU
 import riscvpipeline.lsu.LSU
@@ -22,6 +22,7 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
   val ifu = Module(new IFU(config))
   val ieu = Module(new IEU(config))
   val lsu = Module(new LSU(config))
+  val hazard = Module(new Hazard)
 
   ifu.clk := clk
   ifu.reset := reset
@@ -48,10 +49,10 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
   ifu.io.RedirectPCM := RedirectPCM
   ifu.io.PCSrcE := ieu.io.PCSrcE
   ifu.io.IEUAdrE := ieu.io.IEUAdrE
-  ifu.io.StallF := ieu.io.StallF
-  ifu.io.StallD := ieu.io.StallD
-  ifu.io.FlushD := ieu.io.FlushD
-  ifu.io.BusFlushF := false.B
+  ifu.io.StallF := hazard.io.StallF
+  ifu.io.StallD := hazard.io.StallD
+  ifu.io.FlushD := hazard.io.FlushD
+  ifu.io.BusFlushF := hazard.io.FlushBusF
   ifu.io.ahb.HREADY := true.B
   ifu.io.ahb.HRDATA := 0.U
   ifu.io.ahb.HRESP := false.B
@@ -72,7 +73,7 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
   lsu.reset := reset
   lsu.io.SuppressM := TrapM || StallM
   lsu.io.StallM := StallM
-  lsu.io.BusFlushM := false.B
+  lsu.io.BusFlushM := hazard.io.FlushBusM
   lsu.io.ahb.HREADY := true.B
   lsu.io.ahb.HRDATA := 0.U
   lsu.io.ahb.HRESP := false.B
@@ -120,10 +121,10 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
     // 事件位编号与计数器选择器约定对应，未实现的事件固定为零。
     val HPMEventsM = WireDefault(VecInit(Seq.fill(Counter.EVENT_COUNT)(false.B)))
     HPMEventsM(Counter.EVENT_RETIRED) := InstrRetiredM
-    HPMEventsM(Counter.EVENT_LOAD) := ieu.io.MemRWM(MEM_READ_BIT)
-    HPMEventsM(Counter.EVENT_STORE) := ieu.io.MemRWM(MEM_WRITE_BIT)
-    HPMEventsM(Counter.EVENT_LOAD_STALL) := ieu.io.LoadStallD
-    HPMEventsM(Counter.EVENT_STORE_STALL) := ieu.io.StoreStallD
+    HPMEventsM(Counter.EVENT_LOAD) := InstrRetiredM && ieu.io.MemRWM(MEM_READ_BIT)
+    HPMEventsM(Counter.EVENT_STORE) := InstrRetiredM && ieu.io.MemRWM(MEM_WRITE_BIT)
+    HPMEventsM(Counter.EVENT_LOAD_STALL) := hazard.io.LoadStallD
+    HPMEventsM(Counter.EVENT_STORE_STALL) := hazard.io.StoreStallD
     p.io.HPMEventsM := HPMEventsM.asUInt
     RedirectM := p.io.RedirectM
     RedirectPCM := p.io.RedirectPCM
@@ -137,7 +138,39 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
     BigEndianM := p.io.BigEndianM
   }
 
-  StallM := WFIStallM
+  // One combinational controller for local-memory and bus configurations.
+  hazard.io.ValidD := ifu.io.ValidD && !reset
+  hazard.io.Rs1D := ieu.io.Rs1D
+  hazard.io.Rs2D := ieu.io.Rs2D
+  hazard.io.UsesRs1D := ieu.io.UsesRs1D
+  hazard.io.UsesRs2D := ieu.io.UsesRs2D
+  hazard.io.MemRWD := ieu.io.MemRWD
+  hazard.io.Rs1E := ieu.io.Rs1E
+  hazard.io.Rs2E := ieu.io.Rs2E
+  hazard.io.RdE := ieu.io.RdE
+  hazard.io.ValidE := ieu.io.ValidE
+  hazard.io.MemRWE := ieu.io.MemRWE
+  hazard.io.LateResultE := ieu.io.LateResultE
+  hazard.io.RdM := ieu.io.RdM
+  hazard.io.RegWriteM := ieu.io.RegWriteM
+  hazard.io.ValidM := ieu.io.ValidM
+  hazard.io.ResultSrcM := ieu.io.ResultSrcM
+  hazard.io.RdW := ieu.io.RdW
+  hazard.io.RegWriteW := ieu.io.RegWriteW
+  hazard.io.ValidW := ieu.io.ValidW
+  hazard.io.PCSrcE := ieu.io.PCSrcE
+  hazard.io.IFUStallF := (if (config.bus.nonEmpty) ifu.io.BusStallF else false.B)
+  hazard.io.LSUStallM := (if (config.bus.nonEmpty) lsu.io.BusStallM else false.B)
+  hazard.io.CommittedF := (if (config.bus.nonEmpty) ifu.io.BusCommittedF else false.B)
+  hazard.io.CommittedM := (if (config.bus.nonEmpty) lsu.io.BusCommittedM else false.B)
+  hazard.io.TrapM := TrapM
+  hazard.io.RedirectIntentM := RedirectIntentM
+  hazard.io.RedirectM := RedirectM
+  hazard.io.WFIStallM := WFIStallM
+  ieu.io.ForwardAE := hazard.io.ForwardAE
+  ieu.io.ForwardBE := hazard.io.ForwardBE
+  ieu.io.FlushE := hazard.io.FlushE
+  StallM := hazard.io.StallM
   val ebu = config.bus.map { _ =>
     val master = Module(new EBU)
     master.clk := clk
@@ -171,17 +204,6 @@ abstract class PipelineBase(config: CpuConfig) extends RawModule {
     external.HTRANS := master.io.HTRANS
     external.HMASTLOCK := master.io.HMASTLOCK
 
-    val hazard = Module(new BusHazardControl)
-    hazard.io.IFUStallF := ifu.io.BusStallF
-    hazard.io.LSUStallM := lsu.io.BusStallM
-    hazard.io.CommittedF := ifu.io.BusCommittedF
-    hazard.io.CommittedM := lsu.io.BusCommittedM
-    hazard.io.TrapM := TrapM
-    hazard.io.RedirectIntentM := RedirectIntentM
-    hazard.io.WFIStallM := WFIStallM
-    StallM := hazard.io.StallM
-    ifu.io.BusFlushF := hazard.io.FlushBusF
-    lsu.io.BusFlushM := hazard.io.FlushBusM
     master
   }
 

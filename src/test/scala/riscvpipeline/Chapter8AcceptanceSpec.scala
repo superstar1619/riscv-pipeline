@@ -30,7 +30,7 @@ private[riscvpipeline] final class Chapter8Harness(config: CpuConfig) extends Mo
   val InstrM = expose(dut.ieu.dp.io.InstrM)
   val PCM = expose(dut.ieu.dp.io.PCM)
   val ValidW = expose(dut.ieu.dp.io.ValidW)
-  val LoadStallD = expose(dut.ieu.io.LoadStallD)
+  val LoadStallD = expose(dut.hazard.io.LoadStallD)
   val MemRWE = expose(dut.ieu.io.MemRWE)
   val RegWriteW = expose(dut.ieu.dp.io.RegWriteW)
   val RdW = expose(dut.ieu.dp.io.RdW)

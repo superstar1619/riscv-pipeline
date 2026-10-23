@@ -14,6 +14,21 @@ private class HazardHarness extends Module {
 
 class PipelineHazardSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
   import PipelineTestSupport._
+  private def clear(d: HazardHarness): Unit = {
+    d.io.Rs1D.poke(0.U); d.io.Rs2D.poke(0.U)
+    d.io.UsesRs1D.poke(false.B); d.io.UsesRs2D.poke(false.B)
+    d.io.ValidD.poke(false.B); d.io.MemRWD.poke(0.U)
+    d.io.Rs1E.poke(0.U); d.io.Rs2E.poke(0.U); d.io.RdE.poke(0.U)
+    d.io.ValidE.poke(false.B); d.io.MemRWE.poke(0.U); d.io.LateResultE.poke(false.B)
+    d.io.RdM.poke(0.U); d.io.RegWriteM.poke(false.B)
+    d.io.ValidM.poke(false.B); d.io.ResultSrcM.poke(false.B)
+    d.io.RdW.poke(0.U); d.io.RegWriteW.poke(false.B); d.io.ValidW.poke(false.B)
+    d.io.PCSrcE.poke(false.B); d.io.RedirectM.poke(false.B)
+    d.io.IFUStallF.poke(false.B); d.io.LSUStallM.poke(false.B)
+    d.io.CommittedF.poke(false.B); d.io.CommittedM.poke(false.B)
+    d.io.TrapM.poke(false.B); d.io.RedirectIntentM.poke(false.B); d.io.WFIStallM.poke(false.B)
+  }
+
   behavior of "Pipeline dependencies"
 
   it should "stall once each for store-load and load-use while holding F and D" in {
@@ -86,6 +101,7 @@ class PipelineHazardSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
 
   it should "gate forwarding by valid writes and let redirects override either stall cause" in {
     test(new HazardHarness) { dut =>
+      clear(dut)
       dut.io.Rs1D.poke(5.U)
       dut.io.Rs2D.poke(5.U)
       dut.io.UsesRs1D.poke(true.B)
@@ -136,6 +152,99 @@ class PipelineHazardSpec extends AnyFlatSpec with riscvpipeline.ProjectTest {
         dut.io.StallD.expect(false.B)
         dut.io.FlushD.expect(true.B)
         dut.io.FlushE.expect(true.B)
+      }
+    }
+  }
+  private def drive(d: HazardHarness, f: Boolean = false, m: Boolean = false,
+    cf: Boolean = false, cm: Boolean = false, trap: Boolean = false,
+    redirect: Boolean = false, wfi: Boolean = false): Unit = {
+    clear(d)
+    d.io.IFUStallF.poke(f.B); d.io.LSUStallM.poke(m.B)
+    d.io.CommittedF.poke(cf.B); d.io.CommittedM.poke(cm.B)
+    d.io.TrapM.poke(trap.B); d.io.RedirectIntentM.poke(redirect.B)
+    d.io.WFIStallM.poke(wfi.B)
+  }
+
+  it should "hold independently for fetch data and WFI waits" in {
+    test(new HazardHarness) { d =>
+      drive(d); d.io.StallM.expect(false.B)
+      drive(d, f = true); d.io.StallM.expect(true.B)
+      drive(d, m = true); d.io.StallM.expect(true.B)
+      drive(d, wfi = true); d.io.StallM.expect(true.B)
+      drive(d, f = true, m = true, cf = true, cm = true)
+      d.io.StallM.expect(true.B)
+      d.io.FlushBusF.expect(false.B); d.io.FlushBusM.expect(false.B)
+    }
+  }
+
+  it should "cancel unaccepted requests while preserving each committed owner" in {
+    test(new HazardHarness) { d =>
+      drive(d, f = true, m = true, trap = true, redirect = true)
+      d.io.FlushBusF.expect(true.B); d.io.FlushBusM.expect(true.B)
+      d.io.StallM.expect(false.B)
+      drive(d, f = true, m = true, cf = true, trap = true, redirect = true)
+      d.io.FlushBusF.expect(false.B); d.io.FlushBusM.expect(true.B)
+      d.io.StallM.expect(true.B)
+      drive(d, f = true, m = true, cm = true, trap = true, redirect = true)
+      d.io.FlushBusF.expect(true.B); d.io.FlushBusM.expect(false.B)
+      d.io.StallM.expect(true.B)
+      drive(d, f = true, m = true, cf = true, cm = true, trap = true, redirect = true)
+      d.io.FlushBusF.expect(false.B); d.io.FlushBusM.expect(false.B)
+      d.io.StallM.expect(true.B)
+    }
+  }
+
+  it should "cancel only fetch for CSR fence or return intents" in {
+    test(new HazardHarness) { d =>
+      drive(d, f = true, redirect = true)
+      d.io.FlushBusF.expect(true.B); d.io.FlushBusM.expect(false.B)
+      d.io.StallM.expect(false.B)
+      drive(d, f = true, m = true, redirect = true)
+      d.io.FlushBusF.expect(true.B); d.io.FlushBusM.expect(false.B)
+      d.io.StallM.expect(true.B)
+      drive(d, f = true, cf = true, redirect = true)
+      d.io.FlushBusF.expect(false.B); d.io.StallM.expect(true.B)
+    }
+  }
+
+  it should "combine dependency bubbles with waits and distinguish redirect intent from commit" in {
+    // Hand-checked bus outcomes: f, m, committedF, committedM, trap, intent, wfi,
+    // expected StallM, FlushBusF, FlushBusM. The same outcomes hold for every dependency.
+    val cases = Seq(
+      (false, false, false, false, false, false, false, false, false, false),
+      (true, false, false, false, false, false, false, true, false, false),
+      (false, true, false, false, false, false, false, true, false, false),
+      (false, false, false, false, false, false, true, true, false, false),
+      (true, false, false, false, false, true, false, false, true, false),
+      (true, true, false, false, true, true, false, false, true, true),
+      (true, true, true, false, true, true, false, true, false, true),
+      (true, true, false, true, true, true, false, true, true, false),
+      (true, true, true, true, true, true, false, true, false, false),
+      (true, true, false, false, true, true, true, true, true, true),
+      (true, true, false, false, false, true, false, true, true, false))
+    test(new HazardHarness) { d =>
+      for (dependency <- Seq("none", "load", "csr", "store");
+        (f, m, cf, cm, trap, intent, wfi, stalled, cancelF, cancelM) <- cases;
+        branch <- Seq(false, true); redirect <- Seq(false, true)) {
+        drive(d, f, m, cf, cm, trap, intent, wfi)
+        d.io.ValidD.poke(true.B); d.io.ValidE.poke(true.B)
+        d.io.UsesRs1D.poke(true.B); d.io.Rs1D.poke(5.U); d.io.RdE.poke(5.U)
+        d.io.MemRWD.poke(Control.MEM_READ.U)
+        d.io.MemRWE.poke((dependency match {
+          case "load" => Control.MEM_READ
+          case "store" => Control.MEM_WRITE
+          case _ => Control.MEM_NONE
+        }).U)
+        d.io.LateResultE.poke((dependency == "csr").B)
+        d.io.PCSrcE.poke(branch.B); d.io.RedirectM.poke(redirect.B)
+        d.io.LoadStallD.expect((dependency == "load" || dependency == "csr").B)
+        d.io.StoreStallD.expect((dependency == "store").B)
+        d.io.StallM.expect(stalled.B)
+        d.io.StallF.expect((stalled || (dependency != "none" && !branch)).B)
+        d.io.StallD.expect((stalled || (dependency != "none" && !branch)).B)
+        d.io.FlushD.expect((branch || redirect).B)
+        d.io.FlushE.expect((branch || dependency != "none").B)
+        d.io.FlushBusF.expect(cancelF.B); d.io.FlushBusM.expect(cancelM.B)
       }
     }
   }

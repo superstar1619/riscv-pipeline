@@ -1,7 +1,7 @@
 # BusPipeline 整体流水线接入
 
 BusPipeline 保留原六个 M 级观察端口，增加 AHB 主口和同域 interrupt/time 输入。
-PipelineBase 只在 `config.bus` 非空时实例化 EBU 与 BusHazardControl，IFU/LSU 的
+PipelineBase 在所有配置中只实例化一个顶层 Hazard，并在 `config.bus` 非空时实例化 EBU。IFU/LSU 的
 响应分别由仲裁归属返回；默认无总线配置沿用原 IROM/DTIM 与特权连接。
 
 IFU/LSU 等待冻结 F/D/E/M，W 级按既有机制排空一次。特权单元接入 CommittedF/M，

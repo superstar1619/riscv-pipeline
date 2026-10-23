@@ -234,13 +234,14 @@ scounteren[n]=1，无 S 的 U 只检查 mcounteren。许可关闭不停止增长
 | 事件位常量 | `HPMEventsM` 位 | 软件选择器值 | 当前 PipelineBase 实际来源与含义 |
 | --- | --- | --- | --- |
 | `EVENT_RETIRED` | 0 | 1 | `InstrRetiredM`，有效、非陷阱、非停顿、非复位的退休候选 |
-| `EVENT_LOAD` | 1 | 2 | `ieu.io.MemRWM(MEM_READ_BIT)`，M 级读取请求位；未另外用退休信号资格化 |
-| `EVENT_STORE` | 2 | 3 | `ieu.io.MemRWM(MEM_WRITE_BIT)`，M 级写入请求位；未另外用退休信号资格化 |
-| `EVENT_LOAD_STALL` | 3 | 4 | `ieu.io.LoadStallD`，D 级真实源依赖 E 级 load 或 CSR 晚结果时的停顿条件 |
-| `EVENT_STORE_STALL` | 4 | 5 | `ieu.io.StoreStallD`，E 级 store 与 D 级 load 的共享 DTIM 结构冲突停顿条件 |
+| `EVENT_LOAD` | 1 | 2 | `InstrRetiredM && ieu.io.MemRWM(MEM_READ_BIT)`，成功完成的 load 指令 |
+| `EVENT_STORE` | 2 | 3 | `InstrRetiredM && ieu.io.MemRWM(MEM_WRITE_BIT)`，成功完成的 store 指令 |
+| `EVENT_LOAD_STALL` | 3 | 4 | `hazard.io.LoadStallD`，D 级真实源依赖 E 级 load 或 CSR 晚结果时的停顿条件 |
+| `EVENT_STORE_STALL` | 4 | 5 | `hazard.io.StoreStallD`，E 级 store 与 D 级 load 的共享 DTIM 结构冲突停顿条件 |
 
-其余事件输入 bit 5..31 当前为零。load/store 常量名称不能解释成“已退休 load/store
-数”，也不能解释为“总线成功接受事务数”。HPM 模块只采样选中输入，每拍最多加一，
+其余事件输入 bit 5..31 当前为零。`InstrRetiredM = ValidM && !TrapM && !StallM`；
+load/store 每条成功完成的指令只计一次，等待、异常和被取消的访存不计数。
+总线接受但尚未完成的事务不计数；本地 DTIM 与总线访问使用相同定义。HPM 模块只采样选中输入，每拍最多加一，
 不会统一再套 Valid/Trap 门控；脉冲含义与资格化由调用方决定。
 这两个冒险条件在 E 级重定向优先解除实际 D/F 停顿时仍可能为真，因此事件也不等同于最终停顿周期数。
 

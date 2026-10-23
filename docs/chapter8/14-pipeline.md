@@ -2,7 +2,8 @@
 
 第八章已接入真正的五级流水线。`PrivilegedPipeline` 为支持特权功能的顶层；
 `RiscvPipeline` 默认配置继续提供原第七章 RV32I 行为及原端口。
-二者通过 `PipelineBase` 共享 IFU、IEU、LSU 和 Hazard，Scala 继承不增加硬件层级。
+二者通过 `PipelineBase` 共享 IFU、IEU、LSU 和顶层唯一的 Hazard，Scala 继承不增加硬件层级。
+IEU 向 Hazard 输出依赖信息，接收前递选择和 E 冲刷；内部不再实例化 Hazard。
 
 ## 顶层及配置
 
@@ -54,8 +55,14 @@ WFI 保持 M 并停顿 F/D/E；较老 W 只完成一次，随后 W 插入气泡�
 停顿中 E 操作数保存当拍前递值，避免较老 W 离开后丢失结果。
 WFI 自身先退休，然后在后继指令边界接收已使能中断。
 `minstret` 只计有效、未陷阱且未停顿的 M 指令；`mcycle` 在等待中仍计数。
-HPM 事件位 0–4 为退休、M 加载、M 存储、load/CSR 依赖停顿、store→load 停顿，
-其余位绑零；受 inhibit、权限和已实现计数器数量限制。
+HPM 事件位 0–4（选择器 1–5）为退休、成功完成的 load、成功完成的 store、
+load/CSR 依赖停顿、store→load 停顿，其余位绑零。load/store 分别使用
+`InstrRetiredM && MemRWM(read/write)`，其中 `InstrRetiredM = ValidM && !TrapM && !StallM`。
+因此等待、异常或被取消的访存不计数，每条成功完成的指令只计一次（包括 load 到 x0）。
+退休与两类依赖停顿事件的定义保持不变；停顿事件来自顶层 Hazard，计数器叶模块
+不新增统一门控。计数受 inhibit、权限和已实现计数器数量限制。
+`PipelineHpmSpec` 使用真实 CSR 指令选择事件 2/3，在读回与报告用访存前冻结计数，
+覆盖本地 DTIM、RAM/APB 等待、异常、冲刷、中断取消及同实例复位重跑。
 
 ## 地址、异常和端序
 

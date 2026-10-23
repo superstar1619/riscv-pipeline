@@ -3,7 +3,6 @@ package riscvpipeline.ieu
 import chisel3._
 import riscvpipeline.config.CpuConfig
 import riscvpipeline.control.ControlEncoding._
-import riscvpipeline.hazard.Hazard
 import riscvpipeline.isa.Architecture._
 import riscvpipeline.isa.InstructionDecode
 import riscvpipeline.isa.InstructionEncoding._
@@ -36,15 +35,30 @@ final class IEUIO(config: CpuConfig) extends Bundle {
   val WriteDataM = Output(UInt(config.xlen.W))
   val MemRWM = Output(UInt(MEM_WIDTH.W))
   val Funct3M = Output(UInt(FUNCT3_WIDTH.W))
-  val LoadStallD = Output(Bool())
-  val StoreStallD = Output(Bool())
-  val StallF = Output(Bool())
-  val StallD = Output(Bool())
-  val FlushD = Output(Bool())
+  // Explicit dependency metadata for the single PipelineBase Hazard.
+  val Rs1D = Output(UInt(REGISTER_INDEX_WIDTH.W))
+  val Rs2D = Output(UInt(REGISTER_INDEX_WIDTH.W))
+  val UsesRs1D = Output(Bool())
+  val UsesRs2D = Output(Bool())
+  val MemRWD = Output(UInt(MEM_WIDTH.W))
+  val Rs1E = Output(UInt(REGISTER_INDEX_WIDTH.W))
+  val Rs2E = Output(UInt(REGISTER_INDEX_WIDTH.W))
+  val RdE = Output(UInt(REGISTER_INDEX_WIDTH.W))
+  val ValidE = Output(Bool())
+  val LateResultE = Output(Bool())
+  val RdM = Output(UInt(REGISTER_INDEX_WIDTH.W))
+  val RegWriteM = Output(Bool())
+  val ResultSrcM = Output(Bool())
+  val RdW = Output(UInt(REGISTER_INDEX_WIDTH.W))
+  val RegWriteW = Output(Bool())
+  val ValidW = Output(Bool())
+  val ForwardAE = Input(UInt(FORWARD_WIDTH.W))
+  val ForwardBE = Input(UInt(FORWARD_WIDTH.W))
+  val FlushE = Input(Bool())
 }
 
 /** 教材 §7.2–7.3：D 译码、E 执行/跳转、M 保存结果、W 写回。
-  * 独立 Hazard 负责前递、load-use、store→load 与重定向优先级。
+  * 顶层统一 Hazard 负责前递、load-use、store→load 与重定向优先级。
   * 按合法译码和实际源使用检测依赖，避免立即数位型被误认为 Rs2。
   */
 final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
@@ -53,7 +67,6 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
   val io = IO(new IEUIO(config))
   val c = Module(new Controller)
   val dp = Module(new Datapath(config))
-  val hazard = Module(new Hazard)
 
   val OpD = io.InstrD(6, 0)
   c.io.Op := OpD
@@ -90,9 +103,9 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
   dp.io.ALUControlD := c.io.ALUControl
   dp.io.MemRWD := c.io.MemRW
   dp.io.ReadDataM := io.ReadDataM
-  dp.io.FlushE := hazard.io.FlushE
-  dp.io.ForwardAE := hazard.io.ForwardAE
-  dp.io.ForwardBE := hazard.io.ForwardBE
+  dp.io.FlushE := io.FlushE
+  dp.io.ForwardAE := io.ForwardAE
+  dp.io.ForwardBE := io.ForwardBE
 
   val UsesRs1D = (c.io.RegWrite &&
     (OpD === OP_REG.U(OPCODE_WIDTH.W) || OpD === OP_IMM.U(OPCODE_WIDTH.W) ||
@@ -101,26 +114,22 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
     (config.privilegedSupported.B && CSRInstrD && !io.InstrD(14))
   val UsesRs2D = (c.io.RegWrite && OpD === OP_REG.U(OPCODE_WIDTH.W)) ||
     c.io.MemRW(MEM_WRITE_BIT) || c.io.Branch
-  hazard.io.Rs1D := io.InstrD(19, 15)
-  hazard.io.Rs2D := io.InstrD(24, 20)
-  hazard.io.UsesRs1D := UsesRs1D
-  hazard.io.UsesRs2D := UsesRs2D
-  hazard.io.ValidD := io.ValidD && !reset
-  hazard.io.MemRWD := c.io.MemRW
-  hazard.io.Rs1E := dp.io.Rs1E
-  hazard.io.Rs2E := dp.io.Rs2E
-  hazard.io.RdE := dp.io.RdE
-  hazard.io.ValidE := dp.io.ValidE
-  hazard.io.MemRWE := dp.io.MemRWE
-  hazard.io.LateResultE := dp.io.CSRInstrE
-  hazard.io.RdM := dp.io.RdM
-  hazard.io.RegWriteM := dp.io.RegWriteM
-  hazard.io.ValidM := dp.io.ValidM
-  hazard.io.ResultSrcM := dp.io.ResultSrcM
-  hazard.io.RdW := dp.io.RdW
-  hazard.io.RegWriteW := dp.io.RegWriteW
-  hazard.io.ValidW := dp.io.ValidW
-  hazard.io.PCSrcE := dp.io.PCSrcE
+  io.Rs1D := io.InstrD(19, 15)
+  io.Rs2D := io.InstrD(24, 20)
+  io.UsesRs1D := UsesRs1D
+  io.UsesRs2D := UsesRs2D
+  io.MemRWD := c.io.MemRW
+  io.Rs1E := dp.io.Rs1E
+  io.Rs2E := dp.io.Rs2E
+  io.RdE := dp.io.RdE
+  io.ValidE := dp.io.ValidE
+  io.LateResultE := dp.io.CSRInstrE
+  io.RdM := dp.io.RdM
+  io.RegWriteM := dp.io.RegWriteM
+  io.ResultSrcM := dp.io.ResultSrcM
+  io.RdW := dp.io.RdW
+  io.RegWriteW := dp.io.RegWriteW
+  io.ValidW := dp.io.ValidW
 
   io.InstrM := dp.io.InstrM
   io.PCM := dp.io.PCM
@@ -138,9 +147,4 @@ final class IEU(val config: CpuConfig = CpuConfig()) extends RawModule {
   io.WriteDataM := dp.io.WriteDataM
   io.MemRWM := dp.io.MemRWM
   io.Funct3M := dp.io.Funct3M
-  io.LoadStallD := hazard.io.LoadStallD
-  io.StoreStallD := hazard.io.StoreStallD
-  io.StallF := hazard.io.StallF || io.StallM
-  io.StallD := hazard.io.StallD || io.StallM
-  io.FlushD := hazard.io.FlushD || io.FlushM
 }

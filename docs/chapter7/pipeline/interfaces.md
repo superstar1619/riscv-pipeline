@@ -27,3 +27,24 @@ Funct3 对齐，再进入 W。RAM 无初始化或复位，未写位置未指定�
 高有效同步复位清空流水有效位、恢复复位向量并抑制 RAM/寄存器写入；数据 RAM 和
 非零寄存器保持。首次 store 的观察周期不再等于单周期执行周期。
 
+
+## 统一 Hazard 与 IEU 边界
+
+`PipelineBase` 在所有配置中只实例化一个顶层 `hazard: Hazard`。IEU 内部不再
+实例化 Hazard，继续负责译码及流水数据通路。Hazard 是无状态组合模块，不新增流水级。
+
+IEU 向顶层输出 `Rs1D/Rs2D/UsesRs1D/UsesRs2D/MemRWD`、
+`Rs1E/Rs2E/RdE/ValidE/MemRWE/LateResultE`、
+`RdM/RegWriteM/ValidM/ResultSrcM`、`RdW/RegWriteW/ValidW` 和 `PCSrcE`。
+D 级有效位由 IFU 提供，并在顶层排除 reset。IEU 接收 Hazard 的
+`ForwardAE/BE`（00=寄存器、01=W、10=M）、`FlushE`，保留 `StallM/FlushM` 输入。
+`StallF/D`、`FlushD` 直接送 IFU；依赖事件直接由顶层 Hazard 提供。
+
+`StallF = StallD = (LoadStallD || StoreStallD) && !PCSrcE || StallM`；
+`FlushD = PCSrcE || RedirectM`；`FlushE = PCSrcE || LoadStallD || StoreStallD`。
+M 级重定向仍通过 Datapath 的 `FlushM` 优先清除 E/M，不依赖 `FlushE`，
+较老 W 指令保持一次排空。总线/WFI 等待及请求取消公式见
+[第九章冒险控制](../../chapter9/15-bus-hazard.md)。无总线配置的总线状态输入绑零。
+
+独立生成：`GenerateHazard [targetDir]`，默认目录 `target/generated/hazard`；
+也可运行 `make generate-hazard SBT=./scripts/sbt-local.sh`。
